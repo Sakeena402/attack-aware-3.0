@@ -1,0 +1,184 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Cybersecurity Light Theme */
+  --background: 255 255 255;
+  --foreground: 15 23 42;
+  --card: 248 250 252;
+  --card-foreground: 15 23 42;
+  --popover: 255 255 255;
+  --popover-foreground: 15 23 42;
+  --primary: 15 23 42;
+  --primary-foreground: 255 255 255;
+  --secondary: 139 92 246;
+  --secondary-foreground: 255 255 255;
+  --muted: 226 232 240;
+  --muted-foreground: 51 65 85;
+  --accent: 99 102 241;
+  --accent-foreground: 255 255 255;
+  --destructive: 239 68 68;
+  --destructive-foreground: 255 255 255;
+  --border: 226 232 240;
+  --input: 226 232 240;
+  --ring: 99 102 241;
+  --chart-1: 15 23 42;
+  --chart-2: 139 92 246;
+  --chart-3: 99 102 241;
+  --chart-4: 59 130 246;
+  --chart-5: 167 139 250;
+  --radius: 0.625rem;
+  --sidebar: 248 250 252;
+  --sidebar-foreground: 15 23 42;
+  --sidebar-primary: 15 23 42;
+  --sidebar-primary-foreground: 255 255 255;
+  --sidebar-accent: 139 92 246;
+  --sidebar-accent-foreground: 255 255 255;
+  --sidebar-border: 226 232 240;
+  --sidebar-ring: 99 102 241;
+}
+
+.dark {
+  /* Cybersecurity Dark Theme */
+  --background: 15 23 42;
+  --foreground: 241 245 250;
+  --card: 30 41 59;
+  --card-foreground: 241 245 250;
+  --popover: 30 41 59;
+  --popover-foreground: 241 245 250;
+  --primary: 241 245 250;
+  --primary-foreground: 15 23 42;
+  --secondary: 167 139 250;
+  --secondary-foreground: 15 23 42;
+  --muted: 51 65 85;
+  --muted-foreground: 203 213 225;
+  --accent: 139 92 246;
+  --accent-foreground: 255 255 255;
+  --destructive: 239 68 68;
+  --destructive-foreground: 241 245 250;
+  --border: 51 65 85;
+  --input: 51 65 85;
+  --ring: 139 92 246;
+  --chart-1: 139 92 246;
+  --chart-2: 99 102 241;
+  --chart-3: 167 139 250;
+  --chart-4: 59 130 246;
+  --chart-5: 34 197 94;
+  --sidebar: 30 41 59;
+  --sidebar-foreground: 241 245 250;
+  --sidebar-primary: 139 92 246;
+  --sidebar-primary-foreground: 255 255 255;
+  --sidebar-accent: 99 102 241;
+  --sidebar-accent-foreground: 255 255 255;
+  --sidebar-border: 51 65 85;
+  --sidebar-ring: 139 92 246;
+}
+
+@theme inline {
+  --font-sans: var(--font-sans), 'Inter', system-ui, sans-serif;
+  --font-mono: 'Fira Code', monospace;
+  --color-background: rgb(var(--background) / <alpha-value>);
+  --color-foreground: rgb(var(--foreground) / <alpha-value>);
+  --color-card: rgb(var(--card) / <alpha-value>);
+  --color-card-foreground: rgb(var(--card-foreground) / <alpha-value>);
+  --color-popover: rgb(var(--popover) / <alpha-value>);
+  --color-popover-foreground: rgb(var(--popover-foreground) / <alpha-value>);
+  --color-primary: rgb(var(--primary) / <alpha-value>);
+  --color-primary-foreground: rgb(var(--primary-foreground) / <alpha-value>);
+  --color-secondary: rgb(var(--secondary) / <alpha-value>);
+  --color-secondary-foreground: rgb(var(--secondary-foreground) / <alpha-value>);
+  --color-muted: rgb(var(--muted) / <alpha-value>);
+  --color-muted-foreground: rgb(var(--muted-foreground) / <alpha-value>);
+  --color-accent: rgb(var(--accent) / <alpha-value>);
+  --color-accent-foreground: rgb(var(--accent-foreground) / <alpha-value>);
+  --color-destructive: rgb(var(--destructive) / <alpha-value>);
+  --color-destructive-foreground: rgb(var(--destructive-foreground) / <alpha-value>);
+  --color-border: rgb(var(--border) / <alpha-value>);
+  --color-input: rgb(var(--input) / <alpha-value>);
+  --color-ring: rgb(var(--ring) / <alpha-value>);
+  --color-chart-1: rgb(var(--chart-1) / <alpha-value>);
+  --color-chart-2: rgb(var(--chart-2) / <alpha-value>);
+  --color-chart-3: rgb(var(--chart-3) / <alpha-value>);
+  --color-chart-4: rgb(var(--chart-4) / <alpha-value>);
+  --color-chart-5: rgb(var(--chart-5) / <alpha-value>);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: rgb(var(--sidebar) / <alpha-value>);
+  --color-sidebar-foreground: rgb(var(--sidebar-foreground) / <alpha-value>);
+  --color-sidebar-primary: rgb(var(--sidebar-primary) / <alpha-value>);
+  --color-sidebar-primary-foreground: rgb(var(--sidebar-primary-foreground) / <alpha-value>);
+  --color-sidebar-accent: rgb(var(--sidebar-accent) / <alpha-value>);
+  --color-sidebar-accent-foreground: rgb(var(--sidebar-accent-foreground) / <alpha-value>);
+  --color-sidebar-border: rgb(var(--sidebar-border) / <alpha-value>);
+  --color-sidebar-ring: rgb(var(--sidebar-ring) / <alpha-value>);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Attack Aware 3.0 Cyber Effects */
+  @keyframes glow {
+    0%, 100% { filter: drop-shadow(0 0 10px rgba(124, 58, 237, 0.4)); }
+    50% { filter: drop-shadow(0 0 20px rgba(34, 211, 238, 0.6)); }
+  }
+
+  @keyframes grid-fade {
+    0% { opacity: 0.1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 0.1; }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) translateX(0px); }
+    25% { transform: translateY(-10px) translateX(5px); }
+    50% { transform: translateY(-20px) translateX(0px); }
+    75% { transform: translateY(-10px) translateX(-5px); }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(124, 58, 237, 0.3), inset 0 0 20px rgba(124, 58, 237, 0.1); }
+    50% { box-shadow: 0 0 40px rgba(34, 211, 238, 0.4), inset 0 0 30px rgba(34, 211, 238, 0.15); }
+  }
+
+  .cyber-glow {
+    animation: glow 3s ease-in-out infinite;
+  }
+
+  .cyber-grid {
+    background-image: 
+      linear-gradient(0deg, transparent 24%, rgba(124, 58, 237, 0.05) 25%, rgba(124, 58, 237, 0.05) 26%, transparent 27%, transparent 74%, rgba(124, 58, 237, 0.05) 75%, rgba(124, 58, 237, 0.05) 76%, transparent 77%, transparent),
+      linear-gradient(90deg, transparent 24%, rgba(124, 58, 237, 0.05) 25%, rgba(124, 58, 237, 0.05) 26%, transparent 27%, transparent 74%, rgba(124, 58, 237, 0.05) 75%, rgba(124, 58, 237, 0.05) 76%, transparent 77%, transparent);
+    background-size: 60px 60px;
+    animation: grid-fade 8s ease-in-out infinite;
+  }
+
+  .glassmorphism {
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(10px) saturate(180%);
+    border: 1px solid rgba(124, 58, 237, 0.2);
+  }
+
+  .dark .glassmorphism {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(10px) saturate(180%);
+    border: 1px solid rgba(124, 58, 237, 0.3);
+  }
+
+  .glow-card {
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+
+  .float-animation {
+    animation: float 6s ease-in-out infinite;
+  }
+}
