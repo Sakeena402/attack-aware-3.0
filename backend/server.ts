@@ -85,7 +85,7 @@ import analyticsRouter from './src/routes/analytics';
 import companyRouter from './src/routes/company';
 import leaderboardRouter from './src/routes/leaderboard';
 import contactRouter from './src/routes/contact';
-import employeesRouter from './routes/employees';
+import employeesRouter from './src/routes/employees';
 import 'dotenv/config';
 dotenv.config();
 
