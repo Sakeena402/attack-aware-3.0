@@ -16,6 +16,9 @@ employeesRouter.use(authenticate);
 // Get all departments (for filtering)
 employeesRouter.get('/departments', getDepartments);
 
+// Get employees by department
+employeesRouter.get('/department/:department', getAllEmployees);
+
 // CRUD operations
 employeesRouter.get('/', getAllEmployees);
 employeesRouter.get('/:id', getEmployeeById);

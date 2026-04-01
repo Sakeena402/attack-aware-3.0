@@ -69,6 +69,14 @@ __v0_jsx-dev-runtime.ts
 .vscode/
 .idea/
 
+**/backend-c/
+**/frontend-c/
+
+backend-c/
+frontend-c/
+
+backend-c/
+frontend-c/
 # =========================
 # CACHE
 # =========================

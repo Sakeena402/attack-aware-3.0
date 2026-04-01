@@ -30,11 +30,25 @@ import {
   Clock,
 } from 'lucide-react';
 
+// const fetcher = async (url: string) => {
+//   const response = await api.get(url);
+//   return response.data;
+// };
+
+
 const fetcher = async (url: string) => {
   const response = await api.get(url);
-  return response.data;
-};
+  const data = response.data;
 
+  // Normalize response shape
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.employees)) return data.employees;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.data?.employees)) return data.data.employees;
+
+  console.error("Invalid employees response:", data);
+  return [];
+};
 const typeIcons = {
   phishing: Mail,
   smishing: MessageSquare,
@@ -60,8 +74,27 @@ interface CampaignFormData {
   startDate: string;
   endDate: string;
   targetEmployees: string[];
+  targetDepartments: string[];
   emailTemplate: string;
+  smsTemplate: string;
+  voiceScript: string;
+  description: string;
 }
+
+const smsTemplates = [
+  { key: 'bank_alert', name: 'Bank Security Alert', description: 'Fake bank suspicious activity notification' },
+  { key: 'package_delivery', name: 'Package Delivery', description: 'Fake delivery pending confirmation' },
+  { key: 'hr_benefits', name: 'HR Benefits Update', description: 'Fake HR benefits enrollment expiring' },
+  { key: 'password_reset', name: 'Password Reset', description: 'Fake password reset request warning' },
+  { key: 'prize_winner', name: 'Prize Winner', description: 'Fake prize/gift card claim' },
+  { key: 'tax_refund', name: 'Tax Refund', description: 'Fake IRS tax refund notification' },
+];
+
+const voiceScripts = [
+  { key: 'bank_verification', name: 'Bank Verification', description: 'Fake call from financial institution' },
+  { key: 'it_support', name: 'IT Support Call', description: 'Fake IT department security issue call' },
+  { key: 'insurance_claim', name: 'Insurance Claim', description: 'Fake insurance policy update call' },
+];
 
 export default function CampaignsPage() {
   const { state } = useAuth();
@@ -81,7 +114,11 @@ export default function CampaignsPage() {
     startDate: '',
     endDate: '',
     targetEmployees: [],
+    targetDepartments: [],
     emailTemplate: '',
+    smsTemplate: 'bank_alert',
+    voiceScript: 'bank_verification',
+    description: '',
   });
 
   // Fetch campaigns
@@ -92,12 +129,12 @@ export default function CampaignsPage() {
   );
 
   // Fetch employees for selection
-  const { data: employees } = useSWR<Employee[]>(
+  const { data } = useSWR<Employee[]>(
     state.user?.companyId ? `/employees?companyId=${state.user.companyId}` : '/employees',
     fetcher,
     { revalidateOnFocus: false }
   );
-
+const employees = Array.isArray(data) ? data : [];
   // Calculate stats
   const stats = {
     total: campaigns?.length || 0,
@@ -133,7 +170,11 @@ export default function CampaignsPage() {
         startDate: campaign.startDate?.split('T')[0] || '',
         endDate: campaign.endDate?.split('T')[0] || '',
         targetEmployees: campaign.targetEmployees || [],
+        targetDepartments: campaign.targetDepartments || [],
         emailTemplate: campaign.emailTemplate || '',
+        smsTemplate: campaign.smsTemplate || 'bank_alert',
+        voiceScript: campaign.voiceScript || 'bank_verification',
+        description: campaign.description || '',
       });
     } else {
       setSelectedCampaign(null);
@@ -143,7 +184,11 @@ export default function CampaignsPage() {
         startDate: '',
         endDate: '',
         targetEmployees: [],
+        targetDepartments: [],
         emailTemplate: '',
+        smsTemplate: 'bank_alert',
+        voiceScript: 'bank_verification',
+        description: '',
       });
     }
     setIsModalOpen(true);
@@ -640,7 +685,7 @@ export default function CampaignsPage() {
               </button>
             </div>
             <div className="max-h-40 overflow-y-auto border border-purple-500/20 rounded-lg p-2 space-y-1">
-              {employees?.map((employee) => (
+              {employees.map((employee) => (
                 <label
                   key={employee._id}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer"
@@ -664,14 +709,77 @@ export default function CampaignsPage() {
             </p>
           </div>
 
+          {/* SMS Template Selection - Only show for smishing */}
+          {formData.type === 'smishing' && (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">SMS Template</label>
+              <div className="grid grid-cols-2 gap-2">
+                {smsTemplates.map((template) => (
+                  <button
+                    key={template.key}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, smsTemplate: template.key })}
+                    className={`p-3 rounded-lg border text-left transition-all ${
+                      formData.smsTemplate === template.key
+                        ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
+                        : 'bg-muted/50 border-purple-500/20 text-muted-foreground hover:text-foreground hover:border-purple-500/40'
+                    }`}
+                  >
+                    <span className="block text-sm font-medium">{template.name}</span>
+                    <span className="block text-xs opacity-70 mt-1">{template.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Voice Script Selection - Only show for vishing */}
+          {formData.type === 'vishing' && (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Voice Script</label>
+              <div className="space-y-2">
+                {voiceScripts.map((script) => (
+                  <button
+                    key={script.key}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, voiceScript: script.key })}
+                    className={`w-full p-3 rounded-lg border text-left transition-all ${
+                      formData.voiceScript === script.key
+                        ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
+                        : 'bg-muted/50 border-purple-500/20 text-muted-foreground hover:text-foreground hover:border-purple-500/40'
+                    }`}
+                  >
+                    <span className="block text-sm font-medium">{script.name}</span>
+                    <span className="block text-xs opacity-70 mt-1">{script.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Email Template - Only show for phishing */}
+          {formData.type === 'phishing' && (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Email Template (Optional)</label>
+              <textarea
+                value={formData.emailTemplate}
+                onChange={(e) => setFormData({ ...formData, emailTemplate: e.target.value })}
+                rows={4}
+                className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 resize-none"
+                placeholder="Enter your phishing email template..."
+              />
+            </div>
+          )}
+
+          {/* Description field */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Email Template (Optional)</label>
+            <label className="block text-sm font-medium text-foreground mb-2">Description</label>
             <textarea
-              value={formData.emailTemplate}
-              onChange={(e) => setFormData({ ...formData, emailTemplate: e.target.value })}
-              rows={4}
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={2}
               className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 resize-none"
-              placeholder="Enter your phishing email template..."
+              placeholder="Brief description of this campaign..."
             />
           </div>
 

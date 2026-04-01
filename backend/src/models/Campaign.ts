@@ -47,6 +47,45 @@ const campaignSchema = new Schema<ICampaign>(
       type: Number,
       default: 0,
     },
+    targetDepartments: {
+      type: [String],
+      default: [],
+    },
+    // SMS/Smishing specific fields
+    smsTemplate: {
+      type: String,
+      default: '',
+    },
+    customSmsMessage: {
+      type: String,
+      default: '',
+    },
+    // Voice/Vishing specific fields
+    voiceScript: {
+      type: String,
+      default: '',
+    },
+    // Scheduling
+    scheduledTime: {
+      type: Date,
+    },
+    // Stats tracking
+    sentCount: {
+      type: Number,
+      default: 0,
+    },
+    deliveredCount: {
+      type: Number,
+      default: 0,
+    },
+    clickedCount: {
+      type: Number,
+      default: 0,
+    },
+    reportedCount: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

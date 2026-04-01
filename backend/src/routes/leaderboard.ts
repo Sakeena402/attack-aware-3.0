@@ -3,6 +3,8 @@ import {
   updateLeaderboard,
   getLeaderboard,
   getLeaderboardGeneral,
+  getLeaderboardByDepartment,
+  getUserRank,
   getTopPerformers,
   getDepartmentRanking,
 } from '../controllers/leaderboardController.js';
@@ -14,6 +16,10 @@ leaderboardRouter.use(authenticate);
 
 // General leaderboard (query params for companyId and department)
 leaderboardRouter.get('/', getLeaderboardGeneral);
+
+// Department and user-specific endpoints
+leaderboardRouter.get('/department/:department', getLeaderboardByDepartment);
+leaderboardRouter.get('/user/:userId', getUserRank);
 
 // Company-specific endpoints
 leaderboardRouter.post('/:companyId', authorize('admin', 'super_admin'), updateLeaderboard);
