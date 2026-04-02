@@ -82,7 +82,7 @@ export default function LandingPage() {
               <Shield className="w-6 h-6 text-white relative z-10" />
             </div>
             <span className="text-xl font-bold font-poppins bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-              CyberAwareSim
+              AttackAware3.0
             </span>
           </motion.div>
 
@@ -519,7 +519,7 @@ export default function LandingPage() {
                 name: 'Sarah Mitchell',
                 role: 'Security Manager',
                 company: 'Tech Corp Inc.',
-                content: 'CyberAwareSim transformed our security culture. Our phishing click rates dropped by 65% in just 6 months.',
+                content: 'AttackAware3.0 transformed our security culture. Our phishing click rates dropped by 65% in just 6 months.',
                 avatar: '👩‍💼',
               },
               {
@@ -759,7 +759,7 @@ export default function LandingPage() {
             <motion.div variants={itemVariants}>
               <div className="flex items-center gap-2 mb-4">
                 <Shield className="w-6 h-6 text-purple-400" />
-                <span className="font-bold">CyberAwareSim</span>
+                <span className="font-bold">AttackAware3.0</span>
               </div>
               <p className="text-gray-400 text-sm">Protecting organizations from social engineering threats.</p>
             </motion.div>
@@ -833,7 +833,7 @@ export default function LandingPage() {
             className="border-t border-purple-500/10 pt-8 flex flex-col md:flex-row items-center justify-between"
           >
             <motion.p variants={itemVariants} className="text-gray-400 text-sm">
-              &copy; 2024 CyberAwareSim. All rights reserved.
+              &copy; 2024 AttackAware3.0. All rights reserved.
             </motion.p>
 
             <motion.div

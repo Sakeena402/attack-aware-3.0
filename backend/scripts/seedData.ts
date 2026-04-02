@@ -4,7 +4,7 @@ import { connectDB, disconnectDB } from '../src/config/database.js';
 import { User } from '../src/models/User.js';
 import { Company } from '../src/models/Company.js';
 import { Campaign } from '../src/models/Campaign.js';
-import { SimulationResult } from '../src/models/SimulationResult.js';
+import  SimulationResult  from '../src/models/SimulationResult.js';
 import { Leaderboard } from '../src/models/Leaderboard.js';
 
 dotenv.config();

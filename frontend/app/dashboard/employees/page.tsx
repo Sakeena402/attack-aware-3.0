@@ -26,11 +26,23 @@ import {
   Award,
 } from 'lucide-react';
 
+// const fetcher = async (url: string) => {
+//   const response = await api.get(url);
+//   return response.data;
+// };
+
 const fetcher = async (url: string) => {
   const response = await api.get(url);
-  return response.data;
-};
 
+  const data = response.data;
+
+  // normalize response
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.employees)) return data.employees;
+
+  console.error("Invalid employees response:", data);
+  return [];
+};
 const riskLevelColors = {
   high: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30', icon: AlertTriangle },
   medium: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30', icon: Shield },
@@ -67,36 +79,73 @@ export default function EmployeesPage() {
   });
 
   // Fetch employees
-  const { data: employees, error, isLoading } = useSWR<Employee[]>(
-    state.user?.companyId ? `/employees?companyId=${state.user.companyId}` : '/employees',
-    fetcher,
-    { revalidateOnFocus: false }
-  );
+  // const { data: employees, error, isLoading } = useSWR<Employee[]>(
+  //   state.user?.companyId ? `/employees?companyId=${state.user.companyId}` : '/employees',
+  //   fetcher,
+  //   { revalidateOnFocus: false }
+  // );
 
+  const { data, error, isLoading } = useSWR<Employee[]>(
+  state.user?.companyId 
+    ? `/employees?companyId=${state.user.companyId}` 
+    : '/employees',
+  fetcher,
+  { revalidateOnFocus: false }
+);
+
+// 🔥 normalize once
+const employees = Array.isArray(data) ? data : [];
   // Calculate stats
+  // const stats = {
+  //   total: employees?.length || 0,
+  //   highRisk: employees?.filter(e => e.riskLevel === 'high').length || 0,
+  //   trained: employees?.filter(e => (e.trainingProgress || 0) >= 80).length || 0,
+  //   avgPoints: employees?.length 
+  //     ? Math.round(employees.reduce((acc, e) => acc + (e.points || 0), 0) / employees.length) 
+  //     : 0,
+  // };
   const stats = {
-    total: employees?.length || 0,
-    highRisk: employees?.filter(e => e.riskLevel === 'high').length || 0,
-    trained: employees?.filter(e => (e.trainingProgress || 0) >= 80).length || 0,
-    avgPoints: employees?.length 
-      ? Math.round(employees.reduce((acc, e) => acc + (e.points || 0), 0) / employees.length) 
-      : 0,
-  };
+  total: employees.length,
+  highRisk: employees.filter(e => e.riskLevel === 'high').length,
+  trained: employees.filter(e => (e.trainingProgress || 0) >= 80).length,
+  avgPoints: employees.length
+    ? Math.round(
+        employees.reduce((acc, e) => acc + (e.points || 0), 0) / employees.length
+      )
+    : 0,
+};
 
   // Get unique departments
-  const departments = employees 
-    ? ['all', ...new Set(employees.map(e => e.department).filter(Boolean))]
-    : ['all'];
+  // const departments = employees 
+  //   ? ['all', ...new Set(employees.map(e => e.department).filter(Boolean))]
+  //   : ['all'];
 
+  const departments = [
+  'all',
+  ...new Set(employees.map(e => e.department).filter(Boolean))
+];
   // Filter employees
-  const filteredEmployees = employees?.filter((emp) => {
-    const matchesSearch =
-      emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDepartment = filterDepartment === 'all' || emp.department === filterDepartment;
-    const matchesRisk = filterRisk === 'all' || emp.riskLevel === filterRisk;
-    return matchesSearch && matchesDepartment && matchesRisk;
-  }) || [];
+  // const filteredEmployees = employees?.filter((emp) => {
+  //   const matchesSearch =
+  //     emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     emp.email.toLowerCase().includes(searchTerm.toLowerCase());
+  //   const matchesDepartment = filterDepartment === 'all' || emp.department === filterDepartment;
+  //   const matchesRisk = filterRisk === 'all' || emp.riskLevel === filterRisk;
+  //   return matchesSearch && matchesDepartment && matchesRisk;
+  // }) || [];
+  const filteredEmployees = employees.filter((emp) => {
+  const matchesSearch =
+    emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    emp.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+  const matchesDepartment =
+    filterDepartment === 'all' || emp.department === filterDepartment;
+
+  const matchesRisk =
+    filterRisk === 'all' || emp.riskLevel === filterRisk;
+
+  return matchesSearch && matchesDepartment && matchesRisk;
+});
 
   // Open modal for create/edit
   const openModal = useCallback((employee?: Employee) => {

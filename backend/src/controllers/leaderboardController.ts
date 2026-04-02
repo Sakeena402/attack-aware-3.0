@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { Leaderboard } from '../models/Leaderboard.js';
 import { User } from '../models/User.js';
-import { SimulationResult } from '../models/SimulationResult.js';
+import  SimulationResult  from '../models/SimulationResult.js';
 import { AppError } from '../utils/errorHandler.js';
 import { AuthRequest, ApiResponse } from '../types/index.js';
 
@@ -231,5 +231,93 @@ export const getDepartmentRanking = async (
     });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to fetch department rankings' });
+  }
+};
+
+export const getLeaderboardByDepartment = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    const { department } = req.params;
+    const companyId = req.user?.companyId;
+
+    const query: Record<string, unknown> = { department };
+    if (companyId) query.companyId = companyId;
+
+    const leaderboard = await Leaderboard.find(query)
+      .sort({ score: -1 })
+      .limit(50)
+      .lean();
+
+    res.json({
+      success: true,
+      data: leaderboard,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch department leaderboard' });
+  }
+};
+
+export const getUserRank = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const companyId = req.user?.companyId;
+
+    // Get user's leaderboard entry
+    const userEntry = await Leaderboard.findOne({ userId }).lean();
+    
+    if (!userEntry) {
+      // If no leaderboard entry, get from User model
+      const user = await User.findById(userId).select('points').lean();
+      if (!user) {
+        res.status(404).json({ success: false, error: 'User not found' });
+        return;
+      }
+      
+      // Calculate rank from all users
+      const higherRanked = await User.countDocuments({
+        companyId,
+        points: { $gt: user.points || 0 },
+      });
+      
+      const totalUsers = await User.countDocuments({ companyId });
+      const rank = higherRanked + 1;
+      const percentile = totalUsers > 0 ? Math.round(((totalUsers - rank + 1) / totalUsers) * 100) : 0;
+
+      res.json({
+        success: true,
+        data: {
+          rank,
+          score: user.points || 0,
+          percentile,
+        },
+      });
+      return;
+    }
+
+    // Calculate rank from leaderboard
+    const higherRanked = await Leaderboard.countDocuments({
+      companyId: userEntry.companyId,
+      score: { $gt: userEntry.score },
+    });
+    
+    const totalEntries = await Leaderboard.countDocuments({ companyId: userEntry.companyId });
+    const rank = higherRanked + 1;
+    const percentile = totalEntries > 0 ? Math.round(((totalEntries - rank + 1) / totalEntries) * 100) : 0;
+
+    res.json({
+      success: true,
+      data: {
+        rank,
+        score: userEntry.score,
+        percentile,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch user rank' });
   }
 };

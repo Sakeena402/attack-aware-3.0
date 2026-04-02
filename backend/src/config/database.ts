@@ -7,10 +7,11 @@ export const connectDB = async (): Promise<typeof mongoose> => {
     if (!mongoUri) {
       throw new Error('MONGODB_URI environment variable is not set');
     }
-
-    const conn = await mongoose.connect(mongoUri, {
+    
+  const conn = await mongoose.connect(mongoUri, {
   dbName: 'attackaware3',
 });
+   
     
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     return conn;
@@ -25,10 +26,8 @@ export const disconnectDB = async (): Promise<void> => {
   try {
     await mongoose.disconnect();
     console.log('MongoDB disconnected');
-  }  catch (error: any) {
-  console.error('❌ MongoDB FULL ERROR:', error);
-  console.error('❌ Message:', error.message);
-  console.error('❌ Code:', error.code);
-  process.exit(1);
-}
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`MongoDB disconnection error: ${errorMessage}`);
+  }
 };

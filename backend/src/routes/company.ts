@@ -16,6 +16,7 @@ companyRouter.post('/', authorize('admin', 'super_admin'), createCompany);
 companyRouter.get('/', getAllCompanies);
 companyRouter.get('/:id', getCompany);
 companyRouter.patch('/:id', authorize('admin', 'super_admin'), updateCompany);
+companyRouter.put('/:id', authorize('admin', 'super_admin'), updateCompany);
 companyRouter.delete('/:id', authorize('super_admin'), deleteCompany);
 
 export default companyRouter;

@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { Campaign } from '../models/Campaign.js';
-import { SimulationResult } from '../models/SimulationResult.js';
+import  SimulationResult  from '../models/SimulationResult.js';
 import { AppError } from '../utils/errorHandler.js';
 import { AuthRequest, ApiResponse, CampaignStatus } from '../types/index.js';
 

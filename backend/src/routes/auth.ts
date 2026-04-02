@@ -1,12 +1,15 @@
 import { Router } from 'express';
-import { login, register, getCurrentUser, refreshToken } from '../controllers/authController.js';
+import { register } from '../controllers/authController.js';
+import { validate } from '../middleware/validation.js';
+import { login, refreshToken, getCurrentUser } from '../controllers/authController.js';
 import { authenticate } from '../middleware/auth.js';
+import { loginSchema, registerSchema, refreshTokenSchema } from '../middleware/validation.js';
 
 const authRouter = Router();
 
-authRouter.post('/login', login);
-authRouter.post('/register', register);
-authRouter.post('/refresh', refreshToken);
+authRouter.post('/login', validate(loginSchema), login);
+authRouter.post('/register', validate(registerSchema), register);
+authRouter.post('/refresh', validate(refreshTokenSchema), refreshToken);
 authRouter.get('/me', authenticate, getCurrentUser);
 
 export default authRouter;
