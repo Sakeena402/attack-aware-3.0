@@ -12,7 +12,7 @@ import { AlertCircle, Lock, Mail, Eye, EyeOff, ArrowRight, Shield, Zap, Trending
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-  const [email, setEmail] = useState('admin@cyberaware.com');
+  const [email, setEmail] = useState('admin@attackaware.com');
   const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

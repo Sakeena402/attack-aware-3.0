@@ -1,3 +1,5 @@
+//backend/src/utils/jwt.ts
+
 import jwt from 'jsonwebtoken';
 import { JwtPayload, UserRole } from '../types/index.js';
 
@@ -6,17 +8,22 @@ const REFRESH_SECRET = process.env.REFRESH_SECRET || 'refresh-secret-key-change-
 const JWT_EXPIRY = process.env.JWT_EXPIRY || '15m';
 const REFRESH_EXPIRY = process.env.REFRESH_EXPIRY || '7d';
 
-export const generateToken = (id: string, email: string, role: UserRole): string => {
+export const generateToken = (
+  id: string,
+  email: string,
+  role: UserRole,
+  companyId?: string
+): string => {
   return jwt.sign(
-    { id, email, role } as JwtPayload,
+    { id, email, role, companyId },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRY }
   );
-};
+};;
 
-export const generateRefreshToken = (id: string, email: string, role: UserRole): string => {
+export const generateRefreshToken = (id: string, email: string, role: UserRole,companyId?: string): string => {
   return jwt.sign(
-    { id, email, role } as JwtPayload,
+    { id, email, role, companyId } as JwtPayload,
     REFRESH_SECRET,
     { expiresIn: REFRESH_EXPIRY }
   );

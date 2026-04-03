@@ -5,7 +5,9 @@ import { motion } from 'framer-motion';
 import useSWR from 'swr';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/app/context/authContext';
-import { api, simulationAnalyticsApi } from '@/app/services/api';
+import { apiService } from '@/app/services/api';
+import type { DashboardStats, Campaign, LeaderboardEntry } from '@/app/services/types';
+import {simulationAnalyticsApi} from '@/app/services/simulationAnalyticsApi';
 import { StatCardSkeleton } from '@/components/ui/skeleton-loader';
 import {
   BarChart,
@@ -44,7 +46,7 @@ import {
 } from 'lucide-react';
 
 const fetcher = async (url: string) => {
-  const response = await api.get(url);
+  const response = await  apiService.get(url);
   return response.data;
 };
 

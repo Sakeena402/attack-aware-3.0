@@ -12,24 +12,28 @@ interface JWTError extends Error {
 }
 
 // Extract token from request
+// const extractToken = (req: AuthRequest): string | null => {
+//   // Check Authorization header first
+//   const authHeader = req.headers.authorization;
+//   if (authHeader && authHeader.startsWith('Bearer ')) {
+//     return authHeader.substring(7);
+//   }
+  
+//   // Check cookies as fallback
+//   if (req.cookies?.token) {
+//     return req.cookies.token;
+//   }
+  
+//   // Check query param for special cases (webhooks, etc.)
+//   if (req.query.token && typeof req.query.token === 'string') {
+//     return req.query.token;
+//   }
+  
+//   return null;
+// };
+
 const extractToken = (req: AuthRequest): string | null => {
-  // Check Authorization header first
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    return authHeader.substring(7);
-  }
-  
-  // Check cookies as fallback
-  if (req.cookies?.token) {
-    return req.cookies.token;
-  }
-  
-  // Check query param for special cases (webhooks, etc.)
-  if (req.query.token && typeof req.query.token === 'string') {
-    return req.query.token;
-  }
-  
-  return null;
+  return req.cookies?.accessToken || null;
 };
 
 // Main authentication middleware

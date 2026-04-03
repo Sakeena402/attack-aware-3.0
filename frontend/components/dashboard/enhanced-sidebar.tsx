@@ -16,18 +16,47 @@ import {
   Menu,
   X,
   LogOut,
+  Building2,
+  Activity,
 } from 'lucide-react';
 import { useAuth } from '@/app/context/authContext';
 
-const menuItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', badge: null },
-  { icon: Zap, label: 'Campaigns', href: '/dashboard/campaigns', badge: 'NEW' },
-  { icon: BarChart3, label: 'Analytics', href: '/dashboard/analytics', badge: null },
-  { icon: Trophy, label: 'Leaderboard', href: '/dashboard/leaderboard', badge: null },
-  { icon: Users, label: 'Employees', href: '/dashboard/employees', badge: null },
-  { icon: FileText, label: 'Reports', href: '/dashboard/reports', badge: null },
-  { icon: Settings, label: 'Settings', href: '/dashboard/settings', badge: null },
-];
+const getMenuItems = (role: string | undefined) => {
+  const baseMenuItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', roles: ['super_admin', 'admin', 'employee'] },
+  ];
+
+  const roleBasedItems: Record<string, Array<any>> = {
+    super_admin: [
+      { icon: Building2, label: 'Companies', href: '/dashboard/companies', roles: ['super_admin'] },
+      { icon: BarChart3, label: 'Global Analytics', href: '/dashboard/analytics', roles: ['super_admin'] },
+      { icon: Activity, label: 'System Health', href: '/dashboard/system', roles: ['super_admin'] },
+    ],
+    admin: [
+      { icon: Zap, label: 'Campaigns', href: '/dashboard/campaigns', roles: ['admin'], badge: 'NEW' },
+      { icon: Users, label: 'Employees', href: '/dashboard/employees', roles: ['admin'] },
+      { icon: BarChart3, label: 'Analytics', href: '/dashboard/analytics', roles: ['admin'] },
+      { icon: Trophy, label: 'Leaderboard', href: '/dashboard/leaderboard', roles: ['admin'] },
+    ],
+    employee: [
+      { icon: Trophy, label: 'Leaderboard', href: '/dashboard/leaderboard', roles: ['employee'] },
+      { icon: FileText, label: 'Training', href: '/dashboard/training', roles: ['employee'] },
+      { icon: Zap, label: 'Simulations', href: '/dashboard/simulations', roles: ['employee'] },
+    ],
+  };
+
+  const items = [...baseMenuItems];
+  if (role && roleBasedItems[role]) {
+    items.push(...roleBasedItems[role]);
+  }
+
+  // Settings and logout available to all
+  items.push(
+    { icon: Settings, label: 'Settings', href: '/dashboard/settings', roles: ['super_admin', 'admin', 'employee'] },
+  );
+
+  return items;
+};
 
 export function EnhancedSidebar() {
   const pathname = usePathname();
@@ -74,7 +103,7 @@ export function EnhancedSidebar() {
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/20 scrollbar-track-transparent">
           <div className="space-y-2">
-            {menuItems.map((item, idx) => {
+            {getMenuItems(state.user?.role).map((item, idx) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
 
