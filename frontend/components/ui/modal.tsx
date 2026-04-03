@@ -17,12 +17,20 @@ interface ModalProps {
   closeOnEsc?: boolean;
 }
 
+// const sizeClasses = {
+//   sm: 'max-w-sm',
+//   md: 'max-w-md',
+//   lg: 'max-w-lg',
+//   xl: 'max-w-xl',
+//   full: 'max-w-4xl',
+// };
+
 const sizeClasses = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
-  full: 'max-w-4xl',
+  sm: 'max-w-md',     // small dialogs
+  md: 'max-w-xl',     // default
+  lg: 'max-w-3xl',    // medium forms
+  xl: 'max-w-3xl',    // 🔥 MAIN FORM SIZE
+  full: 'max-w-6xl',  // large dashboards
 };
 
 export function Modal({
@@ -60,7 +68,7 @@ export function Modal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-end pr-24 md:pr-48">
           {/* Overlay */}
           <motion.div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -72,10 +80,10 @@ export function Modal({
 
           {/* Modal */}
           <motion.div
-            className={cn(
-              'relative w-full rounded-2xl glassmorphism border border-purple-500/30 shadow-2xl overflow-hidden',
-              sizeClasses[size]
-            )}
+  className={cn(
+    'relative w-full max-h-[90vh] overflow-y-auto rounded-2xl glassmorphism border border-purple-500/30 shadow-2xl',
+    sizeClasses[size]
+  )}
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -108,7 +116,7 @@ export function Modal({
             )}
 
             {/* Content */}
-            <div className="p-6">{children}</div>
+            <div className="p-8">{children}</div>
           </motion.div>
         </div>
       )}
