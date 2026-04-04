@@ -1,3 +1,5 @@
+
+// backend/src/routes/employees.ts
 import { Router } from 'express';
 import {
   getAllEmployees,
@@ -7,23 +9,23 @@ import {
   deleteEmployee,
   getDepartments,
 } from '../controllers/employeeController.js';
-import { authenticate, authorize } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
+import { requireAdmin, isolateByCompany } from '../middleware/rbac.js';
 
 const employeesRouter = Router();
 
 employeesRouter.use(authenticate);
 
-// Get all departments (for filtering)
-employeesRouter.get('/departments', getDepartments);
+// Static routes MUST come before param routes — otherwise /:id captures "departments"
+employeesRouter.get('/departments', isolateByCompany, getDepartments);
 
-// Get employees by department
-employeesRouter.get('/department/:department', getAllEmployees);
+// Collection routes
+employeesRouter.get('/',    isolateByCompany, getAllEmployees);
+employeesRouter.post('/',   requireAdmin, isolateByCompany, createEmployee);
 
-// CRUD operations
-employeesRouter.get('/', getAllEmployees);
-employeesRouter.get('/:id', getEmployeeById);
-employeesRouter.post('/', authorize('admin', 'super_admin'), createEmployee);
-employeesRouter.put('/:id', authorize('admin', 'super_admin'), updateEmployee);
-employeesRouter.delete('/:id', authorize('admin', 'super_admin'), deleteEmployee);
+// Param routes last
+employeesRouter.get('/:id',    isolateByCompany, getEmployeeById);
+employeesRouter.put('/:id',    requireAdmin, isolateByCompany, updateEmployee);
+employeesRouter.delete('/:id', requireAdmin, isolateByCompany, deleteEmployee);
 
 export default employeesRouter;

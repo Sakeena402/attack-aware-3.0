@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Modal, ConfirmDialog } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast-notification';
 import { useAuth } from '@/app/context/authContext';
-import { api, campaignApi, employeeApi, Campaign, Employee } from '@/app/services/api';
+
 import { StatCardSkeleton } from '@/components/ui/skeleton-loader';
 import {
   Plus,
@@ -29,6 +29,11 @@ import {
   CheckCircle,
   Clock,
 } from 'lucide-react';
+import { apiService } from '@/app/services/api';
+import { campaignApi } from '@/app/services/campaignApi';
+
+import { employeeApi } from '@/app/services/employeeApi';
+import { Campaign, Employee } from '@/app/services/types';
 
 // const fetcher = async (url: string) => {
 //   const response = await api.get(url);
@@ -37,7 +42,7 @@ import {
 
 
 const fetcher = async (url: string) => {
-  const response = await api.get(url);
+  const response = await apiService.get(url);
   const data = response.data;
 
   // Normalize response shape
@@ -606,197 +611,176 @@ const employees = Array.isArray(data) ? data : [];
       )}
 
       {/* Create/Edit Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        title={selectedCampaign ? 'Edit Campaign' : 'Create New Campaign'}
-        description={selectedCampaign ? 'Update campaign details' : 'Configure your security awareness campaign'}
-        size="lg"
-      >
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Campaign Name</label>
-            <input
-              type="text"
-              required
-              value={formData.campaignName}
-              onChange={(e) => setFormData({ ...formData, campaignName: e.target.value })}
-              className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
-              placeholder="Q1 Phishing Awareness"
-            />
-          </div>
+     <Modal
+  isOpen={isModalOpen}
+  onClose={closeModal}
+  title={selectedCampaign ? 'Edit Campaign' : 'Create New Campaign'}
+  description="Configure your security awareness campaign"
+  size="xl"
+  
+>
+  <form onSubmit={handleSubmit} className="space-y-8">
 
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Campaign Type</label>
-            <div className="flex gap-3">
-              {(['phishing', 'smishing', 'vishing'] as const).map((type) => {
-                const Icon = typeIcons[type];
-                return (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, type })}
-                    className={`flex-1 px-4 py-3 rounded-lg border transition-all flex flex-col items-center gap-2 ${
-                      formData.type === type
-                        ? typeColors[type]
-                        : 'bg-muted/50 border-purple-500/20 text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="capitalize text-sm font-medium">{type}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+    {/* ROW 1 */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      
+      {/* Campaign Name */}
+      <div>
+        <label className="block text-sm font-medium mb-2">Campaign Name</label>
+        <input
+          type="text"
+          required
+          value={formData.campaignName}
+          onChange={(e) => setFormData({ ...formData, campaignName: e.target.value })}
+          className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg"
+        />
+      </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Start Date</label>
-              <input
-                type="date"
-                required
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">End Date</label>
-              <input
-                type="date"
-                required
-                value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
-              />
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-foreground">Target Employees</label>
+      {/* Campaign Type */}
+      <div>
+        <label className="block text-sm font-medium mb-2">Campaign Type</label>
+        <div className="flex gap-3 flex-wrap">
+          {(['phishing', 'smishing', 'vishing'] as const).map((type) => {
+            const Icon = typeIcons[type];
+            return (
               <button
+                key={type}
                 type="button"
-                onClick={selectAllEmployees}
-                className="text-xs text-purple-400 hover:text-purple-300"
+                onClick={() => setFormData({ ...formData, type })}
+                className={`flex-1 min-w-[100px] px-4 py-3 rounded-lg border flex flex-col items-center gap-2 ${
+                  formData.type === type
+                    ? typeColors[type]
+                    : 'bg-muted/50 border-purple-500/20'
+                }`}
               >
-                {formData.targetEmployees.length === (employees?.length || 0) ? 'Deselect All' : 'Select All'}
+                <Icon className="w-5 h-5" />
+                <span className="capitalize text-sm">{type}</span>
               </button>
-            </div>
-            <div className="max-h-40 overflow-y-auto border border-purple-500/20 rounded-lg p-2 space-y-1">
-              {employees.map((employee) => (
-                <label
-                  key={employee._id}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={formData.targetEmployees.includes(employee._id)}
-                    onChange={() => toggleEmployee(employee._id)}
-                    className="w-4 h-4 rounded border-purple-500/30 text-purple-500 focus:ring-purple-500/50"
-                  />
-                  <span className="text-sm text-foreground">{employee.name}</span>
-                  <span className="text-xs text-muted-foreground">({employee.department || 'N/A'})</span>
-                </label>
-              ))}
-              {(!employees || employees.length === 0) && (
-                <p className="text-sm text-muted-foreground text-center py-4">No employees found</p>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {formData.targetEmployees.length} employee(s) selected
-            </p>
-          </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
 
-          {/* SMS Template Selection - Only show for smishing */}
-          {formData.type === 'smishing' && (
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">SMS Template</label>
-              <div className="grid grid-cols-2 gap-2">
-                {smsTemplates.map((template) => (
-                  <button
-                    key={template.key}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, smsTemplate: template.key })}
-                    className={`p-3 rounded-lg border text-left transition-all ${
-                      formData.smsTemplate === template.key
-                        ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
-                        : 'bg-muted/50 border-purple-500/20 text-muted-foreground hover:text-foreground hover:border-purple-500/40'
-                    }`}
-                  >
-                    <span className="block text-sm font-medium">{template.name}</span>
-                    <span className="block text-xs opacity-70 mt-1">{template.description}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+    {/* ROW 2 - DATES */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <input
+        type="date"
+        value={formData.startDate}
+        onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+        className="w-full px-4 py-2 border rounded-lg"
+      />
+      <input
+        type="date"
+        value={formData.endDate}
+        onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+        className="w-full px-4 py-2 border rounded-lg"
+      />
+    </div>
 
-          {/* Voice Script Selection - Only show for vishing */}
-          {formData.type === 'vishing' && (
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Voice Script</label>
-              <div className="space-y-2">
-                {voiceScripts.map((script) => (
-                  <button
-                    key={script.key}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, voiceScript: script.key })}
-                    className={`w-full p-3 rounded-lg border text-left transition-all ${
-                      formData.voiceScript === script.key
-                        ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
-                        : 'bg-muted/50 border-purple-500/20 text-muted-foreground hover:text-foreground hover:border-purple-500/40'
-                    }`}
-                  >
-                    <span className="block text-sm font-medium">{script.name}</span>
-                    <span className="block text-xs opacity-70 mt-1">{script.description}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+    {/* ROW 3 - EMPLOYEES */}
+    <div>
+      <div className="flex justify-between mb-2">
+        <label className="text-sm font-medium">Target Employees</label>
+        <button type="button" onClick={selectAllEmployees} className="text-xs text-purple-400">
+          Select All
+        </button>
+      </div>
 
-          {/* Email Template - Only show for phishing */}
-          {formData.type === 'phishing' && (
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Email Template (Optional)</label>
-              <textarea
-                value={formData.emailTemplate}
-                onChange={(e) => setFormData({ ...formData, emailTemplate: e.target.value })}
-                rows={4}
-                className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 resize-none"
-                placeholder="Enter your phishing email template..."
-              />
-            </div>
-          )}
-
-          {/* Description field */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Description</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={2}
-              className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 resize-none"
-              placeholder="Brief description of this campaign..."
+      {/* 🔥 FIXED GRID EMPLOYEES */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-52 overflow-y-auto border rounded-lg p-2">
+        {employees.map((employee) => (
+          <label key={employee._id} className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={formData.targetEmployees.includes(employee._id)}
+              onChange={() => toggleEmployee(employee._id)}
             />
-          </div>
+            {employee.name}
+          </label>
+        ))}
+      </div>
+    </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={closeModal} disabled={isSubmitting}>
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={isSubmitting}
-              className="bg-gradient-to-r from-purple-500 to-blue-500"
-            >
-              {isSubmitting ? 'Saving...' : selectedCampaign ? 'Update Campaign' : 'Create Campaign'}
-            </Button>
+    {/* ROW 4 - CONDITIONAL TEMPLATES */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      {/* SMS */}
+      {formData.type === 'smishing' && (
+        <div>
+          <label className="text-sm font-medium mb-2 block">SMS Template</label>
+          <div className="grid grid-cols-2 gap-2">
+            {smsTemplates.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setFormData({ ...formData, smsTemplate: t.key })}
+                className={`p-2 border rounded-lg text-left ${
+                  formData.smsTemplate === t.key ? 'bg-yellow-500/20' : ''
+                }`}
+              >
+                {t.name}
+              </button>
+            ))}
           </div>
-        </form>
-      </Modal>
+        </div>
+      )}
+
+      {/* Voice */}
+      {formData.type === 'vishing' && (
+        <div>
+          <label className="text-sm font-medium mb-2 block">Voice Script</label>
+          <div className="grid grid-cols-2 gap-2">
+            {voiceScripts.map((v) => (
+              <button
+                key={v.key}
+                type="button"
+                onClick={() => setFormData({ ...formData, voiceScript: v.key })}
+                className={`p-2 border rounded-lg ${
+                  formData.voiceScript === v.key ? 'bg-blue-500/20' : ''
+                }`}
+              >
+                {v.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+    </div>
+
+    {/* EMAIL TEMPLATE */}
+    {formData.type === 'phishing' && (
+      <textarea
+        value={formData.emailTemplate}
+        onChange={(e) => setFormData({ ...formData, emailTemplate: e.target.value })}
+        rows={4}
+        placeholder="Email template..."
+        className="w-full px-4 py-2 border rounded-lg"
+      />
+    )}
+
+    {/* DESCRIPTION */}
+    <textarea
+      value={formData.description}
+      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+      rows={2}
+      placeholder="Description..."
+      className="w-full px-4 py-2 border rounded-lg"
+    />
+
+    {/* ACTIONS */}
+    <div className="flex justify-end gap-3">
+      <Button type="button" variant="outline" onClick={closeModal}>
+        Cancel
+      </Button>
+      <Button type="submit" className="bg-gradient-to-r from-purple-500 to-blue-500">
+        {isSubmitting ? 'Saving...' : 'Save'}
+      </Button>
+    </div>
+
+  </form>
+</Modal>
 
       {/* View Campaign Modal */}
       <Modal

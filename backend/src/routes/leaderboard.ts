@@ -1,3 +1,4 @@
+// backend/src/routes/leaderboard.ts
 import { Router } from 'express';
 import {
   updateLeaderboard,
@@ -8,23 +9,26 @@ import {
   getTopPerformers,
   getDepartmentRanking,
 } from '../controllers/leaderboardController.js';
-import { authenticate, authorize } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
+import {
+  requireAdmin,
+  isolateByCompany,
+  checkOwnership,
+} from '../middleware/rbac.js';
 
 const leaderboardRouter = Router();
 
 leaderboardRouter.use(authenticate);
 
-// General leaderboard (query params for companyId and department)
-leaderboardRouter.get('/', getLeaderboardGeneral);
+// Static routes FIRST — before any /:param routes
+leaderboardRouter.get('/',                         isolateByCompany, getLeaderboardGeneral);
+leaderboardRouter.get('/user/:userId',             checkOwnership,   getUserRank);
+leaderboardRouter.get('/department/:department',   requireAdmin, isolateByCompany, getLeaderboardByDepartment);
 
-// Department and user-specific endpoints
-leaderboardRouter.get('/department/:department', getLeaderboardByDepartment);
-leaderboardRouter.get('/user/:userId', getUserRank);
-
-// Company-specific endpoints
-leaderboardRouter.post('/:companyId', authorize('admin', 'super_admin'), updateLeaderboard);
-leaderboardRouter.get('/:companyId', getLeaderboard);
-leaderboardRouter.get('/:companyId/top', getTopPerformers);
-leaderboardRouter.get('/:companyId/departments', getDepartmentRanking);
+// Param routes LAST
+leaderboardRouter.post('/:companyId',              requireAdmin, isolateByCompany, updateLeaderboard);
+leaderboardRouter.get('/:companyId',               requireAdmin, isolateByCompany, getLeaderboard);
+leaderboardRouter.get('/:companyId/top',           requireAdmin, isolateByCompany, getTopPerformers);
+leaderboardRouter.get('/:companyId/departments',   requireAdmin, isolateByCompany, getDepartmentRanking);
 
 export default leaderboardRouter;

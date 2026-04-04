@@ -1,83 +1,136 @@
+// backend/src/controllers/employeeController.ts
+
 import { Response } from 'express';
 import bcryptjs from 'bcryptjs';
 import { User } from '../models/User.js';
 import { AppError } from '../utils/errorHandler.js';
 import { AuthRequest, ApiResponse } from '../types/index.js';
 
-export const getAllEmployees = async (
-  req: AuthRequest,
-  res: Response<ApiResponse>
-): Promise<void> => {
-  try {
-    if (!req.user) {
-      throw new AppError('User not authenticated', 401);
-    }
+// export const getAllEmployees = async (
+//   req: AuthRequest,
+//   res: Response<ApiResponse>
+// ): Promise<void> => {
+//   try {
+//     if (!req.user) {
+//       throw new AppError('User not authenticated', 401);
+//     }
 
-    const { companyId, department, search, limit = '50', page = '1' } = req.query as {
-      companyId?: string;
+//     const { companyId, department, search, limit = '50', page = '1' } = req.query as {
+//       companyId?: string;
+//       department?: string;
+//       search?: string;
+//       limit?: string;
+//       page?: string;
+//     };
+
+//     const query: Record<string, unknown> = {};
+    
+//     // Filter by company
+//     if (companyId) {
+//       query.companyId = companyId;
+//     } else if (req.user.role !== 'super_admin' && req.user.companyId) {
+//       query.companyId = req.user.companyId;
+//     }
+
+//     // Filter by department
+//     if (department) {
+//       query.department = department;
+//     }
+
+//     // Search by name or email
+//     if (search) {
+//       query.$or = [
+//         { name: { $regex: search, $options: 'i' } },
+//         { email: { $regex: search, $options: 'i' } },
+//       ];
+//     }
+
+//     const pageNum = parseInt(page, 10);
+//     const limitNum = parseInt(limit, 10);
+//     const skip = (pageNum - 1) * limitNum;
+
+//     const [employees, total] = await Promise.all([
+//       User.find(query)
+//         .select('-passwordHash')
+//         .sort({ createdAt: -1 })
+//         .skip(skip)
+//         .limit(limitNum)
+//         .lean(),
+//       User.countDocuments(query),
+//     ]);
+
+//     res.json({
+//       success: true,
+//       data: {
+//         employees: employees.map(emp => ({
+//           ...emp,
+//           _id: emp._id,
+//           id: emp._id,
+//         })),
+//         pagination: {
+//           total,
+//           page: pageNum,
+//           limit: limitNum,
+//           totalPages: Math.ceil(total / limitNum),
+//         },
+//       },
+//     });
+//   } catch (error) {
+//     if (error instanceof AppError) {
+//       res.status(error.statusCode).json({ success: false, error: error.message });
+//     } else {
+//       res.status(500).json({ success: false, error: 'Failed to fetch employees' });
+//     }
+//   }
+// };
+
+
+// In getAllEmployees — replace the manual companyId query handling with this:
+export const getAllEmployees = async (req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
+  try {
+    if (!req.user) throw new AppError('User not authenticated', 401);
+
+    const { department, search, limit = '50', page = '1' } = req.query as {
       department?: string;
       search?: string;
       limit?: string;
       page?: string;
     };
 
-    const query: Record<string, unknown> = {};
-    
-    // Filter by company
-    if (companyId) {
-      query.companyId = companyId;
-    } else if (req.user.role !== 'super_admin' && req.user.companyId) {
-      query.companyId = req.user.companyId;
-    }
+    // companyFilter is set by isolateByCompany — never trust companyId from the client
+    const companyFilter = (req as any).companyFilter || {};
+    const query: Record<string, unknown> = { ...companyFilter };
 
-    // Filter by department
-    if (department) {
-      query.department = department;
-    }
+    if (department) query.department = department;
 
-    // Search by name or email
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
+        { name:  { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
       ];
     }
 
-    const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
-    const skip = (pageNum - 1) * limitNum;
+    const pageNum  = Math.max(1, parseInt(page, 10));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
+    const skip     = (pageNum - 1) * limitNum;
 
     const [employees, total] = await Promise.all([
-      User.find(query)
-        .select('-passwordHash')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limitNum)
-        .lean(),
+      User.find(query).select('-passwordHash').sort({ createdAt: -1 }).skip(skip).limit(limitNum).lean(),
       User.countDocuments(query),
     ]);
 
     res.json({
       success: true,
       data: {
-        employees,
-        pagination: {
-          total,
-          page: pageNum,
-          limit: limitNum,
-          totalPages: Math.ceil(total / limitNum),
-        },
+        employees: employees.map(emp => ({ ...emp, id: emp._id })),
+        pagination: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) },
       },
     });
   } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ success: false, error: error.message });
-    } else {
-      res.status(500).json({ success: false, error: 'Failed to fetch employees' });
-    }
+    if (error instanceof AppError) res.status(error.statusCode).json({ success: false, error: error.message });
+    else res.status(500).json({ success: false, error: 'Failed to fetch employees' });
   }
 };
-
 export const getEmployeeById = async (
   req: AuthRequest,
   res: Response<ApiResponse>

@@ -1,3 +1,5 @@
+  //backend/src/routes/campaign.ts
+
 import { Router } from 'express';
 import {
   createCampaign,
@@ -8,19 +10,21 @@ import {
   launchCampaign,
   pauseCampaign,
 } from '../controllers/campaignController.js';
-import { authenticate, authorize } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
+import { requireAdmin, isolateByCompany } from '../middleware/rbac.js';
 
 const campaignRouter = Router();
 
 campaignRouter.use(authenticate);
 
-campaignRouter.post('/', authorize('admin', 'super_admin'), createCampaign);
-campaignRouter.get('/', getCampaigns);
-campaignRouter.get('/:id', getCampaignById);
-campaignRouter.patch('/:id', authorize('admin', 'super_admin'), updateCampaign);
-campaignRouter.put('/:id', authorize('admin', 'super_admin'), updateCampaign);
-campaignRouter.delete('/:id', authorize('admin', 'super_admin'), deleteCampaign);
-campaignRouter.post('/:id/launch', authorize('admin', 'super_admin'), launchCampaign);
-campaignRouter.post('/:id/pause', authorize('admin', 'super_admin'), pauseCampaign);
+// Admin-only routes (campaign management)
+campaignRouter.post('/', requireAdmin, isolateByCompany, createCampaign);
+campaignRouter.get('/', isolateByCompany, getCampaigns);
+campaignRouter.get('/:id', isolateByCompany, getCampaignById);
+campaignRouter.patch('/:id', requireAdmin, isolateByCompany, updateCampaign);
+campaignRouter.put('/:id', requireAdmin, isolateByCompany, updateCampaign);
+campaignRouter.delete('/:id', requireAdmin, isolateByCompany, deleteCampaign);
+campaignRouter.post('/:id/launch', requireAdmin, isolateByCompany, launchCampaign);
+campaignRouter.post('/:id/pause', requireAdmin, isolateByCompany, pauseCampaign);
 
 export default campaignRouter;
