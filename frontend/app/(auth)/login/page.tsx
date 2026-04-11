@@ -12,8 +12,10 @@ import { AlertCircle, Lock, Mail, Eye, EyeOff, ArrowRight, Shield, Zap, Trending
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-  const [email, setEmail] = useState('admin@cyberaware.com');
-  const [password, setPassword] = useState('password123');
+
+  // ✅ FIX: removed hardcoded demo credentials
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [localError, setLocalError] = useState('');
@@ -22,6 +24,13 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setLocalError('');
+
+    // ✅ FIX: basic client-side validation before hitting the API
+    if (!email || !password) {
+      setLocalError('Please enter your email and password.');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       await login(email, password);
@@ -35,21 +44,20 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-background overflow-hidden">
-      {/* Left Side - Content */}
+
+      {/* LEFT SIDE */}
       <motion.div
         className="hidden md:flex flex-col justify-between p-12 bg-gradient-to-br from-slate-900 via-purple-900/50 to-slate-900 relative overflow-hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6 }}
       >
-        {/* Background elements */}
         <div className="absolute inset-0">
           <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
           <div className="absolute inset-0 cyber-grid opacity-20" />
         </div>
 
-        {/* Content */}
         <div className="relative z-10">
           <motion.div
             className="flex items-center gap-3"
@@ -81,7 +89,6 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Features */}
             <div className="space-y-4">
               {[
                 { icon: Zap, title: 'Real-time Campaigns', desc: 'Launch simulations instantly' },
@@ -113,16 +120,13 @@ export default function LoginPage() {
           </motion.div>
         </div>
 
-        {/* Footer */}
         <motion.div
           className="relative z-10 space-y-2"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
         >
-          <p className="text-sm text-purple-300">
-            Join thousands protecting their workforce
-          </p>
+          <p className="text-sm text-purple-300">Join thousands protecting their workforce</p>
           <div className="flex gap-4 text-sm text-purple-200">
             <span>500K+ Users</span>
             <span>98% Accuracy</span>
@@ -131,20 +135,19 @@ export default function LoginPage() {
         </motion.div>
       </motion.div>
 
-      {/* Right Side - Login Form */}
+      {/* RIGHT SIDE — LOGIN FORM */}
       <motion.div
         className="flex flex-col justify-center items-center p-8 md:p-12 relative"
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.6 }}
       >
-        {/* Background elements */}
         <div className="absolute inset-0">
           <div className="absolute top-1/4 right-0 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl" />
         </div>
 
         <div className="relative z-10 w-full max-w-md space-y-8">
-          {/* Header */}
+
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -154,7 +157,6 @@ export default function LoginPage() {
             <p className="text-muted-foreground mt-2">Sign in to your Attack Aware dashboard</p>
           </motion.div>
 
-          {/* Login Form */}
           <motion.form
             onSubmit={handleSubmit}
             className="space-y-6"
@@ -162,6 +164,7 @@ export default function LoginPage() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
+            {/* Error Message */}
             {localError && (
               <motion.div
                 className="p-4 rounded-lg bg-red-500/20 border border-red-500/30 flex items-start gap-3"
@@ -173,7 +176,7 @@ export default function LoginPage() {
               </motion.div>
             )}
 
-            {/* Email Field */}
+            {/* Email */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}>
               <label className="block text-sm font-medium text-foreground mb-2">Email Address</label>
               <div className="relative">
@@ -184,11 +187,12 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-12 py-3 bg-muted/50 border-purple-500/20 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
                   placeholder="you@company.com"
+                  required
                 />
               </div>
             </motion.div>
 
-            {/* Password Field */}
+            {/* Password */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
               <label className="block text-sm font-medium text-foreground mb-2">Password</label>
               <div className="relative">
@@ -199,22 +203,22 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-12 pr-12 py-3 bg-muted/50 border-purple-500/20 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
                   placeholder="••••••••"
+                  required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2"
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4 text-muted-foreground" />
-                  ) : (
-                    <Eye className="w-4 h-4 text-muted-foreground" />
-                  )}
+                  {showPassword
+                    ? <EyeOff className="w-4 h-4 text-muted-foreground" />
+                    : <Eye className="w-4 h-4 text-muted-foreground" />
+                  }
                 </button>
               </div>
             </motion.div>
 
-            {/* Remember Me and Forgot Password */}
+            {/* Remember Me + Forgot Password */}
             <motion.div
               className="flex items-center justify-between text-sm"
               initial={{ opacity: 0 }}
@@ -230,7 +234,7 @@ export default function LoginPage() {
               </Link>
             </motion.div>
 
-            {/* Login Button */}
+            {/* Submit Button */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
               <Button
                 type="submit"
@@ -260,15 +264,6 @@ export default function LoginPage() {
             </Link>
           </motion.p>
 
-          {/* Demo Info */}
-          <motion.div
-            className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-sm text-blue-300"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-          >
-            Demo credentials pre-filled. Change them for your account.
-          </motion.div>
         </div>
       </motion.div>
     </div>

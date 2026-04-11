@@ -2,11 +2,17 @@ import { Response } from 'express';
 import bcryptjs from 'bcryptjs';
 import { User } from '../models/User.js';
 import { Company } from '../models/Company.js';
-import { generateToken } from '../utils/jwt.js';
+
+// ✅ FIX: import generateRefreshToken and verifyRefreshToken alongside generateToken
+import { generateToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
+
 import { validateLoginRequest, validateRegisterRequest, sanitizeEmail } from '../utils/validators.js';
 import { AppError } from '../utils/errorHandler.js';
 import { AuthRequest, LoginRequest, RegisterRequest, ApiResponse } from '../types/index.js';
 
+// ─────────────────────────────────────────────
+// LOGIN
+// ─────────────────────────────────────────────
 export const login = async (
   req: AuthRequest,
   res: Response<ApiResponse>
@@ -20,7 +26,13 @@ export const login = async (
     }
 
     const sanitizedEmail = sanitizeEmail(email);
-    const user = await User.findOne({ email: sanitizedEmail });
+
+    // ✅ FIX: .select('+passwordHash') ensures Mongoose returns the hash field
+    const user = await User.findOne({ email: sanitizedEmail }).select('+passwordHash');
+
+    // ✅ DEBUG: remove these two lines once login is confirmed working
+    console.log('User found:', user?.email);
+    console.log('passwordHash exists:', !!user?.passwordHash);
 
     if (!user) {
       throw new AppError('Invalid credentials', 401);
@@ -31,15 +43,19 @@ export const login = async (
       throw new AppError('Invalid credentials', 401);
     }
 
+    // ✅ FIX: generate refreshToken in login (was missing before)
     const token = generateToken(user._id.toString(), user.email, user.role);
+    const refreshToken = generateRefreshToken(user._id.toString(), user.email, user.role);
 
     user.lastLogin = new Date();
     await user.save();
 
+    // ✅ FIX: include refreshToken in response so frontend authContext gets it
     res.json({
       success: true,
       data: {
         token,
+        refreshToken,
         user: {
           id: user._id,
           name: user.name,
@@ -50,15 +66,21 @@ export const login = async (
       },
     });
   } catch (error) {
-  console.error('Login error:', error); // Add this line
-  if (error instanceof AppError) {
-    res.status(error.statusCode).json({ success: false, error: error.message });
-  } else {
-    res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Login failed' });
+    console.error('Login error:', error);
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({ success: false, error: error.message });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Login failed',
+      });
+    }
   }
-}
 };
 
+// ─────────────────────────────────────────────
+// REGISTER
+// ─────────────────────────────────────────────
 export const register = async (
   req: AuthRequest,
   res: Response<ApiResponse>
@@ -78,6 +100,7 @@ export const register = async (
       throw new AppError('Email already registered', 409);
     }
 
+    // ✅ Hash the password before saving
     const passwordHash = await bcryptjs.hash(password, 10);
 
     const newUser = new User({
@@ -108,6 +131,7 @@ export const register = async (
       },
     });
   } catch (error) {
+    console.error('Register error:', error);
     if (error instanceof AppError) {
       res.status(error.statusCode).json({ success: false, error: error.message });
     } else {
@@ -116,6 +140,9 @@ export const register = async (
   }
 };
 
+// ─────────────────────────────────────────────
+// GET CURRENT USER
+// ─────────────────────────────────────────────
 export const getCurrentUser = async (
   req: AuthRequest,
   res: Response<ApiResponse>
@@ -125,6 +152,7 @@ export const getCurrentUser = async (
       throw new AppError('User not authenticated', 401);
     }
 
+    // ✅ -passwordHash is correct here — we never return the hash to the client
     const user = await User.findById(req.user.id).select('-passwordHash');
 
     if (!user) {
@@ -153,6 +181,9 @@ export const getCurrentUser = async (
   }
 };
 
+// ─────────────────────────────────────────────
+// REFRESH TOKEN
+// ─────────────────────────────────────────────
 export const refreshToken = async (
   req: AuthRequest,
   res: Response<ApiResponse>

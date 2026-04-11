@@ -13,7 +13,11 @@ export const validateName = (name: string): boolean => {
 };
 
 export const sanitizeEmail = (email: string): string => {
-  return validator.trim(validator.toLowerCase(email));
+  if (!email || typeof email !== "string") {
+    console.log("Invalid email received:", email);
+    return "";
+  }
+  return email.toLowerCase().trim();
 };
 
 export const validateLoginRequest = (
