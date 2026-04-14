@@ -181,3 +181,11 @@
     animation: float 6s ease-in-out infinite;
   }
 }
+
+.custom-input {
+  @apply w-full bg-[#1f2937] border border-gray-600 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500;
+}
+
+.primary-btn {
+  @apply bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white px-5 py-2 rounded-lg transition;
+}

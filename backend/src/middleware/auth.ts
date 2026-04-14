@@ -5,6 +5,7 @@ import { AppError, ErrorCodes } from '../utils/errorHandler.js';
 import { AuthRequest, UserRole } from '../types/index.js';
 import { logAuth, logSecurity } from '../utils/logger.js';
 
+
 // JWT Error types
 interface JWTError extends Error {
   name: 'TokenExpiredError' | 'JsonWebTokenError' | 'NotBeforeError';
@@ -33,7 +34,18 @@ interface JWTError extends Error {
 // };
 
 const extractToken = (req: AuthRequest): string | null => {
-  return req.cookies?.accessToken || null;
+  // ✅ 1. Check Authorization header (frontend)
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.substring(7);
+  }
+
+  // ✅ 2. Check cookies (optional)
+  if (req.cookies?.accessToken) {
+    return req.cookies.accessToken;
+  }
+
+  return null;
 };
 
 // Main authentication middleware

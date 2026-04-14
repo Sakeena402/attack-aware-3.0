@@ -229,7 +229,7 @@ export default function SuperAdminDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {companies.map((company) => (
                 <motion.div
-                  key={company.id}
+                  key={company._id}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   className="p-4 bg-slate-700/50 rounded-lg border border-slate-600/50 hover:border-purple-500/50 transition"

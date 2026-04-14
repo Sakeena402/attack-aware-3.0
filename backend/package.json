@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
-    "dev": "nodemon --watch src --ext ts,json --exec tsx server.ts",
+    "dev": "nodemon --watch src --ext ts,json,js --exec tsx server.ts",
     "seed": "tsx scripts/seedData.ts"
   },
   "dependencies": {

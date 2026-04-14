@@ -10,8 +10,8 @@ import {
   recordCallInitiated,
   getCampaignSimulationStats,
 } from '../services/trackingService.js';
-import {Campaign} from '../models/Campaign.js';
-import { User } from '../models/User.js';
+import { Campaign } from '../models/Campaign.js';
+import { User } from '../models/User.js';          // ✅ named import (was default in first half)
 
 // Make single vishing call
 export const sendVishingSimulation = async (
@@ -29,18 +29,15 @@ export const sendVishingSimulation = async (
       throw new AppError('Missing required fields: campaignId, userId, scriptKey', 400);
     }
 
-    // Validate script
     if (!voiceScripts[scriptKey as keyof typeof voiceScripts]) {
       throw new AppError('Invalid voice script', 400);
     }
 
-    // Get campaign
     const campaign = await Campaign.findById(campaignId);
     if (!campaign) {
       throw new AppError('Campaign not found', 404);
     }
 
-    // Get user
     const user = await User.findById(userId);
     if (!user) {
       throw new AppError('User not found', 404);
@@ -50,10 +47,8 @@ export const sendVishingSimulation = async (
       throw new AppError('User does not have a phone number', 400);
     }
 
-    // Generate tracking token
     const trackingToken = generateTrackingToken();
 
-    // Make call
     const result = await makeVoiceCall({
       to: user.phoneNumber,
       scriptKey: scriptKey as keyof typeof voiceScripts,
@@ -66,7 +61,6 @@ export const sendVishingSimulation = async (
       throw new AppError(result.error || 'Failed to make call', 500);
     }
 
-    // Record the call
     await recordCallInitiated({
       campaignId,
       userId,
@@ -78,10 +72,7 @@ export const sendVishingSimulation = async (
 
     res.json({
       success: true,
-      data: {
-        callSid: result.callSid,
-        status: 'initiated',
-      },
+      data: { callSid: result.callSid, status: 'initiated' },
       message: 'Vishing simulation call initiated',
     });
   } catch (error) {
@@ -110,13 +101,11 @@ export const sendCampaignVishing = async (
       throw new AppError('Script key is required', 400);
     }
 
-    // Get campaign
     const campaign = await Campaign.findById(campaignId);
     if (!campaign) {
       throw new AppError('Campaign not found', 404);
     }
 
-    // Get target users
     const query: Record<string, unknown> = {
       companyId: campaign.companyId,
       phoneNumber: { $exists: true, $ne: '' },
@@ -141,7 +130,6 @@ export const sendCampaignVishing = async (
       errors: [] as string[],
     };
 
-    // Schedule calls with intervals to avoid overwhelming
     for (const user of users) {
       const trackingToken = generateTrackingToken();
 
@@ -168,11 +156,9 @@ export const sendCampaignVishing = async (
         results.errors.push(`${user.email}: ${result.error}`);
       }
 
-      // Add delay between calls
       await new Promise(resolve => setTimeout(resolve, callInterval));
     }
 
-    // Update campaign
     campaign.status = 'active';
     campaign.voiceScript = scriptKey;
     await campaign.save();
@@ -203,10 +189,7 @@ export const getVoiceScripts = async (
       description: getScriptDescription(key),
     }));
 
-    res.json({
-      success: true,
-      data: scripts,
-    });
+    res.json({ success: true, data: scripts });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to fetch voice scripts' });
   }
@@ -235,14 +218,14 @@ export const getCampaignVishingStats = async (
       success: true,
       data: {
         ...stats,
-        answerRate: stats.callsInitiated > 0 
-          ? Math.round((stats.callsAnswered / stats.callsInitiated) * 100) 
+        answerRate: stats.callsInitiated > 0
+          ? Math.round((stats.callsAnswered / stats.callsInitiated) * 100)
           : 0,
-        engagementRate: stats.callsAnswered > 0 
-          ? Math.round((stats.callsEngaged / stats.callsAnswered) * 100) 
+        engagementRate: stats.callsAnswered > 0
+          ? Math.round((stats.callsEngaged / stats.callsAnswered) * 100)
           : 0,
-        reportRate: stats.callsAnswered > 0 
-          ? Math.round((stats.callsReported / stats.callsAnswered) * 100) 
+        reportRate: stats.callsAnswered > 0
+          ? Math.round((stats.callsReported / stats.callsAnswered) * 100)
           : 0,
       },
     });

@@ -186,5 +186,3 @@ export const logout = (req: AuthRequest, res: Response<ApiResponse>) => {
   res.clearCookie('refreshToken', COOKIE_OPTS_REFRESH);
   res.json({ success: true });
 };
-
-

@@ -1,4 +1,4 @@
-import { Schema, model, Types } from 'mongoose';
+import mongoose, { Schema, model, Types } from 'mongoose';
 import { IUser } from '../types/index.js';
 
 const userSchema = new Schema<IUser>(
@@ -77,4 +77,6 @@ const userSchema = new Schema<IUser>(
 
 userSchema.index({ companyId: 1 });
 
-export const User = model<IUser>('User', userSchema);
+// At the bottom of User.ts
+export const User = mongoose.model<IUser>('User', userSchema);
+// ^^^^^^ named export — this is what authController expects
