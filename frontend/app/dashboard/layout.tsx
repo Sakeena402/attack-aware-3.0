@@ -69,6 +69,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { EnhancedSidebar } from '@/components/dashboard/enhanced-sidebar';
 import { EnhancedHeader } from '@/components/dashboard/enhanced-header';
+import { Toaster } from 'react-hot-toast';
 
 export default function DashboardLayout({
   children,
@@ -123,6 +124,10 @@ export default function DashboardLayout({
             <main className="flex-1 overflow-auto">
               <div className="p-4 md:p-8 max-w-7xl mx-auto">
                 {children}
+
+                  {/* ✅ All pages under this layout can now show toast notifications */}
+                  <Toaster position="top-right" />
+
               </div>
             </main>
           </div>

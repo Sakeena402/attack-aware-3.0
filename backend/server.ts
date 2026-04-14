@@ -332,6 +332,12 @@ import trackingRouter from './src/routes/tracking.js';
 import simulationsRouter from './src/routes/simulations.js';
 import superAdminRouter from './src/routes/super-admin.js';
 import cookieParser from 'cookie-parser';
+import settingsRoute from "./src/routes/settingsRoute.js";
+import userRoutes from './src/routes/userRoutes.js';
+// Add these two lines with your other routes:
+import teamRoute from './src/routes/teamRoute.js';
+import systemControlsRoute from './src/routes/systemControlsRoute.js';
+
 
 // Handle uncaught exceptions
 process.on('uncaughtException', handleUncaughtException);
@@ -381,7 +387,7 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'Cookie'],
   exposedHeaders: ['X-Request-ID'],
   maxAge: 86400, // 24 hours
 };
@@ -487,6 +493,11 @@ app.use('/api/employees', apiRateLimiter, employeesRouter);
 app.use('/api/webhooks', webhooksRouter);
 app.use('/api/track', trackingRouter);
 app.use('/api/simulations', apiRateLimiter, simulationsRouter);
+app.use('/api/settings', settingsRoute);
+app.use('/api/users', userRoutes);
+// Then register them:
+app.use('/api/team', teamRoute);
+app.use('/api/system-controls', systemControlsRoute);
 
 // ============================================
 // 404 Handler
@@ -566,6 +577,7 @@ const startServer = async (): Promise<void> => {
     process.exit(1);
   }
 };
+
 
 startServer();
 
