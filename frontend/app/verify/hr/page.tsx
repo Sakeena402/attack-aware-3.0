@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Building2, AlertCircle, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 
-export default function HRBenefitsPage() {
+function HRBenefitsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get('token');
@@ -262,5 +262,13 @@ function CaughtPage({ onClose }: { onClose: () => void }) {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function HRBenefitsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HRBenefitsContent />
+    </Suspense>
   );
 }
