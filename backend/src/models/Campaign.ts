@@ -48,9 +48,21 @@ const campaignSchema = new Schema<ICampaign>(
       default: 0,
     },
     targetDepartments: {
-      type: [String],
+      type: [String],    
       default: [],
     },
+    //addition by hifza (addition starrted here)
+    // Add this in your Schema definition
+targetEmployees: {
+  type: [
+    {
+      _id: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+      phone: { type: String, required: false, default: '' },  // ✅ optional
+    }
+  ],
+  default: [],
+},
+   // addition by hifza (addition ended here)
     // SMS/Smishing specific fields
     smsTemplate: {
       type: String,

@@ -175,8 +175,7 @@ export const createEmployee = async (
       throw new AppError('User not authenticated', 401);
     }
 
-    const { name, email, password, department, role = 'employee', companyId } = req.body;
-
+    const { name, email, password, department, role = 'employee', companyId, phoneNumber } = req.body;
     if (!name || !email || !password) {
       throw new AppError('Name, email, and password are required', 400);
     }
@@ -206,6 +205,7 @@ export const createEmployee = async (
       companyId: employeeCompanyId,
       points: 0,
       badge: 'Rookie',
+      phoneNumber: phoneNumber || '',
     });
 
     await newEmployee.save();
@@ -236,8 +236,7 @@ export const updateEmployee = async (
     }
 
     const { id } = req.params;
-    const { name, email, department, role, points, badge, password } = req.body;
-
+    const { name, email, department, role, points, badge, password, phoneNumber } = req.body;
     const employee = await User.findById(id);
 
     if (!employee) {
@@ -264,6 +263,7 @@ export const updateEmployee = async (
     }
     if (typeof points === 'number') employee.points = points;
     if (badge) employee.badge = badge;
+    if (phoneNumber !== undefined) employee.phoneNumber = phoneNumber;
     if (password) {
       employee.passwordHash = await bcryptjs.hash(password, 10);
     }
