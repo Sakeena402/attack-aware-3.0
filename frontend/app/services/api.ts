@@ -926,3 +926,8 @@ export const apiService = ApiService.getInstance();
 // };
 
 
+export const contactApi = {
+  submit: (data: { name: string; email: string; message: string }) => 
+    api.post<{ success: boolean }>('/contact', data),
+  getAll: () => api.get<{ _id: string; name: string; email: string; message: string; createdAt: string }[]>('/contact'),
+};

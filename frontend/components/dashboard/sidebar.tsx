@@ -38,7 +38,7 @@ export function Sidebar({ isOpen, role }: SidebarProps) {
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <span className="font-poppins font-bold text-foreground">CyberAwareSim</span>
+            <span className="font-poppins font-bold text-foreground">Attack Aware 3.0</span>
           </div>
         ) : (
           <div className="flex justify-center">
@@ -86,3 +86,5 @@ export function Sidebar({ isOpen, role }: SidebarProps) {
     </aside>
   );
 }
+
+

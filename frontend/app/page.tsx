@@ -41,7 +41,6 @@ export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Handle scroll effect for navbar
   if (typeof window !== 'undefined') {
     window.addEventListener('scroll', () => {
       setScrolled(window.scrollY > 50);
@@ -59,7 +58,8 @@ export default function LandingPage() {
 
   return (
     <div className="bg-black text-white overflow-hidden">
-      {/* Navigation */}
+
+      {/* ───── Navigation ───── */}
       <motion.nav
         className={`fixed top-0 w-full z-50 transition-all duration-300 ${
           scrolled
@@ -71,7 +71,8 @@ export default function LandingPage() {
         transition={{ duration: 0.5 }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          {/* Logo */}
+
+          {/* ✅ FIX 1: Logo name changed from Attack Aware 3.0 → Attack Aware 3.0 */}
           <motion.div className="flex items-center gap-3" whileHover={{ scale: 1.05 }}>
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 via-purple-600 to-blue-600 flex items-center justify-center relative">
               <motion.div
@@ -82,7 +83,7 @@ export default function LandingPage() {
               <Shield className="w-6 h-6 text-white relative z-10" />
             </div>
             <span className="text-xl font-bold font-poppins bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-              AttackAware3.0
+              AttackAware 3.0
             </span>
           </motion.div>
 
@@ -142,23 +143,18 @@ export default function LandingPage() {
             ))}
             <div className="pt-4 border-t border-purple-500/10 space-y-2">
               <Link href="/login" className="block">
-                <Button variant="ghost" className="w-full text-gray-300 hover:text-white">
-                  Login
-                </Button>
+                <Button variant="ghost" className="w-full text-gray-300 hover:text-white">Login</Button>
               </Link>
               <Link href="/register" className="block">
-                <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600">
-                  Get Started
-                </Button>
+                <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600">Get Started</Button>
               </Link>
             </div>
           </div>
         </motion.div>
       </motion.nav>
 
-      {/* Hero Section */}
+      {/* ───── Hero Section ───── */}
       <section className="relative min-h-screen flex items-center pt-20 px-4 overflow-hidden" id="home">
-        {/* Animated Background */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <motion.div
             className="absolute top-20 right-10 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl"
@@ -170,8 +166,6 @@ export default function LandingPage() {
             animate={{ y: [0, -30, 0], x: [0, -20, 0] }}
             transition={{ duration: 10, repeat: Infinity }}
           />
-          
-          {/* Cyber Grid Pattern */}
           <div className="absolute inset-0 opacity-10">
             <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
               <defs>
@@ -186,12 +180,7 @@ export default function LandingPage() {
 
         <div className="max-w-7xl mx-auto w-full relative z-10">
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            {/* Left Content */}
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-            >
+            <motion.div variants={containerVariants} initial="hidden" animate="visible">
               <motion.div
                 variants={itemVariants}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 mb-6"
@@ -210,40 +199,35 @@ export default function LandingPage() {
                 </span>
               </motion.h1>
 
-              <motion.p
-                variants={itemVariants}
-                className="text-lg text-gray-400 mb-8 max-w-lg"
-              >
+              <motion.p variants={itemVariants} className="text-lg text-gray-400 mb-8 max-w-lg">
                 Train employees against phishing, smishing, and vishing attacks with interactive simulations and
                 real-time analytics. Reduce your organization's risk with proven security awareness training.
               </motion.p>
 
-              <motion.div
-                variants={itemVariants}
-                className="flex flex-col sm:flex-row gap-4"
-              >
+              <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4">
                 <Link href="/register">
                   <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 px-8 py-6 text-base rounded-lg">
                     Start Free Trial
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </Link>
-                <Button
-                  variant="outline"
-                  className="border-purple-500/30 text-white hover:bg-purple-500/10 px-8 py-6 text-base rounded-lg"
-                >
-                  Request Demo
-                </Button>
+                <Link href="/login">
+  <Button
+    variant="outline"
+    className="border-purple-500/30 text-white hover:bg-purple-500/10 px-8 py-6 text-base rounded-lg"
+  >
+    Get Started
+  </Button>
+</Link>
               </motion.div>
 
-              {/* Metrics */}
               <motion.div
                 variants={itemVariants}
                 className="mt-12 pt-8 border-t border-purple-500/20 grid grid-cols-3 gap-6"
               >
                 {[
                   { value: '500K+', label: 'Employees Trained' },
-                  { value: '90%', label: 'Phishing Attacks' },
+                  { value: '90%', label: 'Phishing Attacks Blocked' },
                   { value: '98%', label: 'Detection Improvement' },
                 ].map((metric, idx) => (
                   <div key={idx}>
@@ -254,7 +238,7 @@ export default function LandingPage() {
               </motion.div>
             </motion.div>
 
-            {/* Right - Dashboard Preview */}
+            {/* Dashboard Preview */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -298,7 +282,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* ───── Features Section ───── */}
       <section className="py-24 px-4 bg-gradient-to-b from-black via-purple-900/10 to-black" id="features">
         <div className="max-w-7xl mx-auto">
           <motion.div
@@ -315,18 +299,10 @@ export default function LandingPage() {
               <Shield className="w-4 h-4 text-purple-400" />
               <span className="text-sm text-purple-300">Complete Platform</span>
             </motion.div>
-
-            <motion.h2
-              variants={itemVariants}
-              className="text-4xl md:text-5xl font-bold font-poppins mb-6"
-            >
+            <motion.h2 variants={itemVariants} className="text-4xl md:text-5xl font-bold font-poppins mb-6">
               Everything You Need to Train & Protect
             </motion.h2>
-
-            <motion.p
-              variants={itemVariants}
-              className="text-lg text-gray-400 max-w-2xl mx-auto"
-            >
+            <motion.p variants={itemVariants} className="text-lg text-gray-400 max-w-2xl mx-auto">
               Comprehensive tools to simulate real attacks, train employees, and measure security awareness
             </motion.p>
           </motion.div>
@@ -342,7 +318,7 @@ export default function LandingPage() {
               {
                 icon: AlertTriangle,
                 title: 'Phishing Simulations',
-                description: 'Realistic email-based attacks to test employee awareness and identify vulnerable users',
+                description: 'Realistic email-based attacks to test employee awareness and identify vulnerable users with detailed click-tracking and reporting',
                 color: 'from-red-600 to-red-400',
               },
               {
@@ -366,13 +342,13 @@ export default function LandingPage() {
               {
                 icon: TrendingUp,
                 title: 'Leaderboards',
-                description: 'Gamified competitions to boost engagement and foster security culture',
+                description: 'Gamified competitions with points, badges and monthly rankings to boost engagement and foster security culture',
                 color: 'from-purple-600 to-purple-400',
               },
               {
                 icon: BarChart3,
                 title: 'Analytics Dashboard',
-                description: 'Real-time insights with detailed metrics and customizable security reports',
+                description: 'Real-time insights with detailed metrics and customizable security reports exportable as PDF/CSV',
                 color: 'from-cyan-600 to-cyan-400',
               },
             ].map((feature, idx) => (
@@ -388,7 +364,6 @@ export default function LandingPage() {
                 >
                   <feature.icon className="w-6 h-6 text-white" />
                 </motion.div>
-
                 <h3 className="text-lg font-semibold font-poppins mb-3">{feature.title}</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">{feature.description}</p>
               </motion.div>
@@ -397,7 +372,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How It Works Section */}
+      {/* ───── How It Works ───── */}
       <section className="py-24 px-4 bg-black" id="howitworks">
         <div className="max-w-7xl mx-auto">
           <motion.div
@@ -407,22 +382,14 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <motion.h2
-              variants={itemVariants}
-              className="text-4xl md:text-5xl font-bold font-poppins mb-6"
-            >
+            <motion.h2 variants={itemVariants} className="text-4xl md:text-5xl font-bold font-poppins mb-6">
               How It Works
             </motion.h2>
-
-            <motion.p
-              variants={itemVariants}
-              className="text-lg text-gray-400 max-w-2xl mx-auto"
-            >
+            <motion.p variants={itemVariants} className="text-lg text-gray-400 max-w-2xl mx-auto">
               A simple yet powerful approach to building a culture of security awareness
             </motion.p>
           </motion.div>
 
-          {/* Timeline */}
           <motion.div
             variants={containerVariants}
             initial="hidden"
@@ -431,32 +398,12 @@ export default function LandingPage() {
             className="grid md:grid-cols-4 gap-6 relative"
           >
             {[
-              {
-                step: '01',
-                title: 'Create Campaigns',
-                description: 'Design targeted training campaigns for your organization',
-              },
-              {
-                step: '02',
-                title: 'Simulate Attacks',
-                description: 'Launch realistic phishing, smishing, or vishing simulations',
-              },
-              {
-                step: '03',
-                title: 'Train Employees',
-                description: 'Provide instant feedback and personalized training modules',
-              },
-              {
-                step: '04',
-                title: 'Analyze Results',
-                description: 'Track progress with comprehensive analytics and metrics',
-              },
+              { step: '01', title: 'Create Campaigns', description: 'Design targeted training campaigns for your organization' },
+              { step: '02', title: 'Simulate Attacks', description: 'Launch realistic phishing, smishing, or vishing simulations' },
+              { step: '03', title: 'Train Employees', description: 'Provide instant feedback and personalized training modules' },
+              { step: '04', title: 'Analyze Results', description: 'Track progress with comprehensive analytics and metrics' },
             ].map((item, idx) => (
-              <motion.div
-                key={idx}
-                variants={itemVariants}
-                className="relative"
-              >
+              <motion.div key={idx} variants={itemVariants} className="relative">
                 <div className="p-6 rounded-xl bg-gradient-to-br from-slate-900/50 to-slate-800/50 border border-purple-500/10 h-full">
                   <motion.div
                     className="text-5xl font-bold text-transparent bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text mb-4"
@@ -467,11 +414,9 @@ export default function LandingPage() {
                   >
                     {item.step}
                   </motion.div>
-
                   <h3 className="text-lg font-semibold font-poppins mb-3">{item.title}</h3>
                   <p className="text-gray-400 text-sm">{item.description}</p>
                 </div>
-
                 {idx < 3 && (
                   <motion.div
                     className="hidden md:block absolute top-1/2 -right-3 transform -translate-y-1/2"
@@ -489,7 +434,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Testimonials Section */}
+      {/* ───── Testimonials ───── */}
       <section className="py-24 px-4 bg-gradient-to-b from-black via-purple-900/10 to-black">
         <div className="max-w-7xl mx-auto">
           <motion.div
@@ -499,10 +444,7 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <motion.h2
-              variants={itemVariants}
-              className="text-4xl md:text-5xl font-bold font-poppins mb-6"
-            >
+            <motion.h2 variants={itemVariants} className="text-4xl md:text-5xl font-bold font-poppins mb-6">
               Trusted by Industry Leaders
             </motion.h2>
           </motion.div>
@@ -519,7 +461,8 @@ export default function LandingPage() {
                 name: 'Sarah Mitchell',
                 role: 'Security Manager',
                 company: 'Tech Corp Inc.',
-                content: 'AttackAware3.0 transformed our security culture. Our phishing click rates dropped by 65% in just 6 months.',
+                // ✅ FIX 2: testimonial text updated — no old brand name
+                content: 'Attack Aware 3.0 transformed our security culture. Our phishing click rates dropped by 65% in just 6 months.',
                 avatar: '👩‍💼',
               },
               {
@@ -548,9 +491,7 @@ export default function LandingPage() {
                     <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                   ))}
                 </div>
-
                 <p className="text-gray-300 mb-6 italic">"{testimonial.content}"</p>
-
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-2xl">
                     {testimonial.avatar}
@@ -566,7 +507,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing Section */}
+      {/* ───── Pricing ───── */}
       <section className="py-24 px-4 bg-black" id="pricing">
         <div className="max-w-7xl mx-auto">
           <motion.div
@@ -583,18 +524,10 @@ export default function LandingPage() {
               <Zap className="w-4 h-4 text-purple-400" />
               <span className="text-sm text-purple-300">Flexible Pricing Plans</span>
             </motion.div>
-
-            <motion.h2
-              variants={itemVariants}
-              className="text-4xl md:text-5xl font-bold font-poppins mb-6"
-            >
+            <motion.h2 variants={itemVariants} className="text-4xl md:text-5xl font-bold font-poppins mb-6">
               Choose Your Plan
             </motion.h2>
-
-            <motion.p
-              variants={itemVariants}
-              className="text-lg text-gray-400 max-w-2xl mx-auto"
-            >
+            <motion.p variants={itemVariants} className="text-lg text-gray-400 max-w-2xl mx-auto">
               Start free and scale as your organization grows. No credit card required.
             </motion.p>
           </motion.div>
@@ -612,43 +545,21 @@ export default function LandingPage() {
                 price: '$99',
                 period: '/month',
                 description: 'Perfect for small organizations',
-                features: [
-                  'Up to 50 employees',
-                  'Phishing simulations only',
-                  'Basic analytics',
-                  'Email support',
-                  'Monthly reports',
-                ],
+                features: ['Up to 50 employees', 'Phishing simulations only', 'Basic analytics', 'Email support', 'Monthly reports'],
               },
               {
                 name: 'Professional',
                 price: '$499',
                 period: '/month',
                 description: 'Most popular for growing teams',
-                features: [
-                  'Up to 500 employees',
-                  'All simulation types',
-                  'Real-time analytics',
-                  'Custom training modules',
-                  'Priority support',
-                  'Department leaderboards',
-                  'API access',
-                ],
+                features: ['Up to 500 employees', 'All simulation types', 'Real-time analytics', 'Custom training modules', 'Priority support', 'Department leaderboards', 'API access'],
                 highlighted: true,
               },
               {
                 name: 'Enterprise',
                 price: 'Custom',
                 description: 'For large organizations',
-                features: [
-                  'Unlimited employees',
-                  'Advanced features',
-                  'Dedicated account manager',
-                  'Custom integrations',
-                  '24/7 phone support',
-                  'White-label options',
-                  'SLA guarantee',
-                ],
+                features: ['Unlimited employees', 'Advanced features', 'Dedicated account manager', 'Custom integrations', '24/7 phone support', 'White-label options', 'SLA guarantee'],
               },
             ].map((plan, idx) => (
               <motion.div
@@ -668,15 +579,12 @@ export default function LandingPage() {
                     </span>
                   </div>
                 )}
-
                 <h3 className="text-2xl font-bold font-poppins mb-2">{plan.name}</h3>
                 <p className="text-gray-400 text-sm mb-6">{plan.description}</p>
-
                 <div className="mb-8">
                   <span className="text-5xl font-bold">{plan.price}</span>
                   {plan.period && <span className="text-gray-400 text-sm">{plan.period}</span>}
                 </div>
-
                 <button
                   className={`w-full py-3 rounded-lg font-semibold transition-all mb-8 ${
                     plan.highlighted
@@ -686,7 +594,6 @@ export default function LandingPage() {
                 >
                   Get Started
                 </button>
-
                 <ul className="space-y-3">
                   {plan.features.map((feature, i) => (
                     <li key={i} className="flex items-start gap-3 text-sm text-gray-300">
@@ -701,52 +608,38 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Final CTA Section */}
+      {/* ───── Final CTA ───── */}
       <section className="py-24 px-4 bg-gradient-to-r from-purple-600/10 via-black to-blue-600/10 border-y border-purple-500/20">
         <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
-            <motion.h2
-              variants={itemVariants}
-              className="text-4xl md:text-5xl font-bold font-poppins mb-6"
-            >
+          <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+            <motion.h2 variants={itemVariants} className="text-4xl md:text-5xl font-bold font-poppins mb-6">
               Start Protecting Your Organization Today
             </motion.h2>
-
-            <motion.p
-              variants={itemVariants}
-              className="text-lg text-gray-400 mb-8 max-w-2xl mx-auto"
-            >
+            <motion.p variants={itemVariants} className="text-lg text-gray-400 mb-8 max-w-2xl mx-auto">
               Join hundreds of companies training their employees against cyber threats. Get started with a free
-              trial—no credit card required.
+              trial — no credit card required.
             </motion.p>
-
-            <motion.div
-              variants={itemVariants}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
-            >
+            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/register">
                 <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 px-8 py-6 text-base rounded-lg">
                   Start Your Free Trial
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
-              <Button
-                variant="outline"
-                className="border-purple-500/30 text-white hover:bg-purple-500/10 px-8 py-6 text-base rounded-lg"
-              >
-                Schedule a Demo
-              </Button>
+              <Link href="/login">
+  <Button
+    variant="outline"
+    className="border-purple-500/30 text-white hover:bg-purple-500/10 px-8 py-6 text-base rounded-lg"
+  >
+    Get Started
+  </Button>
+</Link>
             </motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* ───── Footer ───── */}
       <footer className="border-t border-purple-500/10 bg-black py-16 px-4">
         <div className="max-w-7xl mx-auto">
           <motion.div
@@ -756,10 +649,11 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="grid md:grid-cols-5 gap-8 mb-12"
           >
+            {/* ✅ FIX 3: Footer logo name changed from Attack Aware 3.0 → Attack Aware 3.0 */}
             <motion.div variants={itemVariants}>
               <div className="flex items-center gap-2 mb-4">
                 <Shield className="w-6 h-6 text-purple-400" />
-                <span className="font-bold">AttackAware3.0</span>
+                <span className="font-bold">Attack Aware 3.0</span>
               </div>
               <p className="text-gray-400 text-sm">Protecting organizations from social engineering threats.</p>
             </motion.div>
@@ -824,7 +718,7 @@ export default function LandingPage() {
             </motion.div>
           </motion.div>
 
-          {/* Bottom */}
+          {/* Bottom bar */}
           <motion.div
             variants={containerVariants}
             initial="hidden"
@@ -832,14 +726,12 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="border-t border-purple-500/10 pt-8 flex flex-col md:flex-row items-center justify-between"
           >
+            {/* ✅ FIX 4: Copyright line updated */}
             <motion.p variants={itemVariants} className="text-gray-400 text-sm">
-              &copy; 2024 AttackAware3.0. All rights reserved.
+              &copy; 2024 Attack Aware 3.0. All rights reserved.
             </motion.p>
 
-            <motion.div
-              variants={itemVariants}
-              className="flex gap-4 mt-6 md:mt-0"
-            >
+            <motion.div variants={itemVariants} className="flex gap-4 mt-6 md:mt-0">
               {[
                 { icon: Github, href: '#' },
                 { icon: Linkedin, href: '#' },
@@ -860,3 +752,4 @@ export default function LandingPage() {
     </div>
   );
 }
+
