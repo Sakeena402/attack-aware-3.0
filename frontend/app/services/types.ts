@@ -14,7 +14,21 @@ export interface AuthResponse {
   refreshToken: string;
   user: User;
 }
+//hifza code below 
+export interface Employee {
+  _id: string;      // id ki jagah _id
+  name: string;
+  email: string;
+  phone?: string;   // ye add karo
+  phoneNumber?: string;  // ye bhi add karo
+  position: string;
+  department: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
+//sakeena code below commented out
+/*
 export interface Employee {
   id: string;
   name: string;
@@ -24,7 +38,29 @@ export interface Employee {
   createdAt: string;
   updatedAt: string;
 }
+*/
+//hifza code 
+export interface Campaign {
+  _id: string;      // id ki jagah _id
+  campaignName: string;
+  type: 'phishing' | 'smishing' | 'vishing';
+  status: 'draft' | 'active' | 'completed' | 'paused';
+  description?: string;
+  startDate?: string;
+  endDate?: string;
+  targetEmployees?: { _id: string; phone: string }[];
+  targetDepartments?: string[];
+  emailTemplate?: string;
+  smsTemplate?: string;
+  voiceScript?: string;
+  clickRate?: number;
+  reportRate?: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
+//sakeena code below commented out
+/*
 export interface Campaign {
   id: string;
   title: string;
@@ -36,7 +72,7 @@ export interface Campaign {
   createdAt: string;
   updatedAt: string;
 }
-
+*/
 export interface AnalyticsData {
   totalDonations: number;
   totalUsers: number;

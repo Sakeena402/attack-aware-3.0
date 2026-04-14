@@ -78,7 +78,9 @@ interface CampaignFormData {
   type: 'phishing' | 'smishing' | 'vishing';
   startDate: string;
   endDate: string;
-  targetEmployees: string[];
+  //line below is added by hifza, the original line is commented out
+  targetEmployees: { _id: string; phone: string }[];  // string[] ki jagah
+ //(sakeenaa line is commented) targetEmployees: string[];
   targetDepartments: string[];
   emailTemplate: string;
   smsTemplate: string;
@@ -277,7 +279,39 @@ const employees = Array.isArray(data) ? data : [];
       setIsSubmitting(false);
     }
   };
+//hifza code 
+const toggleEmployee = (employee: Employee) => {
+  setFormData(prev => {
+    const exists = prev.targetEmployees.some((e) => e._id === employee._id);
+    return {
+      ...prev,
+      targetEmployees: exists
+        ? prev.targetEmployees.filter((e) => e._id !== employee._id)
+        : [...prev.targetEmployees, { 
+            _id: employee._id, 
+            phone: employee.phoneNumber || employee.phone || ''  // ← ye fix
+          }],
+    };
+  });
+};
 
+const selectAllEmployees = () => {
+  if (employees) {
+    const allSelected = formData.targetEmployees.length === employees.length;
+    setFormData(prev => ({
+      ...prev,
+      targetEmployees: allSelected
+        ? []
+        : employees.map(e => ({ 
+            _id: e._id, 
+            phone: e.phoneNumber || e.phone || ''  // ← ye fix
+          })),
+    }));
+  }
+};
+//hifza code end
+/*  
+//sakeena code commented below
   // Toggle employee selection
   const toggleEmployee = (employeeId: string) => {
     setFormData(prev => ({
@@ -299,7 +333,7 @@ const employees = Array.isArray(data) ? data : [];
       }));
     }
   };
-
+*/
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -693,8 +727,12 @@ const employees = Array.isArray(data) ? data : [];
           <label key={employee._id} className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
-              checked={formData.targetEmployees.includes(employee._id)}
-              onChange={() => toggleEmployee(employee._id)}
+              //hifza code below
+              checked={formData.targetEmployees.some((e: any) => e._id === employee._id)}
+onChange={() => toggleEmployee(employee)}  // poora employee object pass karo
+
+//              checked={formData.targetEmployees.includes(employee._id)}
+//              onChange={() => toggleEmployee(employee._id)}
             />
             {employee.name}
           </label>
