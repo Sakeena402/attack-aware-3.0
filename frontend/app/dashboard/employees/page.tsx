@@ -23,7 +23,7 @@ const riskLevelColors = {
   medium: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30', icon: Shield },
   low:    { bg: 'bg-green-500/20',  text: 'text-green-400',  border: 'border-green-500/30',  icon: CheckCircle },
 };
-
+// phone field added in Employee interface by hifza and phone number is being sent to backend when adding target employees to campaign. This is required for smishing campaigns where we need to send SMS to employees.
 interface EmployeeFormData {
   name: string;
   email: string;
@@ -31,6 +31,7 @@ interface EmployeeFormData {
   department: string;
   role: string;
   riskLevel: 'low' | 'medium' | 'high';
+  phoneNumber: string;  // ← ADD
 }
 
 // Stable SWR key — always the same string so mutate() hits the same cache entry
@@ -48,8 +49,8 @@ export default function EmployeesPage() {
   const [selectedEmployee,  setSelectedEmployee]  = useState<Employee | null>(null);
   const [isSubmitting,      setIsSubmitting]      = useState(false);
   const [formData, setFormData] = useState<EmployeeFormData>({
-    name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low',
-  });
+    name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low', phoneNumber: '',//←PH NO ADDED BY HIFZA,
+  }); 
 
   // Single consistent fetcher — apiService already returns the unwrapped `data` field,
   // so res.data here is already { employees: [...], pagination: {} }
@@ -92,10 +93,11 @@ export default function EmployeesPage() {
         department: employee.department ?? '',
         role:       employee.role,
         riskLevel:  (employee.riskLevel as 'low' | 'medium' | 'high') ?? 'low',
+        phoneNumber: employee.phoneNumber ?? '',  // ←PH NO ADDED BY HIFZA
       });
     } else {
       setSelectedEmployee(null);
-      setFormData({ name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low' });
+setFormData({ name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low',phoneNumber: '' });//←PHNOAddByHIFZA
     }
     setIsModalOpen(true);
   }, []);
@@ -103,7 +105,7 @@ export default function EmployeesPage() {
   const closeModal = useCallback(() => {
     setIsModalOpen(false);
     setSelectedEmployee(null);
-    setFormData({ name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low' });
+    setFormData({ name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low', phoneNumber: '' });//←PHNOAddByHIFZA
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -116,6 +118,7 @@ export default function EmployeesPage() {
           name:       formData.name,
           email:      formData.email,
           department: formData.department,
+          phoneNumber: formData.phoneNumber,  // ← ADDED BY HIFZA 
           role:       formData.role as Employee['role'],
           riskLevel:  formData.riskLevel,
         };
@@ -133,6 +136,7 @@ export default function EmployeesPage() {
           name:             formData.name,
           email:            formData.email,
           password:         formData.password,
+          phoneNumber: formData.phoneNumber,  // ← ADDED BY HIFZA 
           department:       formData.department,
           role:             formData.role as Employee['role'],
           riskLevel:        formData.riskLevel,
@@ -464,6 +468,18 @@ export default function EmployeesPage() {
               minLength={6}
             />
           </div>
+        {/* comment by hifza: added phone number field in employee form */}
+         <div>
+  <label className="block text-sm font-medium text-foreground mb-2">Phone Number</label>
+  <input
+    type="tel"
+    value={formData.phoneNumber}
+    onChange={e => setFormData({ ...formData, phoneNumber: e.target.value })}
+    className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
+    placeholder="+92xxxxxxxxxx"
+  />
+</div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Department</label>

@@ -527,7 +527,7 @@ export const launchCampaign = async (
     }
 
     const targets = campaign.targetEmployees as TargetEmployee[];
-    console.log('TARGET EMPLOYEES:', JSON.stringify(targets)); // ← YE ADD KARO
+    console.log('TARGET EMPLOYEES:', JSON.stringify(targets)); // ← YE ADD KARO(HIFZA)
     
 
     if (!targets || targets.length === 0) {

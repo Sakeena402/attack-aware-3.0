@@ -19,7 +19,6 @@ campaignRouter.use(authenticate);
 
 // Admin-only routes (campaign management)
 
-campaignRouter.post("/create", createCampaign);
 campaignRouter.post('/', requireAdmin, isolateByCompany, createCampaign);
 campaignRouter.get('/', isolateByCompany, getCampaigns);
 campaignRouter.get('/:id', isolateByCompany, getCampaignById);
