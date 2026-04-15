@@ -66,16 +66,26 @@ export const generateTrackingUrl = (
   return `${baseUrl}/click?${params.toString()}`;
 };
 
+// export const generatePhishingPageUrl = (
+//   token: string,
+//   pageType: string = 'bank'
+// ): string => {
+//   // Must point to FRONTEND port 3000 — this is where employee lands after click
+//   const baseUrl = process.env.PHISHING_PAGE_BASE_URL || 'http://localhost:3000/verify';
+//   return `${baseUrl}/${pageType}?token=${token}`;
+// };
+
+// Change generatePhishingPageUrl to include campaignId and userId
 export const generatePhishingPageUrl = (
   token: string,
-  pageType: string = 'bank'
+  pageType: string = 'bank',
+  campaignId: string = '',
+  userId: string = ''
 ): string => {
-  // Must point to FRONTEND port 3000 — this is where employee lands after click
   const baseUrl = process.env.PHISHING_PAGE_BASE_URL || 'http://localhost:3000/verify';
-  return `${baseUrl}/${pageType}?token=${token}`;
+  const params = new URLSearchParams({ token, c: campaignId, u: userId });
+  return `${baseUrl}/${pageType}?${params.toString()}`;
 };
-
-
 
 
 export const smsTemplates = {

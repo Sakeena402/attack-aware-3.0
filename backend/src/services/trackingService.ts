@@ -122,6 +122,37 @@ export const recordSmsClick = async (
 };
 
 // Record credentials submitted on phishing page
+// export const recordCredentialsSubmitted = async (
+//   trackingToken: string,
+//   campaignId: string,
+//   userId: string,
+//   formData: Record<string, unknown>
+// ): Promise<{ success: boolean }> => {
+//   const hashedToken = hashToken(trackingToken);
+
+//   const result = await SimulationResult.findOne({
+//     campaignId,
+//     userId,
+//     trackingToken: hashedToken,
+//   });
+
+//   if (!result) {
+//     return { success: false };
+//   }
+
+//   // DO NOT store actual credentials - only mark as compromised
+//   result.credentialsSubmitted = true;
+//   result.credentialsSubmittedAt = new Date();
+//   result.formFieldsSubmitted = Object.keys(formData); // Only store field names
+//   await result.save();
+
+//   // Update user risk score
+//   await updateUserRiskScore(userId, 'submitted_credentials');
+
+//   return { success: true };
+// };
+
+// Replace recordCredentialsSubmitted in trackingService.ts
 export const recordCredentialsSubmitted = async (
   trackingToken: string,
   campaignId: string,
@@ -130,23 +161,31 @@ export const recordCredentialsSubmitted = async (
 ): Promise<{ success: boolean }> => {
   const hashedToken = hashToken(trackingToken);
 
-  const result = await SimulationResult.findOne({
+  let result = await SimulationResult.findOne({
     campaignId,
     userId,
     trackingToken: hashedToken,
   });
 
   if (!result) {
-    return { success: false };
+    // Create a record if one doesn't exist yet (e.g. user went directly to page)
+    result = await SimulationResult.create({
+      campaignId,
+      userId,
+      trackingToken: hashedToken,
+      simulationType: 'smishing',
+      smsSent: false,
+      timestamp: new Date(),
+    });
   }
 
-  // DO NOT store actual credentials - only mark as compromised
-  result.credentialsSubmitted = true;
-  result.credentialsSubmittedAt = new Date();
-  result.formFieldsSubmitted = Object.keys(formData); // Only store field names
+  result.credentialsSubmitted      = true;
+  result.credentialsSubmittedAt    = new Date();
+  result.formFieldsSubmitted       = Object.keys(formData).filter(
+    k => !['token', 'campaignId', 'userId'].includes(k)
+  );
   await result.save();
 
-  // Update user risk score
   await updateUserRiskScore(userId, 'submitted_credentials');
 
   return { success: true };
