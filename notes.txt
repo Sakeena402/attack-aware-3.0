@@ -1,0 +1,308 @@
+{
+  "_id": {
+    "$oid": "69de761811df27ad53614613"
+  },
+  "campaignName": "Attack Aware",
+  "type": "smishing",
+  "createdBy": {
+    "$oid": "69cef6c1da1075b1b766e6ac"
+  },
+  "companyId": {
+    "$oid": "69cef6c1da1075b1b766e6ae"
+  },
+  "description": "Hey Smishing Master",
+  "status": "draft",
+  "startDate": {
+    "$date": "2026-04-14T00:00:00.000Z"
+  },
+  "endDate": {
+    "$date": "2026-04-15T00:00:00.000Z"
+  },
+  "targetCount": 0,
+  "completedCount": 0,
+  "targetDepartments": [],
+  "targetEmployees": [
+    {
+      "_id": {
+        "$oid": "69d0368038a5a3dcfe14c47e"
+      },
+      "phone": "+923209237125"
+    }
+  ],
+  "smsTemplate": "package_delivery",
+  "customSmsMessage": "",
+  "voiceScript": "bank_verification",
+  "sentCount": 0,
+  "deliveredCount": 0,
+  "clickedCount": 0,
+  "reportedCount": 0,
+  "createdAt": {
+    "$date": "2026-04-14T17:15:04.311Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-14T17:15:04.311Z"
+  },
+  "__v": 0
+}
+
+
+{
+  "_id": {
+    "$oid": "69de761811df27ad53614613"
+  },
+  "campaignName": "Attack Aware",
+  "type": "smishing",
+  "createdBy": {
+    "$oid": "69cef6c1da1075b1b766e6ac"
+  },
+  "companyId": {
+    "$oid": "69cef6c1da1075b1b766e6ae"
+  },
+  "description": "Hey Smishing Master",
+  "status": "active",
+  "startDate": {
+    "$date": "2026-04-14T17:16:50.098Z"
+  },
+  "endDate": {
+    "$date": "2026-04-15T00:00:00.000Z"
+  },
+  "targetCount": 0,
+  "completedCount": 0,
+  "targetDepartments": [],
+  "targetEmployees": [
+    {
+      "_id": {
+        "$oid": "69d0368038a5a3dcfe14c47e"
+      },
+      "phone": "+923209237125"
+    }
+  ],
+  "smsTemplate": "package_delivery",
+  "customSmsMessage": "",
+  "voiceScript": "bank_verification",
+  "sentCount": 0,
+  "deliveredCount": 0,
+  "clickedCount": 0,
+  "reportedCount": 0,
+  "createdAt": {
+    "$date": "2026-04-14T17:15:04.311Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-14T17:16:50.103Z"
+  },
+  "__v": 0
+}
+
+
+
+```typescript
+
+
+
+
+
+
+
+import { apiService } from './api';
+
+
+
+export interface SmsTemplate { key: string; name: string; content: string }
+
+export interface VoiceScript { key: string; name: string; content: string }
+
+export interface SimulationStats { total: number; sent?: number; failed?: number; initiated?: number }
+
+
+
+export const simulationApi = {
+
+  getSmsTemplates: () => apiService.get<SmsTemplate[]>('/simulations/sms/templates'),
+
+  sendSms: (data: { campaignId: string; userId: string; templateKey: string }) =>
+
+    apiService.post<{ messageSid: string; status: string }>('/simulations/sms/send', data),
+
+  launchSmsCampaign: (campaignId: string, data: { templateKey: string; targetDepartment?: string }) =>
+
+    apiService.post<{ total: number; sent: number; failed: number }>(`/simulations/sms/campaign/${campaignId}`, data),
+
+  getSmsStats: (campaignId: string) => apiService.get<SimulationStats>(`/simulations/sms/stats/${campaignId}`),
+
+
+
+  getVoiceScripts: () => apiService.get<VoiceScript[]>('/simulations/voice/scripts'),
+
+  makeCall: (data: { campaignId: string; userId: string; scriptKey: string }) =>
+
+    apiService.post<{ callSid: string; status: string }>('/simulations/voice/call', data),
+
+  launchVoiceCampaign: (campaignId: string, data: { scriptKey: string; targetDepartment?: string }) =>
+
+    apiService.post<{ total: number; initiated: number; failed: number }>(`/simulations/voice/campaign/${campaignId}`, data),
+
+  getVoiceStats: (campaignId: string) => apiService.get<SimulationStats>(`/simulations/voice/stats/${campaignId}`),
+
+};
+
+
+
+
+
+import { apiService } from './api';
+
+
+
+export const simulationAnalyticsApi = {
+
+  getSimulationBreakdown: (companyId?: string) =>
+
+    apiService.get<any>(`/analytics/simulations${companyId ? `?companyId=${companyId}` : ''}`),
+
+
+
+  getDepartmentRisk: (companyId?: string) =>
+
+    apiService.get<any[]>(`/analytics/department-risk${companyId ? `?companyId=${companyId}` : ''}`),
+
+};
+
+
+
+
+
+// /services/api/analyticsApi.ts
+
+import { apiService } from './api';
+
+import { AnalyticsData } from './types';
+
+
+
+export const analyticsApi = {
+
+  getOverview: async (): Promise<AnalyticsData> => {
+
+    const res = await apiService.get<AnalyticsData>('/analytics/overview');
+
+    return res.data;
+
+  },
+
+};
+
+
+
+ack-aware-api","environment"
+
+2026-04-15 01:42:56 [http] ["environment":"development",200,"responseTime":"232ms","ecko) Chrome/146.0.0.0 Safar
+
+2026-04-15 01:42:56 [http]: "attack-aware-api","environm
+
+2026-04-15 01:43:10 [http] ["environment":"development",esponseTime":"27ms","userAgehrome/146.0.0.0 Safari/537.3
+
+2026-04-15 01:43:10 [http] ["environment":"development",nseTime":"353ms","userAgent"me/146.0.0.0 Safari/537.36",
+
+2026-04-15 01:43:10 [http]: re-api","environment":"devel
+
+2026-04-15 01:43:11 [http] ["environment":"development",200,"responseTime":"344ms","ecko) Chrome/146.0.0.0 Safar
+
+2026-04-15 01:43:11 [http]: "attack-aware-api","environm
+
+TARGET EMPLOYEES: [{"_id":"6
+
+
+
+[MOCK SMS] ═════════════════
+
+  To          : +92320923712
+
+  Template    : hr_benefits
+
+  Mock SID    : MOCK_SM_1776
+
+  Message     :
+
+  [HR Notice] Your benefits click?t=768ec342-195b-4ae1-9
+
+  ──────────────────────────
+
+  Click this to simulate emp
+
+  http://localhost:5000/api/038a5a3dcfe14c47e&p=hr_benef
+
+════════════════════════════
+
+
+
+2026-04-15 01:43:20 [http] ["environment":"development",0,"responseTime":"401ms","usko) Chrome/146.0.0.0 Safari/
+
+2026-04-15 01:43:20 [http]: tack-aware-api","environment
+
+2026-04-15 01:43:21 [http] ["environment":"development",200,"responseTime":"247ms","ecko) Chrome/146.0.0.0 Safar
+
+2026-04-15 01:43:21 [http]: "attack-aware-api","environm
+
+
+
+[TRACK CLICK] ──────────────
+
+  token      : 768ec342-195b
+
+  campaignId : 69de9ef321a39
+
+  userId     : 69d0368038a5a
+
+  pageType   : hr_benefits
+
+[TRACK CLICK] Click recorded
+
+[TRACK CLICK] Redirecting → 
+
+2026-04-15 01:43:46 [http] ["environment":"development",f321a3962a529e8964&u=69d0368ozilla/5.0 (Windows NT 10.0;":"::1"}
+
+2026-04-15 01:43:46 [http]: u=69d0368038a5a3dcfe14c47e&pent"}
+
+2026-04-15 01:43:50 [http] ["environment":"development",":"Mozilla/5.0 (Windows NT 1,"ip":"::1"}
+
+2026-04-15 01:43:50 [http]: pment"}
+
+
+
+[TRACK SUBMIT] ─────────────
+
+  token      : 768ec342-195b
+
+  campaignId : 
+
+  userId     : 
+
+  fields     : employeeId, p
+
+[TRACK SUBMIT] Missing track
+
+2026-04-15 01:44:12 [http] ["environment":"development",gent":"Mozilla/5.0 (Windows .36","ip":"::1"}
+
+
+
+
+
+mujhy tracking siubmission wali chez sahi krni hy jb user linkmai clock kry or apna sara ata send kry wo wo db mai show ho k user ny clcik kia hy or employee k dashboard amai bh k usny clcik kia hy or admin bh ye analystics dkeh pae hr campaogn ki k ks user ny clcik ansd all
+
+
+
+
+
+poora flow or code sahi krkr do
+
+
+
+
+
+
+
+
+
+
+
+```
