@@ -1,3 +1,5 @@
+// backend/src/controllers/trackingController.ts
+
 import { Request, Response } from 'express';
 import {
   recordSmsClick,

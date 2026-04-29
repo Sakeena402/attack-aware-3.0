@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, BarChart3, Users, Settings, LogOut, Shield } from 'lucide-react';
 import { useAuth } from '@/app/context/authContext';
-
+import { FileText } from 'lucide-react';
 interface SidebarProps {
   isOpen: boolean;
   role?: string;
@@ -21,6 +21,7 @@ export function Sidebar({ isOpen, role }: SidebarProps) {
     { icon: Shield, label: 'Campaigns', href: '/dashboard/campaigns', roles: ['admin'] },
     { icon: Users, label: 'Manage Users', href: '/dashboard/users', roles: ['super_admin', 'admin'] },
     { icon: Settings, label: 'Settings', href: '/dashboard/settings', roles: ['admin', 'employee'] },
+    { icon: FileText, label: 'Reports', href: '/dashboard/reports', roles: ['admin'] }
   ];
 
   const filteredItems = menuItems.filter(item => item.roles.includes(role || 'employee'));
@@ -86,3 +87,6 @@ export function Sidebar({ isOpen, role }: SidebarProps) {
     </aside>
   );
 }
+
+
+

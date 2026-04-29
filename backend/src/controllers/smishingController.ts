@@ -1,3 +1,4 @@
+// backend/src/controllers/smishingController.ts
 import { Response } from 'express';
 import { AuthRequest, ApiResponse } from '../types/index.js';
 import { AppError } from '../utils/errorHandler.js';

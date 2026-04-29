@@ -2,6 +2,7 @@
 
 import { Router } from 'express';
 import {
+  
   createCampaign,
   getCampaigns,
   getCampaignById,
@@ -13,11 +14,27 @@ import {
 import { authenticate } from '../middleware/auth.js';
 import { requireAdmin, isolateByCompany } from '../middleware/rbac.js';
 
+import {
+  getCampaignResults,
+  compareCampaignsController,
+} from '../controllers/campaignAnalyticsController.js';
+
+
 const campaignRouter = Router();
 
 campaignRouter.use(authenticate);
 
 // Admin-only routes (campaign management)
+
+// ADD these routes BEFORE the param routes (/:id)
+campaignRouter.get('/compare', requireAdmin, isolateByCompany, compareCampaignsController);
+
+// ADD this route AFTER other /:id routes
+
+campaignRouter.get('/:id/results', requireAdmin, isolateByCompany, getCampaignResults);
+
+//campaignRouter.get('/',    requireAdmin, isolateByCompany, getAllCampaigns);
+
 
 campaignRouter.post('/', requireAdmin, isolateByCompany, createCampaign);
 campaignRouter.get('/', isolateByCompany, getCampaigns);
@@ -29,3 +46,7 @@ campaignRouter.post('/:id/launch', requireAdmin, isolateByCompany, launchCampaig
 campaignRouter.post('/:id/pause', requireAdmin, isolateByCompany, pauseCampaign);
 
 export default campaignRouter;
+
+
+
+

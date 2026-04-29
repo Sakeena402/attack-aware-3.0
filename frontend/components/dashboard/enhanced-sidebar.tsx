@@ -34,9 +34,11 @@ const getMenuItems = (role: string | undefined) => {
     ],
     admin: [
       { icon: Zap, label: 'Campaigns', href: '/dashboard/campaigns', roles: ['admin'], badge: 'NEW' },
+      { icon: Trophy, label: 'Leaderboard', href: '/dashboard/leaderboard', roles: ['admin'] },
       { icon: Users, label: 'Employees', href: '/dashboard/employees', roles: ['admin'] },
       { icon: BarChart3, label: 'Analytics', href: '/dashboard/analytics', roles: ['admin'] },
-      { icon: Trophy, label: 'Leaderboard', href: '/dashboard/leaderboard', roles: ['admin'] },
+      { icon: FileText, label: 'Reports', href: '/dashboard/reports', roles: ['admin'] },
+     
     ],
     employee: [
       { icon: Trophy, label: 'Leaderboard', href: '/dashboard/leaderboard', roles: ['employee'] },

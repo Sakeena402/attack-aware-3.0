@@ -1,3 +1,5 @@
+//frontend/app/dashboard/campaigns/page.tsx
+
 'use client';
 
 import { useState, useCallback } from 'react';
@@ -8,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Modal, ConfirmDialog } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast-notification';
 import { useAuth } from '@/app/context/authContext';
-
+import Link from 'next/link';
 import { StatCardSkeleton } from '@/components/ui/skeleton-loader';
 import {
   Plus,
@@ -28,6 +30,7 @@ import {
   Users,
   CheckCircle,
   Clock,
+  BarChart3,
 } from 'lucide-react';
 import { apiService } from '@/app/services/api';
 import { campaignApi } from '@/app/services/campaignApi';
@@ -167,6 +170,7 @@ const employees = Array.isArray(data) ? data : [];
     mutate(state.user?.companyId ? `/campaigns?companyId=${state.user.companyId}` : '/campaigns');
   };
 
+  
   // Open modal for create/edit
   const openModal = useCallback((campaign?: Campaign) => {
     if (campaign) {
@@ -592,6 +596,14 @@ const selectAllEmployees = () => {
                               >
                                 <Eye className="w-4 h-4 text-blue-400" />
                               </button>
+
+                               <Link
+                                href={`/dashboard/campaigns/${campaign._id}/results`}
+                                className="p-2 hover:bg-blue-500/20 rounded-lg transition-all"
+                                title="View Results"
+                              >
+                                <BarChart3 className="w-4 h-4 text-blue-400" />
+                              </Link>
                               <button 
                                 onClick={() => openModal(campaign)}
                                 className="p-2 hover:bg-purple-500/20 rounded-lg transition-all"

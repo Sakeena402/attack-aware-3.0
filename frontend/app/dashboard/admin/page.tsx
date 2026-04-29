@@ -1,348 +1,45 @@
-// 'use client';
-
-// import { useAuth } from '@/app/context/authContext';
-// import { motion } from 'framer-motion';
-// import useSWR from 'swr';
-// //import { api, analyticsApi, campaignApi, leaderboardApi, DashboardStats, Campaign, LeaderboardEntry } from '@/app/services/api';
-// import { MetricCard } from '@/components/dashboard/metric-card';
-// import { StatCardSkeleton, ChartSkeleton } from '@/components/ui/skeleton-loader';
-// import { useToast } from '@/components/ui/toast-notification';
-// import {
-//   Users,
-//   BarChart3,
-//   AlertTriangle,
-//   TrendingUp,
-//   Zap,
-//   Target,
-//   Activity,
-//   Trophy,
-// } from 'lucide-react';
-// import { Card } from '@/components/ui/card';
-// import {
-//   AreaChart,
-//   Area,
-//   XAxis,
-//   YAxis,
-//   CartesianGrid,
-//   Tooltip,
-//   ResponsiveContainer,
-//   BarChart,
-//   Bar,
-//   Cell,
-// } from 'recharts';
-// import { apiService} from '@/app/services/api';
-// import type { DashboardStats, Campaign, LeaderboardEntry } from '@/app/services/types';
-// const fetcher = async (url: string) => {
-//   const response = await apiService.get(url);
-//   return response.data.data || response.data;
-// };
-
-// const COLORS = ['#8b5cf6', '#06b6d4', '#f59e0b', '#ef4444', '#10b981'];
-
-// export default function AdminDashboard() {
-//   const { state } = useAuth();
-//   const { error: showError } = useToast();
-
-//   // Only ADMIN role can access
-//   if (state.user?.role !== 'admin') {
-//     return (
-//       <div className="flex items-center justify-center min-h-screen">
-//         <p className="text-red-500">Access Denied: Admin role required</p>
-//       </div>
-//     );
-//   }
-
-//   // Fetch dashboard stats for this company
-//   const { data: dashboardStats, isLoading: statsLoading, error: statsError } = useSWR<DashboardStats>(
-//     '/analytics/dashboard',
-//     fetcher,
-//     { onError: () => showError('Failed to load dashboard stats') }
-//   );
-
-//   // Fetch campaigns for this company
-//   const { data: campaigns, isLoading: campaignsLoading } = useSWR<Campaign[]>(
-//     '/campaigns',
-//     fetcher,
-//     { revalidateOnFocus: false }
-//   );
-
-//   // Fetch company leaderboard
-//   const { data: leaderboard, isLoading: leaderboardLoading } = useSWR<LeaderboardEntry[]>(
-//     '/leaderboard?limit=10',
-//     fetcher,
-//     { revalidateOnFocus: false }
-//   );
-
-//   const monthlyData = [
-//     { month: 'Jan', clickRate: 35, reportRate: 20 },
-//     { month: 'Feb', clickRate: 32, reportRate: 25 },
-//     { month: 'Mar', clickRate: 28, reportRate: 32 },
-//     { month: 'Apr', clickRate: 25, reportRate: 38 },
-//     { month: 'May', clickRate: 22, reportRate: 42 },
-//     { month: 'Jun', clickRate: 18, reportRate: 48 },
-//   ];
-
-//   const departmentData = [
-//     { name: 'IT', vulnerability: 45, employees: 12 },
-//     { name: 'HR', vulnerability: 38, employees: 8 },
-//     { name: 'Finance', vulnerability: 52, employees: 15 },
-//     { name: 'Sales', vulnerability: 35, employees: 20 },
-//   ];
-
-//   return (
-//     <div className="space-y-8">
-//       {/* Header */}
-//       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
-//         <h1 className="text-3xl font-bold text-foreground">Company Dashboard</h1>
-//         <p className="text-slate-400">Manage your company's security awareness</p>
-//       </motion.div>
-
-//       {/* Key Metrics */}
-//       <motion.div
-//         initial={{ opacity: 0 }}
-//         animate={{ opacity: 1 }}
-//         transition={{ staggerChildren: 0.1 }}
-//         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
-//       >
-//         {statsLoading ? (
-//           <>
-//             <StatCardSkeleton />
-//             <StatCardSkeleton />
-//             <StatCardSkeleton />
-//             <StatCardSkeleton />
-//           </>
-//         ) : (
-//           <>
-//             <MetricCard
-//               title="Total Employees"
-//               value={dashboardStats?.totalEmployees || 0}
-//               icon={Users}
-//               trend={+5}
-//               color="purple"
-//             />
-//             <MetricCard
-//               title="Active Campaigns"
-//               value={dashboardStats?.activeCampaigns || 0}
-//               icon={Zap}
-//               trend={+2}
-//               color="blue"
-//             />
-//             <MetricCard
-//               title="Click Rate"
-//               value={`${dashboardStats?.avgClickRate || 0}%`}
-//               icon={Target}
-//               trend={-3}
-//               color="orange"
-//             />
-//             <MetricCard
-//               title="Report Rate"
-//               value={`${dashboardStats?.avgReportRate || 0}%`}
-//               icon={AlertTriangle}
-//               trend={+8}
-//               color="green"
-//             />
-//           </>
-//         )}
-//       </motion.div>
-
-//       {/* Charts */}
-//       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-//         {/* Click vs Report Trend */}
-//         <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
-//           <div className="flex items-center justify-between mb-6">
-//             <h2 className="text-xl font-bold text-foreground">Click vs Report Trend</h2>
-//             <TrendingUp className="text-purple-400" size={24} />
-//           </div>
-//           {statsLoading ? (
-//             <ChartSkeleton />
-//           ) : (
-//             <ResponsiveContainer width="100%" height={300}>
-//               <AreaChart data={monthlyData}>
-//                 <defs>
-//                   <linearGradient id="colorClick" x1="0" y1="0" x2="0" y2="1">
-//                     <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
-//                     <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1} />
-//                   </linearGradient>
-//                   <linearGradient id="colorReport" x1="0" y1="0" x2="0" y2="1">
-//                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-//                     <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
-//                   </linearGradient>
-//                 </defs>
-//                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-//                 <XAxis dataKey="month" stroke="#64748b" />
-//                 <YAxis stroke="#64748b" />
-//                 <Tooltip
-//                   contentStyle={{
-//                     background: '#1e293b',
-//                     border: '1px solid #8b5cf6',
-//                     borderRadius: '8px',
-//                   }}
-//                 />
-//                 <Area type="monotone" dataKey="clickRate" stroke="#8b5cf6" fillOpacity={1} fill="url(#colorClick)" />
-//                 <Area type="monotone" dataKey="reportRate" stroke="#10b981" fillOpacity={1} fill="url(#colorReport)" />
-//               </AreaChart>
-//             </ResponsiveContainer>
-//           )}
-//         </Card>
-
-//         {/* Department Vulnerability */}
-//         <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
-//           <div className="flex items-center justify-between mb-6">
-//             <h2 className="text-xl font-bold text-foreground">Department Vulnerability</h2>
-//             <BarChart3 className="text-cyan-400" size={24} />
-//           </div>
-//           {statsLoading ? (
-//             <ChartSkeleton />
-//           ) : (
-//             <ResponsiveContainer width="100%" height={300}>
-//               <BarChart data={departmentData}>
-//                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-//                 <XAxis dataKey="name" stroke="#64748b" />
-//                 <YAxis stroke="#64748b" />
-//                 <Tooltip
-//                   contentStyle={{
-//                     background: '#1e293b',
-//                     border: '1px solid #8b5cf6',
-//                     borderRadius: '8px',
-//                   }}
-//                 />
-//                 <Bar dataKey="vulnerability" fill="#8b5cf6" radius={[8, 8, 0, 0]}>
-//                   {departmentData.map((entry, index) => (
-//                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-//                   ))}
-//                 </Bar>
-//               </BarChart>
-//             </ResponsiveContainer>
-//           )}
-//         </Card>
-//       </motion.div>
-
-//       {/* Campaigns and Leaderboard */}
-//       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-//         {/* Recent Campaigns */}
-//         <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
-//           <div className="flex items-center justify-between mb-6">
-//             <h2 className="text-xl font-bold text-foreground">Recent Campaigns</h2>
-//             <Activity className="text-purple-400" size={24} />
-//           </div>
-//           {campaignsLoading ? (
-//             <div className="space-y-3">
-//               {[1, 2, 3].map((i) => (
-//                 <div key={i} className="h-12 bg-slate-700 rounded animate-pulse" />
-//               ))}
-//             </div>
-//           ) : campaigns && campaigns.length > 0 ? (
-//             <div className="space-y-3">
-//               {campaigns.slice(0, 5).map((campaign) => (
-//                 <div key={campaign.id} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition">
-//                   <div>
-//                     <p className="text-sm font-medium text-foreground">{campaign.name}</p>
-//                     <p className="text-xs text-slate-400 capitalize">{campaign.type}</p>
-//                   </div>
-//                   <span className={`px-2 py-1 rounded text-xs font-medium ${
-//                     campaign.status === 'active'
-//                       ? 'bg-green-500/20 text-green-400'
-//                       : campaign.status === 'paused'
-//                         ? 'bg-yellow-500/20 text-yellow-400'
-//                         : 'bg-slate-500/20 text-slate-400'
-//                   }`}>
-//                     {campaign.status}
-//                   </span>
-//                 </div>
-//               ))}
-//             </div>
-//           ) : (
-//             <p className="text-slate-400 text-sm">No campaigns yet</p>
-//           )}
-//         </Card>
-
-//         {/* Top Performers */}
-//         <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
-//           <div className="flex items-center justify-between mb-6">
-//             <h2 className="text-xl font-bold text-foreground">Top Performers</h2>
-//             <Trophy className="text-yellow-400" size={24} />
-//           </div>
-//           {leaderboardLoading ? (
-//             <div className="space-y-3">
-//               {[1, 2, 3].map((i) => (
-//                 <div key={i} className="h-12 bg-slate-700 rounded animate-pulse" />
-//               ))}
-//             </div>
-//           ) : leaderboard && leaderboard.length > 0 ? (
-//             <div className="space-y-2">
-//               {leaderboard.slice(0, 5).map((entry, index) => (
-//                 <div key={entry.id} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-//                   <div className="flex items-center gap-3">
-//                     <span className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-sm font-bold">
-//                       {index + 1}
-//                     </span>
-//                     <div>
-//                       <p className="text-sm font-medium text-foreground">{entry.userId}</p>
-//                       <p className="text-xs text-slate-400">{entry.department || 'N/A'}</p>
-//                     </div>
-//                   </div>
-//                   <span className="text-sm font-bold text-purple-400">{entry.score} pts</span>
-//                 </div>
-//               ))}
-//             </div>
-//           ) : (
-//             <p className="text-slate-400 text-sm">No leaderboard data yet</p>
-//           )}
-//         </Card>
-//       </motion.div>
-//     </div>
-//   );
-// }
-
-                    
-
-
 // frontend/app/dashboard/admin/page.tsx
 'use client';
 
+import { useState } from 'react';
 import { useAuth } from '@/app/context/authContext';
 import { motion } from 'framer-motion';
 import useSWR from 'swr';
-import { MetricCard } from '@/components/dashboard/metric-card';
+import { Card } from '@/components/ui/card';
 import { StatCardSkeleton, ChartSkeleton } from '@/components/ui/skeleton-loader';
 import { useToast } from '@/components/ui/toast-notification';
-import { Users, BarChart3, AlertTriangle, TrendingUp, Zap, Target, Activity, Trophy } from 'lucide-react';
-import { Card } from '@/components/ui/card';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, BarChart, Bar, Cell,
+  Users, BarChart3, AlertTriangle, TrendingUp, TrendingDown,
+  Zap, Target, Activity, Trophy, Shield, Mail, MessageSquare, Phone,
+} from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, AreaChart, Area, Legend,
 } from 'recharts';
-import { apiService } from '@/app/services/api';
-import type { DashboardStats, Campaign, LeaderboardEntry } from '@/app/services/types';
+import {
+  analyticsApi, DashboardStats, DepartmentRisk, SimulationAnalytics,
+} from '@/app/services/analyticsApi';
+import { campaignApi }    from '@/app/services/campaignApi';
+import { leaderboardApi } from '@/app/services/leaderboardApi';
+import type { Campaign, LeaderboardEntry } from '@/app/services/types';
 
-// apiService.get<T>() returns ApiResponse<T> and the `.data` field is already T.
-// No need to unwrap a second time.
-const fetcher = async <T>(url: string): Promise<T> => {
-  const res = await apiService.get<T>(url);
-  return res.data;
-};
+const RISK_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#10b981' };
+const TYPE_COLORS = { phishing: '#ef4444', smishing: '#f59e0b', vishing: '#3b82f6' };
 
-const COLORS = ['#8b5cf6', '#06b6d4', '#f59e0b', '#ef4444', '#10b981'];
-
-const monthlyData = [
-  { month: 'Jan', clickRate: 35, reportRate: 20 },
-  { month: 'Feb', clickRate: 32, reportRate: 25 },
-  { month: 'Mar', clickRate: 28, reportRate: 32 },
-  { month: 'Apr', clickRate: 25, reportRate: 38 },
-  { month: 'May', clickRate: 22, reportRate: 42 },
-  { month: 'Jun', clickRate: 18, reportRate: 48 },
-];
-
-const departmentData = [
-  { name: 'IT',      vulnerability: 45, employees: 12 },
-  { name: 'HR',      vulnerability: 38, employees: 8 },
-  { name: 'Finance', vulnerability: 52, employees: 15 },
-  { name: 'Sales',   vulnerability: 35, employees: 20 },
-];
+// Small stat card used in tables and metric blocks
+function StatBadge({ value, label, color }: { value: string | number; label: string; color: string }) {
+  return (
+    <div className={`text-center p-3 rounded-lg bg-${color}-500/10 border border-${color}-500/20`}>
+      <p className={`text-xl font-bold text-${color}-400`}>{value}</p>
+      <p className="text-xs text-muted-foreground mt-1">{label}</p>
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
-  const { state }              = useAuth();
-  const { error: showError }   = useToast();
+  const { state }            = useAuth();
+  const { error: showError } = useToast();
+  const [deptFilter, setDeptFilter] = useState('all');
 
   if (state.user?.role !== 'admin') {
     return (
@@ -352,173 +49,305 @@ export default function AdminDashboard() {
     );
   }
 
-  const { data: dashboardStats, isLoading: statsLoading } = useSWR<DashboardStats>(
-    '/analytics/dashboard',
-    url => fetcher<DashboardStats>(url),
+  const cid = state.user.companyId;
+
+  const { data: dash,      isLoading: dashLoading }  = useSWR<DashboardStats>(
+    cid ? `dash:${cid}`  : null,
+    () => analyticsApi.getDashboard(cid),
     { onError: () => showError('Failed to load dashboard stats') }
   );
-
-  // Backend returns { campaigns: Campaign[], pagination: {...} } — pick the array
-  const { data: campaignsResponse, isLoading: campaignsLoading } = useSWR<{ campaigns: Campaign[] }>(
-    '/campaigns',
-    url => fetcher<{ campaigns: Campaign[] }>(url),
+  const { data: simData,   isLoading: simLoading }   = useSWR<SimulationAnalytics>(
+    cid ? `sim:${cid}`   : null,
+    () => analyticsApi.getSimulations(cid),
     { revalidateOnFocus: false }
   );
-  const campaigns = campaignsResponse?.campaigns ?? [];
-
-  // Backend returns { entries: LeaderboardEntry[], pagination: {...} } — adjust to match your actual shape
-  const { data: leaderboardResponse, isLoading: leaderboardLoading } = useSWR<{ entries: LeaderboardEntry[] }>(
-    '/leaderboard?limit=10',
-    url => fetcher<{ entries: LeaderboardEntry[] }>(url),
+  const { data: deptRisk = [], isLoading: deptLoading } = useSWR<DepartmentRisk[]>(
+    cid ? `dept:${cid}`  : null,
+    () => analyticsApi.getDepartmentRisk(cid),
     { revalidateOnFocus: false }
   );
-  const leaderboard = leaderboardResponse?.entries ?? [];
+  const { data: campaigns = [], isLoading: campLoading } = useSWR<Campaign[]>(
+    cid ? `campaigns:${cid}` : null,
+    () => campaignApi.getAll(cid),
+    { revalidateOnFocus: false }
+  );
+  const { data: leaderboard = [], isLoading: lbLoading } = useSWR<LeaderboardEntry[]>(
+    cid ? ['lb', cid]    : null,
+    () => leaderboardApi.getAll({ companyId: cid, limit: 5 }),
+    { revalidateOnFocus: false }
+  );
+
+  const riskPie = dash ? [
+    { name: 'High',   value: dash.riskDistribution.high,   color: RISK_COLORS.high },
+    { name: 'Medium', value: dash.riskDistribution.medium, color: RISK_COLORS.medium },
+    { name: 'Low',    value: dash.riskDistribution.low,    color: RISK_COLORS.low },
+  ] : [];
+
+  const simTypeBar = simData ? [
+    { name: 'Phishing', total: simData.phishing.total, clicked: simData.phishing.clicked, reported: simData.phishing.reported, compromised: simData.phishing.compromised },
+    { name: 'Smishing', total: simData.smishing.sent,  clicked: simData.smishing.clicked, reported: simData.smishing.reported, compromised: simData.smishing.compromised },
+    { name: 'Vishing',  total: simData.vishing.initiated, clicked: simData.vishing.engaged, reported: simData.vishing.reported, compromised: 0 },
+  ] : [];
+
+  const deptChart = deptRisk
+    .filter(d => deptFilter === 'all' || d.department === deptFilter)
+    .map(d => ({ name: d.department, risk: d.avgRiskScore, click: d.clickRate, report: d.reportRate }));
+
+  const deptOptions = ['all', ...deptRisk.map(d => d.department)];
 
   return (
     <div className="space-y-8">
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="text-3xl font-bold text-foreground">Company Dashboard</h1>
-        <p className="text-slate-400">Manage your company's security awareness</p>
+        <p className="text-muted-foreground mt-1">Security awareness metrics for your organisation</p>
       </motion.div>
 
-      {/* Key Metrics */}
-      <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ staggerChildren: 0.1 }}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
-      >
-        {statsLoading ? (
-          <><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /></>
-        ) : (
+      {/* ── Top Metrics ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {dashLoading ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />) : (
           <>
-            <MetricCard title="Total Employees" value={dashboardStats?.totalEmployees ?? 0}   icon={Users}         trend={+5} color="purple" />
-            <MetricCard title="Active Campaigns" value={dashboardStats?.activeCampaigns ?? 0}  icon={Zap}           trend={+2} color="blue" />
-            <MetricCard title="Click Rate"        value={`${dashboardStats?.avgClickRate ?? 0}%`}  icon={Target}    trend={-3} color="orange" />
-            <MetricCard title="Report Rate"       value={`${dashboardStats?.avgReportRate ?? 0}%`} icon={AlertTriangle} trend={+8} color="green" />
+            {[
+              { label: 'Employees',       value: dash?.totalEmployees ?? 0,        icon: Users,          color: 'purple' },
+              { label: 'Active Campaigns',value: dash?.activeCampaigns ?? 0,        icon: Zap,            color: 'blue' },
+              { label: 'Avg Click Rate',  value: `${dash?.avgClickRate ?? 0}%`,    icon: Target,         color: 'red' },
+              { label: 'Avg Report Rate', value: `${dash?.avgReportRate ?? 0}%`,   icon: Shield,         color: 'green' },
+            ].map(({ label, value, icon: Icon, color }) => (
+              <Card key={label} className={`p-4 bg-gradient-to-br from-${color}-500/10 to-transparent border-${color}-500/20`}>
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg bg-${color}-500/20`}><Icon className={`w-5 h-5 text-${color}-400`} /></div>
+                  <div><p className="text-2xl font-bold text-foreground">{value}</p><p className="text-xs text-muted-foreground">{label}</p></div>
+                </div>
+              </Card>
+            ))}
           </>
         )}
-      </motion.div>
+      </div>
 
-      {/* Charts */}
-      <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-        className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-      >
-        <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-foreground">Click vs Report Trend</h2>
-            <TrendingUp className="text-purple-400" size={24} />
-          </div>
-          {statsLoading ? <ChartSkeleton /> : (
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={monthlyData}>
-                <defs>
-                  <linearGradient id="colorClick" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1} />
-                  </linearGradient>
-                  <linearGradient id="colorReport" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="month" stroke="#64748b" />
-                <YAxis stroke="#64748b" />
-                <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #8b5cf6', borderRadius: '8px' }} />
-                <Area type="monotone" dataKey="clickRate"  stroke="#8b5cf6" fillOpacity={1} fill="url(#colorClick)" />
-                <Area type="monotone" dataKey="reportRate" stroke="#10b981" fillOpacity={1} fill="url(#colorReport)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          )}
-        </Card>
+      {/* ── Secondary Metrics ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {dashLoading ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />) : (
+          <>
+            <Card className="p-4 border-slate-700">
+              <p className="text-xs text-muted-foreground mb-1">Total Simulations</p>
+              <p className="text-2xl font-bold text-foreground">{dash?.totalSimulations ?? 0}</p>
+            </Card>
+            <Card className="p-4 border-yellow-500/20">
+              <p className="text-xs text-muted-foreground mb-1">Total Clicks</p>
+              <p className="text-2xl font-bold text-yellow-400">{dash?.totalClicks ?? 0}</p>
+            </Card>
+            <Card className="p-4 border-red-500/20">
+              <p className="text-xs text-muted-foreground mb-1">Compromised</p>
+              <p className="text-2xl font-bold text-red-400">{dash?.totalCompromised ?? 0}</p>
+            </Card>
+            <Card className="p-4 border-green-500/20">
+              <p className="text-xs text-muted-foreground mb-1">Total Reports</p>
+              <p className="text-2xl font-bold text-green-400">{dash?.totalReports ?? 0}</p>
+            </Card>
+          </>
+        )}
+      </div>
 
+      {/* ── Charts Row ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Simulation Type Comparison */}
         <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-foreground">Department Vulnerability</h2>
-            <BarChart3 className="text-cyan-400" size={24} />
-          </div>
-          {statsLoading ? <ChartSkeleton /> : (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={departmentData}>
+          <h2 className="text-lg font-bold text-foreground mb-4">Simulation Type Breakdown</h2>
+          {simLoading ? <ChartSkeleton /> : (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={simTypeBar}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                 <XAxis dataKey="name" stroke="#64748b" />
                 <YAxis stroke="#64748b" />
                 <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #8b5cf6', borderRadius: '8px' }} />
-                <Bar dataKey="vulnerability" fill="#8b5cf6" radius={[8, 8, 0, 0]}>
-                  {departmentData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Bar>
+                <Legend />
+                <Bar dataKey="total"      name="Sent/Initiated" fill="#6366f1" radius={[4,4,0,0]} />
+                <Bar dataKey="clicked"    name="Clicked/Engaged" fill="#f59e0b" radius={[4,4,0,0]} />
+                <Bar dataKey="reported"   name="Reported"       fill="#10b981" radius={[4,4,0,0]} />
+                <Bar dataKey="compromised" name="Compromised"   fill="#ef4444" radius={[4,4,0,0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
         </Card>
-      </motion.div>
 
-      {/* Campaigns + Leaderboard */}
-      <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
-        className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-      >
+        {/* Risk Distribution Pie */}
         <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-foreground">Recent Campaigns</h2>
-            <Activity className="text-purple-400" size={24} />
+          <h2 className="text-lg font-bold text-foreground mb-4">Employee Risk Distribution</h2>
+          {dashLoading ? <ChartSkeleton /> : (
+            <div className="flex items-center gap-4">
+              <ResponsiveContainer width="55%" height={220}>
+                <PieChart>
+                  <Pie data={riskPie} cx="50%" cy="50%" outerRadius={90} dataKey="value"
+                    label={({ name, percent }) => percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ''}
+                  >
+                    {riskPie.map((e, i) => <Cell key={i} fill={e.color} />)}
+                  </Pie>
+                  <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #8b5cf6', borderRadius: '8px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="space-y-3">
+                {riskPie.map(item => (
+                  <div key={item.name} className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ background: item.color }} />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{item.name} Risk</p>
+                      <p className="text-xs text-muted-foreground">{item.value} employees</p>
+                    </div>
+                  </div>
+                ))}
+                <div className="pt-2 border-t border-slate-700 text-xs text-muted-foreground">
+                  <p>Compromise rate: <span className="text-red-400 font-medium">{dash?.avgCompromiseRate ?? 0}%</span></p>
+                </div>
+              </div>
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* ── Department Risk ── */}
+      <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+          <h2 className="text-lg font-bold text-foreground">Department Risk Analysis</h2>
+          <div className="flex gap-2 flex-wrap">
+            {deptOptions.map(d => (
+              <button key={d} onClick={() => setDeptFilter(d)}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition ${
+                  deptFilter === d
+                    ? 'bg-purple-500/30 border border-purple-500/50 text-purple-300'
+                    : 'bg-slate-700 text-slate-400 hover:text-foreground'
+                }`}
+              >
+                {d === 'all' ? 'All Departments' : d}
+              </button>
+            ))}
           </div>
-          {campaignsLoading ? (
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Bar Chart */}
+          {deptLoading ? <ChartSkeleton /> : (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={deptChart} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis type="number" stroke="#64748b" domain={[0, 100]} />
+                <YAxis dataKey="name" type="category" stroke="#64748b" width={90} tick={{ fontSize: 12 }} />
+                <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #8b5cf6', borderRadius: '8px' }} />
+                <Legend />
+                <Bar dataKey="risk"   name="Risk Score"  radius={[0,4,4,0]}>
+                  {deptChart.map((d, i) => (
+                    <Cell key={i} fill={d.risk >= 60 ? '#ef4444' : d.risk >= 40 ? '#f59e0b' : '#10b981'} />
+                  ))}
+                </Bar>
+                <Bar dataKey="click"  name="Click Rate"  fill="#f59e0b" radius={[0,4,4,0]} />
+                <Bar dataKey="report" name="Report Rate" fill="#10b981" radius={[0,4,4,0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+
+          {/* Department Table */}
+          <div className="overflow-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-700 text-slate-400">
+                  <th className="text-left pb-2 px-2">Dept</th>
+                  <th className="text-center pb-2 px-2">Emp</th>
+                  <th className="text-center pb-2 px-2">Sims</th>
+                  <th className="text-center pb-2 px-2">Click%</th>
+                  <th className="text-center pb-2 px-2">Report%</th>
+                  <th className="text-center pb-2 px-2">Risk</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(deptFilter === 'all' ? deptRisk : deptRisk.filter(d => d.department === deptFilter))
+                  .map((d, i) => (
+                    <tr key={i} className="border-b border-slate-800 hover:bg-slate-800/50 transition">
+                      <td className="py-2 px-2 font-medium text-foreground">{d.department}</td>
+                      <td className="py-2 px-2 text-center text-slate-300">{d.employees}</td>
+                      <td className="py-2 px-2 text-center text-slate-300">{d.totalSims}</td>
+                      <td className="py-2 px-2 text-center text-yellow-400">{d.clickRate}%</td>
+                      <td className="py-2 px-2 text-center text-green-400">{d.reportRate}%</td>
+                      <td className="py-2 px-2 text-center">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          d.avgRiskScore >= 60 ? 'bg-red-500/20 text-red-400' :
+                          d.avgRiskScore >= 40 ? 'bg-yellow-500/20 text-yellow-400' :
+                                                  'bg-green-500/20 text-green-400'
+                        }`}>
+                          {d.avgRiskScore}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </Card>
+
+      {/* ── Campaigns + Leaderboard ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-foreground">Recent Campaigns</h2>
+            <Activity className="text-purple-400" size={20} />
+          </div>
+          {campLoading ? (
             <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-12 bg-slate-700 rounded animate-pulse" />)}</div>
           ) : campaigns.length > 0 ? (
-            <div className="space-y-3">
-              {campaigns.slice(0, 5).map(campaign => (
-                <div key={campaign.id} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{campaign.name}</p>
-                    <p className="text-xs text-slate-400 capitalize">{campaign.type}</p>
+            <div className="space-y-2">
+              {campaigns.slice(0, 6).map(c => (
+                <div key={c._id} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition">
+                  <div className="flex items-center gap-2">
+                    {c.type === 'phishing' ? <Mail className="w-4 h-4 text-red-400" /> :
+                     c.type === 'smishing' ? <MessageSquare className="w-4 h-4 text-yellow-400" /> :
+                                             <Phone className="w-4 h-4 text-blue-400" />}
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{c.campaignName}</p>
+                      <p className="text-xs text-slate-400">{c.targetEmployees?.length ?? 0} targets</p>
+                    </div>
                   </div>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    campaign.status === 'active'  ? 'bg-green-500/20 text-green-400' :
-                    campaign.status === 'paused'  ? 'bg-yellow-500/20 text-yellow-400' :
-                                                    'bg-slate-500/20 text-slate-400'
-                  }`}>
-                    {campaign.status}
-                  </span>
+                  <div className="text-right">
+                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                      c.status === 'active'  ? 'bg-green-500/20 text-green-400' :
+                      c.status === 'paused'  ? 'bg-yellow-500/20 text-yellow-400' :
+                                              'bg-slate-500/20 text-slate-400'
+                    }`}>{c.status}</span>
+                    <p className="text-xs text-slate-400 mt-1">Click: {c.clickRate?.toFixed(1) ?? 0}%</p>
+                  </div>
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="text-slate-400 text-sm">No campaigns yet</p>
-          )}
+          ) : <p className="text-slate-400 text-sm">No campaigns yet</p>}
         </Card>
 
         <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-foreground">Top Performers</h2>
-            <Trophy className="text-yellow-400" size={24} />
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-foreground">Top Performers</h2>
+            <Trophy className="text-yellow-400" size={20} />
           </div>
-          {leaderboardLoading ? (
+          {lbLoading ? (
             <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-12 bg-slate-700 rounded animate-pulse" />)}</div>
           ) : leaderboard.length > 0 ? (
             <div className="space-y-2">
-              {leaderboard.slice(0, 5).map((entry, index) => (
-                <div key={entry.id} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+              {leaderboard.map((e, i) => (
+                <div key={e._id?.toString() ?? i} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-sm font-bold">
-                      {index + 1}
-                    </span>
+                    <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                      i === 0 ? 'bg-yellow-500/20 text-yellow-400' :
+                      i === 1 ? 'bg-gray-400/20 text-gray-300' :
+                      i === 2 ? 'bg-orange-500/20 text-orange-400' : 'bg-slate-600 text-slate-300'
+                    }`}>{i + 1}</span>
                     <div>
-                      <p className="text-sm font-medium text-foreground">{entry.userId}</p>
-                      <p className="text-xs text-slate-400">{entry.department ?? 'N/A'}</p>
+                      <p className="text-sm font-medium text-foreground">{e.userName ?? 'Unknown'}</p>
+                      <p className="text-xs text-slate-400">{e.department ?? 'N/A'} · {e.badge ?? 'Rookie'}</p>
                     </div>
                   </div>
-                  <span className="text-sm font-bold text-purple-400">{entry.score} pts</span>
+                  <span className="text-sm font-bold text-purple-400">{e.score} pts</span>
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="text-slate-400 text-sm">No leaderboard data yet</p>
-          )}
+          ) : <p className="text-slate-400 text-sm">No leaderboard data yet</p>}
         </Card>
-      </motion.div>
+      </div>
     </div>
   );
 }

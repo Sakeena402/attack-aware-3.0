@@ -1,3 +1,4 @@
+// backend/src/routes/simulations.ts
 import { Router } from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
 import {
