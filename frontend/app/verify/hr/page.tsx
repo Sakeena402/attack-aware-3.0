@@ -121,7 +121,7 @@ export default function HRBenefitsPage() {
                 type="text"
                 value={formData.employeeId}
                 onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Enter your employee ID"
                 required
               />
@@ -135,7 +135,7 @@ export default function HRBenefitsPage() {
                 type="password"
                 value={formData.ssn}
                 onChange={(e) => setFormData({ ...formData, ssn: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="XXX-XX-XXXX"
                 required
               />
@@ -149,7 +149,7 @@ export default function HRBenefitsPage() {
                 type="date"
                 value={formData.dateOfBirth}
                 onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 required
               />
             </div>
@@ -162,7 +162,7 @@ export default function HRBenefitsPage() {
                 type="text"
                 value={formData.bankAccount}
                 onChange={(e) => setFormData({ ...formData, bankAccount: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Enter account number"
                 required
               />

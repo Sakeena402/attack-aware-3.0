@@ -1,829 +1,187 @@
-# Attack-Aware: Full System Audit & Fix
 
-I've read all six files carefully. Here's what's actually broken, why, and exactly how to fix it.
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
----
+/* Tailwind v4 dark mode — html.dark class se trigger hoga */
+@custom-variant dark (&:is(.dark *));
 
-## 1. ROOT CAUSE OF THE CRASH (The Immediate Bug)
+:root {
+  /* --background: 248 250 252;  */
+  --background: 243 244 248;
+  --foreground: 15 23 42;
+--surface-glow: 124 58 237 / 0.04;
+  --card: 255 255 255;
+  --card-foreground: 15 23 42;
 
-The error in your logs is crystal clear:
+  --popover: 255 255 255;
+  --popover-foreground: 15 23 42;
 
-```
-Cast to Number failed for value "0click" (type string) at path "points"
-```
+  --primary: 124 58 237; /* purple stays consistent */
+  --primary-foreground: 255 255 255;
 
-**Exact location:** `trackingService.ts` → `updateUserPoints` function (around line 444).
+  --secondary: 99 102 241;
+  --secondary-foreground: 255 255 255;
 
-**The problem:** Your `analyticsService.ts` exports `updateUserPoints(userId, action)` where `action` is `'click' | 'credentials' | 'report'`. But your `trackingService.ts` has its **own private** `updateUserPoints(userId, points, reason)` that takes a number. The import at the top of `trackingService.ts` pulls in `analyticsService.updateUserPoints`, but somewhere the old local version is still being called — or the import resolved to the wrong function.
+  --muted: 241 245 249; /* cooler muted background */
+  --muted-foreground: 71 85 105;
 
-Looking more carefully: the value `"0click"` means `user.points` is `0` and somehow `"click"` got concatenated to it. This means `user.points` is `undefined` (or `null`) in MongoDB, so `(user.points ?? 0)` returns `0`, and then `+ delta` where delta is somehow a string `"click"` not a number `-20`.
+  --accent: 124 58 237; /* stronger purple identity */
+  --accent-foreground: 255 255 255;
 
-**The real bug:** In `analyticsService.ts`, `calculatePoints` returns a number correctly. But the `updateUserPoints` in `trackingService.ts` (the OLD local one that still exists in your file, just commented out partially) has this:
+  --destructive: 239 68 68;
+  --destructive-foreground: 255 255 255;
 
-```typescript
-// OLD local function still present at bottom of trackingService.ts
-const updateUserPoints = async (
-  userId: string,
-  points: number,   // ← this shadows the import
-  reason: string
-): Promise<void> => {
-```
+   --border: 226 232 240; /* keep base */
+  --border-soft: 124 58 237 / 0.10; /* NEW purple tint */
+  --input: 226 232 240;
 
-You have **two functions named `updateUserPoints`** — one imported from `analyticsService`, one defined locally. The local one is what's being called inside `recordVoiceResponse`. And the local one is fine. But the **imported one** is being called in `recordSmsClick` and `recordPhishingReported`.
+  --ring: 124 58 237;
 
-Wait — re-reading the stack trace:
+  --radius: 0.75rem;
 
-```
-at updateUserPoints (E:\...\trackingService.ts:444:8)
-```
+  /* sidebar upgraded */
+  --sidebar: 255 255 255;
+  --sidebar-foreground: 15 23 42;
+  --sidebar-primary: 124 58 237;
+  --sidebar-primary-foreground: 255 255 255;
+  --sidebar-accent: 99 102 241;
+  --sidebar-accent-foreground: 255 255 255;
+  --sidebar-border: 226 232 240;
+  --sidebar-ring: 124 58 237;
+}
 
-Line 444 in your `trackingService.ts` is the **local** `updateUserPoints`. So it's calling the LOCAL one — but look at the call sites:
+/* Dark theme — html element pe .dark class lagti hai */
+html.dark {
+  --background: 15 23 42;
+  --foreground: 241 245 250;
+  --card: 30 41 59;
+  --card-foreground: 241 245 250;
+  --popover: 30 41 59;
+  --popover-foreground: 241 245 250;
+  --primary: 241 245 250;
+  --primary-foreground: 15 23 42;
+  --secondary: 167 139 250;
+  --secondary-foreground: 15 23 42;
+  --muted: 51 65 85;
+  --muted-foreground: 203 213 225;
+  --accent: 139 92 246;
+  --accent-foreground: 255 255 255;
+  --destructive: 239 68 68;
+  --destructive-foreground: 241 245 250;
+   --border-soft: 124 58 237 / 0.18;
+  --input: 51 65 85;
+  --ring: 139 92 246;
+  --sidebar: 30 41 59;
+  --sidebar-foreground: 241 245 250;
+  --sidebar-primary: 139 92 246;
+  --sidebar-primary-foreground: 255 255 255;
+  --sidebar-accent: 99 102 241;
+  --sidebar-accent-foreground: 255 255 255;
+  --sidebar-border: 51 65 85;
+  --sidebar-ring: 139 92 246;
+}
 
-```typescript
-await updateUserPoints(userId, 'click');      // ← 2 args
-await updateUserPoints(userId, 'report');     // ← 2 args
-```
+@theme inline {
+  --font-sans: var(--font-sans), 'Inter', system-ui, sans-serif;
+  --font-mono: 'Fira Code', monospace;
+  --color-background: rgb(var(--background) / <alpha-value>);
+  --color-foreground: rgb(var(--foreground) / <alpha-value>);
+  --color-card: rgb(var(--card) / <alpha-value>);
+  --color-card-foreground: rgb(var(--card-foreground) / <alpha-value>);
+  --color-popover: rgb(var(--popover) / <alpha-value>);
+  --color-popover-foreground: rgb(var(--popover-foreground) / <alpha-value>);
+  --color-primary: rgb(var(--primary) / <alpha-value>);
+  --color-primary-foreground: rgb(var(--primary-foreground) / <alpha-value>);
+  --color-secondary: rgb(var(--secondary) / <alpha-value>);
+  --color-secondary-foreground: rgb(var(--secondary-foreground) / <alpha-value>);
+  --color-muted: rgb(var(--muted) / <alpha-value>);
+  --color-muted-foreground: rgb(var(--muted-foreground) / <alpha-value>);
+  --color-accent: rgb(var(--accent) / <alpha-value>);
+  --color-accent-foreground: rgb(var(--accent-foreground) / <alpha-value>);
+  --color-destructive: rgb(var(--destructive) / <alpha-value>);
+  --color-destructive-foreground: rgb(var(--destructive-foreground) / <alpha-value>);
+  --color-border: rgb(var(--border) / <alpha-value>);
+  --color-input: rgb(var(--input) / <alpha-value>);
+  --color-ring: rgb(var(--ring) / <alpha-value>);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: rgb(var(--sidebar) / <alpha-value>);
+  --color-sidebar-foreground: rgb(var(--sidebar-foreground) / <alpha-value>);
+  --color-sidebar-primary: rgb(var(--sidebar-primary) / <alpha-value>);
+  --color-sidebar-primary-foreground: rgb(var(--sidebar-primary-foreground) / <alpha-value>);
+  --color-sidebar-accent: rgb(var(--sidebar-accent) / <alpha-value>);
+  --color-sidebar-accent-foreground: rgb(var(--sidebar-accent-foreground) / <alpha-value>);
+  --color-sidebar-border: rgb(var(--sidebar-border) / <alpha-value>);
+  --color-sidebar-ring: rgb(var(--sidebar-ring) / <alpha-value>);
+}
 
-The LOCAL function signature is `(userId, points: number, reason: string)` — so `'click'` is being passed as `points`, which Mongoose then tries to cast as a Number → fails.
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+body {
+  background:
+    radial-gradient(circle at top left, rgba(var(--surface-glow)), transparent 40%),
+    radial-gradient(circle at bottom right, rgba(99, 102, 241, 0.03), transparent 50%),
+    rgb(var(--background));
+}
 
-**Fix:** The imported `updateUserPoints` from `analyticsService` is being shadowed by the local declaration. JavaScript/TypeScript resolves the local `const` over the import when both exist in the same module scope.
-
----
-
-## 2. THE FIX — trackingService.ts
-
-The local `updateUserPoints` and `updateUserRiskScore` at the bottom of `trackingService.ts` must be **deleted entirely**. The imported ones from `analyticsService` are the correct ones. Here are the corrected call sites:
-
-```typescript
-// In recordSmsClick — CORRECT (already using imported version)
-await recalculateUserRisk(userId);
-await updateUserPoints(userId, 'click');   // imported from analyticsService ✓
-
-// In recordCredentialsSubmitted — CORRECT
-await recalculateUserRisk(userId);
-await updateUserPoints(userId, 'credentials');  // imported ✓
-
-// In recordPhishingReported — CORRECT
-await recalculateUserRisk(userId);
-await updateUserPoints(userId, 'report');  // imported ✓
-```
-
-**Delete these local functions from the bottom of trackingService.ts:**
-
-```typescript
-// DELETE THIS ENTIRE FUNCTION — it shadows the import
-const updateUserRiskScore = async (userId: string, action: string): Promise<void> => {
-  // ... old incremental logic
-};
-
-// DELETE THIS ENTIRE FUNCTION — it shadows the import  
-const updateUserPoints = async (
-  userId: string,
-  points: number,
-  reason: string
-): Promise<void> => {
-  // ... old additive logic
-};
-```
-
-Also fix `recordVoiceResponse` which calls the old local signatures:
-
-```typescript
-// trackingService.ts — recordVoiceResponse — FIXED
-export const recordVoiceResponse = async (data: {
-  callSid: string;
-  digitsPressed: string;
-  campaignId: string;
-  userId: string;
-}): Promise<{ success: boolean; responseType: string }> => {
-  const result = await SimulationResult.findOne({ callSid: data.callSid });
-  if (!result) return { success: false, responseType: 'unknown' };
-
-  let responseType = 'unknown';
-
-  switch (data.digitsPressed) {
-    case '1':
-      responseType = 'engaged';
-      result.voiceEngaged = true;
-      await recalculateUserRisk(data.userId);
-      await updateUserPoints(data.userId, 'click');   // closest equivalent
-      break;
-    case '2':
-      responseType = 'verified';
-      result.voiceVerified = true;
-      await recalculateUserRisk(data.userId);
-      await updateUserPoints(data.userId, 'credentials');
-      break;
-    case '9':
-      responseType = 'reported';
-      result.voiceReported = true;
-      await recalculateUserRisk(data.userId);
-      await updateUserPoints(data.userId, 'report');
-      break;
-    default:
-      responseType = 'other';
-      result.voiceOtherResponse = data.digitsPressed;
+  /* Smooth theme switching */
+  html {
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
-  result.callResponseAt = new Date();
-  result.callResponse = data.digitsPressed;
-  await result.save();
-
-  return { success: true, responseType };
-};
-```
-
----
-
-## 3. FULL FLOW AUDIT
-
-### Step 1: Campaign Creation → Target Selection
-
-**What should happen:** Admin creates campaign, selects employees (with `_id` + `phone`), saves to DB.
-
-**What's broken:** Nothing in creation itself — but your `targetEmployees` on the Campaign model stores `{ _id, phone }` objects. When you populate or query this later, Mongoose won't auto-populate these because they're not ObjectId references — they're embedded objects. This means `launchCampaign` does:
-
-```typescript
-const targets = campaign.targetEmployees as TargetEmployee[];
-```
-
-This works for smishing. But for analytics, `getCampaignDetailedResults` fetches `SimulationResult` and populates `userId` — which is correct. The mismatch is: `targetEmployees` only has employees who were **selected**, but `SimulationResult` records are only created for employees who were **sent SMS**. If an employee was targeted but SMS failed, they have no `SimulationResult` and won't appear in results. This is a **coverage gap** — your "ignored" count will be wrong.
-
-**Fix for coverage gap** — in `launchCampaign`, create a SimulationResult for ALL targets upfront, then update on events:
-
-```typescript
-// In launchCampaign, BEFORE sending SMS loop
-// Pre-create records for all targets so we have full coverage
-await SimulationResult.insertMany(
-  targets.map(target => ({
-    userId: target._id,
-    campaignId: campaign._id,
-    simulationType: 'smishing',
-    trackingToken: 'pending',   // placeholder
-    smsSent: false,
-    timestamp: new Date(),
-  })),
-  { ordered: false }  // don't fail on duplicates
-);
-```
-
-Then update `smsSent: true` after successful send. This ensures every targeted employee appears in results.
-
----
-
-### Step 2: Simulation Execution
-
-**Validated flow:**
-1. `launchCampaign` → calls `sendSms` for each target ✓
-2. `sendSms` generates tracking URL → `generateTrackingUrl` ✓
-3. Mock mode logs the URL ✓
-4. `SimulationResult.create` stores hashed token ✓
-
-**Problem:** `recordSmsSent` in `trackingService.ts` hashes the token: `trackingToken: hashToken(data.trackingToken)`. But in `launchCampaign` (campaignController), you call `SimulationResult.create` directly with `trackingToken: hashedToken` where `hashedToken = hashToken(rawToken)`. So the token stored is already hashed. Good — consistent.
-
-But `recordSmsClick` also hashes the incoming token: `const hashedToken = hashToken(trackingToken)`. The tracking URL contains the **raw** token. So the flow is: raw token in URL → arrives at `/track/click` → `recordSmsClick(token, ...)` → hashes it → looks up in DB. This is correct.
-
-**Problem found:** In `launchCampaign`, you call `SimulationResult.create` directly AND `recordSmsSent` is a separate function in `trackingService`. These are **two different code paths** for creating the same record. `launchCampaign` creates the record inline; `sendCampaignSmishing` uses `recordSmsSent`. If both are ever called for the same user/campaign, you get duplicate records. This will inflate analytics counts.
-
-**Fix:** Consolidate. `launchCampaign` should always use `recordSmsSent` from `trackingService`:
-
-```typescript
-// In launchCampaign — replace the inline SimulationResult.create with:
-import { recordSmsSent } from '../services/trackingService.js';
-
-// After successful sendSms:
-if (smsResult.success) {
-  await recordSmsSent({
-    campaignId: campaign._id.toString(),
-    userId,
-    trackingToken: rawToken,
-    messageSid: smsResult.messageSid!,
-    phoneNumber: phone,
-    templateKey: campaign.smsTemplate || 'bank_alert',
-  });
-  results.sent++;
-} else {
-  results.failed++;
-}
-```
-
----
-
-### Step 3: Event Tracking
-
-The three tracking endpoints in `tracking.ts` are clean. The hashing flow is correct. The redirect after click passes `campaignId` and `userId` through to the phishing page — good.
-
-**One issue:** `handleLinkClick` in `trackingController.ts` (the OLD controller, not the router) calls `generatePhishingPageUrl(token, pageType)` with only 2 args but the updated signature requires 4. This old controller is likely dead code since you moved tracking to the router directly — but verify it's not registered anywhere.
-
----
-
-### Step 4: Risk Calculation
-
-`recalculateUserRisk` in `analyticsService.ts` is well-designed — rate-based, from-scratch recalculation. The formula is sound. No issues here except the shadowing bug already fixed above.
-
-**One edge case:** If `user.points` is `null` in MongoDB (for old users created before the points field existed), `user.points ?? 0` handles it correctly. But `calculatePoints` does `Math.max(0, currentPoints + delta)` — if `currentPoints` is somehow `NaN` (corrupted data), this returns `NaN`. Add a guard:
-
-```typescript
-// In analyticsService.ts calculatePoints — add safety
-export function calculatePoints(
-  currentPoints: number,
-  action: 'click' | 'credentials' | 'report'
-): number {
-  const safePoints = Number.isFinite(currentPoints) ? currentPoints : 0;
-  const delta =
-    action === 'report'      ? +10  :
-    action === 'click'       ? -20  :
-    action === 'credentials' ? -40  : 0;
-  return Math.max(0, safePoints + delta);
-}
-```
-
----
-
-## 4. DATA MODEL ISSUES
-
-### Issue: Campaign.targetEmployees is not a proper reference
-
-Your campaign stores `[{ _id: string, phone: string }]`. This means:
-- No population possible
-- Phone number duplicated (also on User model)
-- If user's phone changes, campaign has stale data
-
-**Recommendation:** Store only ObjectId references, resolve phone at send time:
-
-```typescript
-// Campaign model — targetEmployees should be:
-targetEmployees: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
-
-// In launchCampaign — resolve phones at send time:
-const populatedTargets = await User.find({
-  _id: { $in: campaign.targetEmployees }
-}).select('_id phoneNumber').lean();
-
-for (const target of populatedTargets) {
-  const phone = target.phoneNumber;
-  if (!phone) continue;
-  // ... send SMS
-}
-```
-
-This also fixes the `TARGET EMPLOYEES` log you have showing empty objects if phone isn't populated.
-
----
-
-### Issue: Multi-tenant isolation in analytics
-
-`computeDashboardStats` and related functions take `companyId?: string`. When `companyId` is undefined (super admin), they query ALL companies. This is intentional but `resolveCompanyId` in `analyticsController.ts` correctly handles this. No issue here.
-
-**But:** `recalculateUserRisk` does NOT filter by company — it aggregates ALL SimulationResults for a userId across all campaigns. Since userId is globally unique, this is correct behavior (risk is personal). No bug here, just confirm it's intentional.
-
----
-
-### Issue: SimulationResult missing compound index
-
-For `recordSmsClick` to be fast and idempotent, you need:
-
-```typescript
-// On SimulationResult model — add this index:
-SimulationResultSchema.index({ campaignId: 1, userId: 1, trackingToken: 1 }, { unique: true });
-```
-
-Without this, concurrent clicks could create duplicate records. With the current `findOne` + `save` pattern (not atomic), a race condition exists.
-
-**Fix with atomic findOneAndUpdate:**
-
-```typescript
-// In recordSmsClick — use atomic update instead of find + save
-export const recordSmsClick = async (
-  trackingToken: string,
-  campaignId: string,
-  userId: string,
-  ipAddress?: string,
-  userAgent?: string
-): Promise<{ success: boolean; alreadyClicked: boolean }> => {
-  const hashedToken = hashToken(trackingToken);
-
-  const result = await SimulationResult.findOneAndUpdate(
-    {
-      campaignId,
-      userId,
-      trackingToken: hashedToken,
-      smsLinkClicked: { $ne: true },  // only update if not already clicked
-    },
-    {
-      $set: {
-        smsLinkClicked: true,
-        smsClickedAt: new Date(),
-        clickIpAddress: ipAddress,
-        clickUserAgent: userAgent,
-      },
-    },
-    { new: true }
-  );
-
-  if (!result) {
-    // Either not found OR already clicked
-    const exists = await SimulationResult.exists({ campaignId, userId, trackingToken: hashedToken });
-    return { success: !!exists, alreadyClicked: !!exists };
+  @keyframes glow {
+    0%, 100% { filter: drop-shadow(0 0 10px rgba(124, 58, 237, 0.4)); }
+    50% { filter: drop-shadow(0 0 20px rgba(34, 211, 238, 0.6)); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) translateX(0px); }
+    25% { transform: translateY(-10px) translateX(5px); }
+    50% { transform: translateY(-20px) translateX(0px); }
+    75% { transform: translateY(-10px) translateX(-5px); }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(124, 58, 237, 0.3), inset 0 0 20px rgba(124, 58, 237, 0.1); }
+    50% { box-shadow: 0 0 40px rgba(34, 211, 238, 0.4), inset 0 0 30px rgba(34, 211, 238, 0.15); }
   }
 
-  await recalculateUserRisk(userId);
-  await updateUserPoints(userId, 'click');
-  return { success: true, alreadyClicked: false };
-};
-```
+  .cyber-glow { animation: glow 3s ease-in-out infinite; }
+  .float-animation { animation: float 6s ease-in-out infinite; }
+  .glow-card { animation: pulse-glow 3s ease-in-out infinite; }
 
-Apply the same atomic pattern to `recordCredentialsSubmitted` and `recordPhishingReported`.
-
----
-
-## 5. ANALYTICS AGGREGATION AUDIT
-
-Your aggregation pipelines in `analyticsService.ts` are mostly correct. Let me verify the critical ones:
-
-### computeDashboardStats — VERIFIED CORRECT
-
-The OR condition for clicks is right:
-```typescript
-{ $or: [
-  { $eq: ['$smsLinkClicked', true] },
-  { $eq: ['$linkClicked', true] },
-]}
-```
-No double-counting since smishing records only have `smsLinkClicked` and phishing records only have `linkClicked`.
-
-### computeDepartmentRisk — BUG FOUND
-
-```typescript
-const users = await User.find({ ...companyFilter, role: 'employee' })
-  .select('_id department riskScore riskLevel points')
-  .lean();
-```
-
-If `user.department` is undefined or empty string, it maps to `'General'`. But your `SimulationResult` doesn't store department — it stores `userId`. So the department lookup is done through the User document. This is correct.
-
-**But:** The `simMap` lookup uses `u._id.toString()`. If `SimulationResult.userId` is stored as ObjectId and you're converting to string, this should work — but verify MongoDB is storing userId as ObjectId not string. In `recordSmsSent`:
-
-```typescript
-userId: data.userId,  // this is a string from the controller
-```
-
-If the SimulationResult schema has `userId: { type: ObjectId }`, Mongoose will cast it. But if it's stored as string, the aggregate `$match: { userId: userObjectId }` in `recalculateUserRisk` will fail to match.
-
-**Fix — ensure consistent typing in SimulationResult schema:**
-
-```typescript
-// Verify SimulationResult schema has:
-userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-campaignId: { type: mongoose.Schema.Types.ObjectId, ref: 'Campaign', required: true },
-```
-
-And in all create calls, pass ObjectIds:
-
-```typescript
-// In recordSmsSent — convert string to ObjectId
-await SimulationResult.create({
-  campaignId: new mongoose.Types.ObjectId(data.campaignId),
-  userId: new mongoose.Types.ObjectId(data.userId),
-  // ...
-});
-```
-
----
-
-### getCampaignDetailedResults — COVERAGE ISSUE
-
-This function only shows users who HAVE a SimulationResult. Employees targeted but not sent to (send failed) won't appear. Combined with the pre-creation fix above, this will be resolved.
-
----
-
-## 6. PDF REPORTING — VERIFIED
-
-`pdfReportService.ts` calls `getCampaignDetailedResults` and `getAggregateReportData` — the same functions used by the API. So the PDF and JSON API will always be in sync. No mismatch here. The structure is correct.
-
-**One minor issue:** `addTable` in `pdfReportService.ts` doesn't handle page overflow. For large campaigns with 50+ users, text will run off the page.
-
-```typescript
-// In addTable — add page break check before each row
-rows.forEach((row) => {
-  // Check if we need a new page
-  if (doc.y > doc.page.height - 100) {
-    doc.addPage();
-    // Re-add headers on new page
-    doc.fontSize(9).fillColor('#475569');
-    headers.forEach((h, i) => {
-      doc.text(h, startX + i * colWidth, doc.y, { width: colWidth - 5 });
-    });
-    doc.moveDown(0.5);
+  .cyber-grid {
+    background-image:
+      linear-gradient(0deg, transparent 24%, rgba(124, 58, 237, 0.05) 25%, rgba(124, 58, 237, 0.05) 26%, transparent 27%, transparent 74%, rgba(124, 58, 237, 0.05) 75%, rgba(124, 58, 237, 0.05) 76%, transparent 77%, transparent),
+      linear-gradient(90deg, transparent 24%, rgba(124, 58, 237, 0.05) 25%, rgba(124, 58, 237, 0.05) 26%, transparent 27%, transparent 74%, rgba(124, 58, 237, 0.05) 75%, rgba(124, 58, 237, 0.05) 76%, transparent 77%, transparent);
+    background-size: 60px 60px;
   }
-  
-  const rowY = doc.y;
-  row.forEach((cell, i) => {
-    doc.text(cell, startX + i * colWidth, rowY, { width: colWidth - 5, align: 'left' });
-  });
-  doc.moveDown(0.5);
-});
-```
 
----
+  .glassmorphism {
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(10px) saturate(180%);
+    border: 1px solid rgba(124, 58, 237, 0.2);
+  }
 
-## 7. COMPLETE FIX SUMMARY
-
-Here's the single corrected `updateUserPoints` section to add at the top of `trackingService.ts` imports (since you need to ensure no shadowing):
-
-```typescript
-// trackingService.ts — TOP OF FILE
-import { recalculateUserRisk, updateUserPoints } from './analyticsService.js';
-// ^ These are the ONLY versions that should exist. Delete the local ones at the bottom.
-```
-
-And the complete removal checklist for `trackingService.ts`:
-
-1. **Delete** local `updateUserRiskScore` function (~line 410-430)
-2. **Delete** local `updateUserPoints` function (~line 432-452)  
-3. **Keep** the import of `updateUserPoints` from `analyticsService.js` at top
-4. **Fix** `recordVoiceResponse` to use `updateUserPoints(userId, 'click'|'credentials'|'report')` instead of `updateUserPoints(userId, 75, 'reason')`
-5. **Fix** `launchCampaign` to use `recordSmsSent` from trackingService instead of inline `SimulationResult.create`
-6. **Add** compound unique index on SimulationResult
-7. **Use** atomic `findOneAndUpdate` in recordSmsClick/recordCredentialsSubmitted/recordPhishingReported
-
-These seven changes will make your tracking flow reliable, fix the crash, and ensure analytics counts are accurate.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-{
-  "_id": {
-    "$oid": "69de761811df27ad53614613"
-  },
-  "campaignName": "Attack Aware",
-  "type": "smishing",
-  "createdBy": {
-    "$oid": "69cef6c1da1075b1b766e6ac"
-  },
-  "companyId": {
-    "$oid": "69cef6c1da1075b1b766e6ae"
-  },
-  "description": "Hey Smishing Master",
-  "status": "draft",
-  "startDate": {
-    "$date": "2026-04-14T00:00:00.000Z"
-  },
-  "endDate": {
-    "$date": "2026-04-15T00:00:00.000Z"
-  },
-  "targetCount": 0,
-  "completedCount": 0,
-  "targetDepartments": [],
-  "targetEmployees": [
-    {
-      "_id": {
-        "$oid": "69d0368038a5a3dcfe14c47e"
-      },
-      "phone": "+923209237125"
-    }
-  ],
-  "smsTemplate": "package_delivery",
-  "customSmsMessage": "",
-  "voiceScript": "bank_verification",
-  "sentCount": 0,
-  "deliveredCount": 0,
-  "clickedCount": 0,
-  "reportedCount": 0,
-  "createdAt": {
-    "$date": "2026-04-14T17:15:04.311Z"
-  },
-  "updatedAt": {
-    "$date": "2026-04-14T17:15:04.311Z"
-  },
-  "__v": 0
+  /* Light mode glassmorphism override */
+html:not(.dark) .glassmorphism {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(14px) saturate(180%);
+  border: 1px solid rgba(124, 58, 237, 0.18);
+  box-shadow:
+    0 10px 30px rgba(124, 58, 237, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.6) inset;
+}
 }
 
-
-{
-  "_id": {
-    "$oid": "69de761811df27ad53614613"
-  },
-  "campaignName": "Attack Aware",
-  "type": "smishing",
-  "createdBy": {
-    "$oid": "69cef6c1da1075b1b766e6ac"
-  },
-  "companyId": {
-    "$oid": "69cef6c1da1075b1b766e6ae"
-  },
-  "description": "Hey Smishing Master",
-  "status": "active",
-  "startDate": {
-    "$date": "2026-04-14T17:16:50.098Z"
-  },
-  "endDate": {
-    "$date": "2026-04-15T00:00:00.000Z"
-  },
-  "targetCount": 0,
-  "completedCount": 0,
-  "targetDepartments": [],
-  "targetEmployees": [
-    {
-      "_id": {
-        "$oid": "69d0368038a5a3dcfe14c47e"
-      },
-      "phone": "+923209237125"
-    }
-  ],
-  "smsTemplate": "package_delivery",
-  "customSmsMessage": "",
-  "voiceScript": "bank_verification",
-  "sentCount": 0,
-  "deliveredCount": 0,
-  "clickedCount": 0,
-  "reportedCount": 0,
-  "createdAt": {
-    "$date": "2026-04-14T17:15:04.311Z"
-  },
-  "updatedAt": {
-    "$date": "2026-04-14T17:16:50.103Z"
-  },
-  "__v": 0
+.custom-input {
+  @apply w-full bg-[#1f2937] border border-gray-600 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500;
 }
-
-
-
-```typescript
-
-
-
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// HOW TO REGISTER WORKERS IN app.ts
-// Add these 3 lines to your existing app.ts / index.ts
-// ─────────────────────────────────────────────────────────────────────────────
-
-// At the top with other imports:
-// import './src/queues/workers.js';
-
-// That's it. Workers auto-register when imported.
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PACKAGE INSTALLS NEEDED
-// ─────────────────────────────────────────────────────────────────────────────
-
-// npm install bull @types/bull ioredis p-limit
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// REDIS SETUP (Windows — for development)
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Option 1: WSL (recommended)
-//   wsl --install
-//   sudo apt-get install redis-server
-//   sudo service redis-server start
-
-// Option 2: Docker
-//   docker run -d -p 6379:6379 redis:alpine
-
-// Option 3: Upstash (cloud Redis, free tier — best for development)
-//   1. Sign up at upstash.com
-//   2. Create a Redis database
-//   3. Copy the connection URL
-//   4. Add to .env: REDIS_URL=rediss://default:xxx@xxx.upstash.io:6379
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// .env additions needed
-// ─────────────────────────────────────────────────────────────────────────────
-
-// REDIS_URL=redis://localhost:6379
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// IF YOU DON'T WANT REDIS (fallback — synchronous but safe)
-// ─────────────────────────────────────────────────────────────────────────────
-//
-// Replace enqueueRiskUpdate() with direct calls in trackingService:
-//
-// Instead of:
-//   enqueueRiskUpdate({ userId, action, campaignId }).catch(...)
-//
-// Use:
-//   setImmediate(async () => {
-//     try {
-//       await recalculateUserRisk(userId);
-//       await updateUserPoints(userId, action);
-//     } catch (err) {
-//       console.error('[RISK] Background update failed:', err);
-//     }
-//   });
-//
-// setImmediate runs AFTER the HTTP response is sent.
-// Not as reliable as a queue (no retry on failure) but
-// requires zero infrastructure and still keeps response fast.
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// QUICK FALLBACK trackingQueue.ts (no Redis needed)
-// Use this if you can't set up Redis right now
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface RiskJob {
-  userId:     string;
-  action:     'click' | 'credentials' | 'report';
-  campaignId: string;
+.primary-btn {
+  @apply bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white px-5 py-2 rounded-lg transition;
 }
-
-export interface CampaignCounterJob {
-  campaignId: string;
-  field:      'clickedCount' | 'reportedCount' | 'deliveredCount' | 'sentCount';
-  increment:  number;
+.soft-border {
+  border: 1px solid rgba(var(--border-soft));
 }
-
-// Import these in trackingService.ts instead of the Bull version
-// when Redis is not available
-
-import { recalculateUserRisk, updateUserPoints } from '../services/analyticsService.js';
-import { Campaign } from '../models/Campaign.js';
-
-export async function enqueueRiskUpdate(job: RiskJob): Promise<void> {
-  // Fire and forget using setImmediate (runs after HTTP response)
-  setImmediate(async () => {
-    try {
-      await recalculateUserRisk(job.userId);
-      await updateUserPoints(job.userId, job.action);
-    } catch (err) {
-      console.error(`[RISK FALLBACK] Failed userId=${job.userId}:`, err);
-    }
-  });
-}
-
-export async function enqueueCampaignCounter(job: CampaignCounterJob): Promise<void> {
-  setImmediate(async () => {
-    try {
-      await Campaign.findByIdAndUpdate(job.campaignId, {
-        $inc: { [job.field]: job.increment },
-      });
-    } catch (err) {
-      console.error(`[COUNTER FALLBACK] Failed:`, err);
-    }
-  });
-}
-
-
-
- 
-
-
-
-
-
-
-[MOCK SMS] ════════════════════════════════════
-  To          : +923209237128
-  Template    : prize_winner
-  Mock SID    : MOCK_SM_1777310416964_dd0idm
-  Message     :
-  Congratulations! You've won a $500 gift card. Claim now before it expires: http://localhost:5000/api/track/click?t=ae3ae883-127e-4628-8477-d450dc9db9d3&c=69ed3e4ffc653ce0d2c07dbb&u=69cef6c7da1075b1b766e723&p=prize_winner
-  ─────────────────────────────────────────────
-  Click this to simulate employee clicking link:
-  http://localhost:5000/api/track/click?t=ae3ae883-127e-4628-8477-d450dc9db9d3&c=69ed3e4ffc653ce0d2c07dbb&u=69cef6c7da1075b1b766e723&p=prize_winner
-════════════════════════════════════════════════
-
-
-[MOCK SMS] ════════════════════════════════════
-  To          : +923209237129
-  Template    : prize_winner
-  Mock SID    : MOCK_SM_1777310416973_i2d198
-  Message     :
-  Congratulations! You've won a $500 gift card. Claim now before it expires: http://localhost:5000/api/track/click?t=d91d763c-0cc8-4151-b448-e58c89a1d24c&c=69ed3e4ffc653ce0d2c07dbb&u=69cef6c7da1075b1b766e721&p=prize_winner
-  ─────────────────────────────────────────────
-  Click this to simulate employee clicking link:
-  http://localhost:5000/api/track/click?t=d91d763c-0cc8-4151-b448-e58c89a1d24c&c=69ed3e4ffc653ce0d2c07dbb&u=69cef6c7da1075b1b766e721&p=prize_winner
-════════════════════════════════════════════════
-
-
-[MOCK SMS] ════════════════════════════════════
-  To          : +923209237120
-  Template    : prize_winner
-  Mock SID    : MOCK_SM_1777310416980_kl2637
-  Message     :
-  Congratulations! You've won a $500 gift card. Claim now before it expires: http://localhost:5000/api/track/click?t=d8b5832d-6bc7-4f29-9478-eb241637cb98&c=69ed3e4ffc653ce0d2c07dbb&u=69cef6c7da1075b1b766e71f&p=prize_winner
-  ─────────────────────────────────────────────
-  Click this to simulate employee clicking link:
-  http://localhost:5000/api/track/click?t=d8b5832d-6bc7-4f29-9478-eb241637cb98&c=69ed3e4ffc653ce0d2c07dbb&u=69cef6c7da1075b1b766e71f&p=prize_winner
-════════════════════════════════════════════════
-
-
-[MOCK SMS] ════════════════════════════════════
-  To          : +923209237123
-  Template    : prize_winner
-  Mock SID    : MOCK_SM_1777310416994_li8v1n
-  Message     :
-  Congratulations! You've won a $500 gift card. Claim now before it expires: http://localhost:5000/api/track/click?t=1049a6fc-c55b-42fa-833d-0202b2537f0e&c=69ed3e4ffc653ce0d2c07dbb&u=69cef6c7da1075b1b766e719&p=prize_winner
-  ─────────────────────────────────────────────
-  Click this to simulate employee clicking link:
-  http://localhost:5000/api/track/click?t=1049a6fc-c55b-42fa-833d-0202b2537f0e&c=69ed3e4ffc653ce0d2c07dbb&u=69cef6c7da1075b1b766e719&p=prize_winner
-════════════════════════════════════════════════
-
-
-[MOCK SMS] ════════════════════════════════════
-  To          : +923209437125
-  Template    : prize_winner
-  Mock SID    : MOCK_SM_1777310416998_sbo011
-  Message     :
-  Congratulations! You've won a $500 gift card. Claim now before it expires: http://localhost:5000/api/track/click?t=0c24bab2-b1c0-4b67-8a49-8aa9cea6301f&c=69ed3e4ffc653ce0d2c07dbb&u=69cef6c7da1075b1b766e717&p=prize_winner
-  ─────────────────────────────────────────────
-  Click this to simulate employee clicking link:
-  http://localhost:5000/api/track/click?t=0c24bab2-b1c0-4b67-8a49-8aa9cea6301f&c=69ed3e4ffc653ce0d2c07dbb&u=69cef6c7da1075b1b766e717&p=prize_winner
-════════════════════════════════════════════════
-
-
-[MOCK SMS] ════════════════════════════════════
-  To          : +923909237125
-  Template    : prize_winner
-  Mock SID    : MOCK_SM_1777310417027_bivygb
-  Message     :
-  Congratulations! You've won a $500 gift card. Claim now before it expires: http://localhost:5000/api/track/click?t=ce0a219d-2298-4911-a5f9-62cce2ccf4d8&c=69ed3e4ffc653ce0d2c07dbb&u=69cef6c7da1075b1b766e715&p=prize_winner
-  ─────────────────────────────────────────────
-  Click this to simulate employee clicking link:
-  http://localhost:5000/api/track/click?t=ce0a219d-2298-4911-a5f9-62cce2ccf4d8&c=69ed3e4ffc653ce0d2c07dbb&u=69cef6c7da1075b1b766e715&p=prize_winner
-════════════════════════════════════════════════
-
-
-[MOCK SMS] ════════════════════════════════════
-  To          : +923209237025
-  Template    : prize_winner
-  Mock SID    : MOCK_SM_1777310417046_hd6r8d
-  Message     :
-  Congratulations! You've won a $500 gift card. Claim now before it expires: http://localhost:5000/api/track/click?t=b7322dfe-c48c-4014-9c76-3fe633bd2c8b&c=69ed3e4ffc653ce0d2c07dbb&u=69cef6c6da1075b1b766e70b&p=prize_winner
-  ─────────────────────────────────────────────
-  Click this to simulate employee clicking link:
-  http://localhost:5000/api/track/click?t=b7322dfe-c48c-4014-9c76-3fe633bd2c8b&c=69ed3e4ffc653ce0d2c07dbb&u=69cef6c6da1075b1b766e70b&p=prize_winner
-════════════════════════════════════════════════
-
-
-[MOCK SMS] ════════════════════════════════════
-  To          : +923209237111
-  Template    : prize_winner
-  Mock SID    : MOCK_SM_1777310417053_4088nz
-  Message     :
-  Congratulations! You've won a $500 gift card. Claim now before it expires: http://localhost:5000/api/track/click?t=41d51fa5-2f82-40e8-babf-f142e217f673&c=69ed3e4ffc653ce0d2c07dbb&u=69cef6c6da1075b1b766e701&p=prize_winner
-  ─────────────────────────────────────────────
-  Click this to simulate employee clicking link:
-  http://localhost:5000/api/track/click?t=41d51fa5-2f82-40e8-babf-f142e217f673&c=69ed3e4ffc653ce0d2c07dbb&u=69cef6c6da1075b1b766e701&p=prize_winner
-════════════════════════════════════════════════
-
-
-[MOCK SMS] ════════════════════════════════════
-  To          : +923209237112
-  Template    : prize_winner
-  Mock SID    : MOCK_SM_1777310417075_7eyuas
-  Message     :
-  Congratulations! You've won a $500 gift card. Claim now before it expires: http://localhost:5000/api/track/click?t=4a9c75bf-f0fc-4fa3-a4ce-367f55d96850&c=69ed3e4ffc653ce0d2c07dbb&u=69cef6c5da1075b1b766e6f7&p=prize_winner
-  ─────────────────────────────────────────────
-  Click this to simulate employee clicking link:
-  http://localhost:5000/api/track/click?t=4a9c75bf-f0fc-4fa3-a4ce-367f55d96850&c=69ed3e4ffc653ce0d2c07dbb&u=69cef6c5da1075b1b766e6f7&p=prize_winner
-════════════════════════════════════════════════
-
-[LAUNCH] Done: sent=9 failed=0
-2026-04-27 22:20:18 [http] [ac037d0e-e55b-4d32-95f8-def0e8f3aeec]: Request completed {"service":"attack-aware-api","environment":"development","method":"POST","path":"/api/campaigns/69ed3e4ffc653ce0d2c07dbb/launch","statusCode":200,"responseTime":"1536ms","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36","ip":"::1"}
-2026-04-27 22:20:18 [http]: POST /api/campaigns/69ed3e4ffc653ce0d2c07dbb/launch 200 1532.496 ms - 1295 {"service":"attack-aware-api","environment":"development"}
-[COUNTER WORKER] ✓ deliveredCount+=1 campaign=69ed3e4ffc653ce0d2c07dbb
-[COUNTER WORKER] ✓ deliveredCount+=1 campaign=69ed3e4ffc653ce0d2c07dbb
-[COUNTER WORKER] ✓ deliveredCount+=1 campaign=69ed3e4ffc653ce0d2c07dbb
-[COUNTER WORKER] ✓ deliveredCount+=1 campaign=69ed3e4ffc653ce0d2c07dbb
-[COUNTER WORKER] ✓ deliveredCount+=1 campaign=69ed3e4ffc653ce0d2c07dbb
-[COUNTER WORKER] ✓ deliveredCount+=1 campaign=69ed3e4ffc653ce0d2c07dbb
-2026-04-27 22:20:18 [http] [2fe8ec78-c282-4619-8457-acd272dfc86d]: Request completed {"service":"attack-aware-api","environment":"development","method":"GET","path":"/api/campaigns?companyId=69cef6c1da1075b1b766e6ae","statusCode":200,"responseTime":"276ms","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36","ip":"::1"}
-2026-04-27 22:20:18 [http]: GET /api/campaigns?companyId=69cef6c1da1075b1b766e6ae 200 275.316 ms - 17424 {"service":"attack-aware-api","environment":"development"}
-[COUNTER WORKER] ✓ deliveredCount+=1 campaign=69ed3e4ffc653ce0d2c07dbb
-[COUNTER WORKER] ✓ deliveredCount+=1 campaign=69ed3e4ffc653ce0d2c07dbb
-[COUNTER WORKER] ✓ deliveredCount+=1 campaign=69ed3e4ffc653ce0d2c07dbb

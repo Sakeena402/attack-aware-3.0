@@ -283,7 +283,7 @@ export default function AnalyticsPage() {
 
             {/* Simulation Type Comparison + Radar */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
+              <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20">
                 <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
                   <BarChart3 className="w-5 h-5 text-purple-400" /> Simulation Type Comparison
                 </h2>
@@ -304,7 +304,7 @@ export default function AnalyticsPage() {
                 )}
               </Card>
 
-              <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
+              <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20">
                 <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
                   <Activity className="w-5 h-5 text-cyan-400" /> Rate Comparison Radar
                 </h2>
@@ -327,7 +327,7 @@ export default function AnalyticsPage() {
 
             {/* Response Distribution + KPIs */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
+              <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20">
                 <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
                   <Target className="w-5 h-5 text-purple-400" /> Overall Response Distribution
                 </h2>
@@ -367,7 +367,7 @@ export default function AnalyticsPage() {
                 )}
               </Card>
 
-              <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
+              <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20">
                 <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
                   <Zap className="w-5 h-5 text-yellow-400" /> Key Performance Indicators
                 </h2>
@@ -428,7 +428,7 @@ export default function AnalyticsPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Rate Summary */}
-              <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-red-500/20">
+              <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-red-500/20">
                 <h2 className="text-lg font-bold text-foreground mb-5 flex items-center gap-2">
                   <Mail className="w-5 h-5 text-red-400" /> Phishing Rate Summary
                 </h2>
@@ -464,7 +464,7 @@ export default function AnalyticsPage() {
               </Card>
 
               {/* Phishing Bar Chart */}
-              <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-red-500/20">
+              <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-red-500/20">
                 <h2 className="text-lg font-bold text-foreground mb-4">Email Phishing Breakdown</h2>
                 {simLoading ? <div className="h-52 bg-slate-700 rounded animate-pulse" /> : (
                   <ResponsiveContainer width="100%" height={220}>
@@ -511,7 +511,7 @@ export default function AnalyticsPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Funnel Chart */}
-              <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-yellow-500/20">
+              <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-yellow-500/20">
                 <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
                   <MessageSquare className="w-5 h-5 text-yellow-400" /> SMS Campaign Funnel
                 </h2>
@@ -531,7 +531,7 @@ export default function AnalyticsPage() {
               </Card>
 
               {/* Rate Breakdown with Progress Bars */}
-              <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-yellow-500/20">
+              <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-yellow-500/20">
                 <h2 className="text-lg font-bold text-foreground mb-5 flex items-center gap-2">
                   <Activity className="w-5 h-5 text-yellow-400" /> Smishing Rate Breakdown
                 </h2>
@@ -575,7 +575,7 @@ export default function AnalyticsPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-blue-500/20">
+              <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-blue-500/20">
                 <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
                   <Phone className="w-5 h-5 text-blue-400" /> Voice Call Funnel
                 </h2>
@@ -594,7 +594,7 @@ export default function AnalyticsPage() {
                 )}
               </Card>
 
-              <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-blue-500/20">
+              <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-blue-500/20">
                 <h2 className="text-lg font-bold text-foreground mb-5 flex items-center gap-2">
                   <PhoneCall className="w-5 h-5 text-blue-400" /> Vishing Rate Breakdown
                 </h2>
@@ -633,7 +633,7 @@ export default function AnalyticsPage() {
 
       {/* ── Department Risk — always visible ── */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-orange-500/20">
+        <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-orange-500/20">
           <h2 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-orange-400" /> Department Risk Analysis
           </h2>

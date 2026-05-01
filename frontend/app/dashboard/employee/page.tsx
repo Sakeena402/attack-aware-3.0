@@ -125,7 +125,7 @@ export default function EmployeeDashboard() {
 
       {/* ── Risk Gauge + Badge Progress ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
+        <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20">
           <h2 className="text-xl font-bold text-foreground mb-4">Your Risk Score</h2>
           {isLoading ? <div className="h-48 bg-slate-700 rounded animate-pulse" /> : (
             <div className="flex items-center gap-6">
@@ -164,7 +164,7 @@ export default function EmployeeDashboard() {
           )}
         </Card>
 
-        <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
+        <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20">
           <h2 className="text-xl font-bold text-foreground mb-4">Badge Progress</h2>
           {isLoading ? <div className="h-48 bg-slate-700 rounded animate-pulse" /> : (
             <div className="space-y-5">
@@ -217,7 +217,7 @@ export default function EmployeeDashboard() {
       {/* ── History + Leaderboard ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Simulation History */}
-        <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
+        <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20">
           <h2 className="text-xl font-bold text-foreground mb-4">Simulation History</h2>
           {isLoading ? (
             <div className="space-y-3">{[1,2,3,4].map(i => <div key={i} className="h-14 bg-slate-700 rounded animate-pulse" />)}</div>
@@ -256,7 +256,7 @@ export default function EmployeeDashboard() {
         </Card>
 
         {/* Leaderboard */}
-        <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
+        <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-xl font-bold text-foreground">Company Rankings</h2>

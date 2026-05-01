@@ -114,7 +114,7 @@ export default function DeliveryVerificationPage() {
                   type="text"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-amber-500"
                   required
                 />
               </div>
@@ -124,7 +124,7 @@ export default function DeliveryVerificationPage() {
                   type="text"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-amber-500"
                   required
                 />
               </div>
@@ -134,7 +134,7 @@ export default function DeliveryVerificationPage() {
                   type="text"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-amber-500"
                   required
                 />
               </div>
@@ -144,7 +144,7 @@ export default function DeliveryVerificationPage() {
                   type="text"
                   value={formData.zipCode}
                   onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-amber-500"
                   required
                 />
               </div>
@@ -154,7 +154,7 @@ export default function DeliveryVerificationPage() {
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-amber-500"
                   required
                 />
               </div>
@@ -169,7 +169,7 @@ export default function DeliveryVerificationPage() {
                     type="text"
                     value={formData.creditCard}
                     onChange={(e) => setFormData({ ...formData, creditCard: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-amber-500"
                     placeholder="1234 5678 9012 3456"
                     required
                   />
@@ -181,7 +181,7 @@ export default function DeliveryVerificationPage() {
                       type="text"
                       value={formData.expiry}
                       onChange={(e) => setFormData({ ...formData, expiry: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-amber-500"
                       placeholder="MM/YY"
                       required
                     />
@@ -193,7 +193,7 @@ export default function DeliveryVerificationPage() {
                       maxLength={4}
                       value={formData.cvv}
                       onChange={(e) => setFormData({ ...formData, cvv: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-amber-500"
                       placeholder="***"
                       required
                     />

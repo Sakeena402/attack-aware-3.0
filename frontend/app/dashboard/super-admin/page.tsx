@@ -139,7 +139,7 @@ export default function SuperAdminDashboard() {
         className="grid grid-cols-1 lg:grid-cols-2 gap-6"
       >
         {/* Platform Growth */}
-        <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
+        <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-foreground">Platform Growth</h2>
             <TrendingUp className="text-cyan-400" size={24} />
@@ -183,7 +183,7 @@ export default function SuperAdminDashboard() {
         </Card>
 
         {/* Company Distribution */}
-        <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
+        <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-foreground">Companies by Industry</h2>
             <Globe className="text-yellow-400" size={24} />
@@ -213,7 +213,7 @@ export default function SuperAdminDashboard() {
 
       {/* Companies List */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
-        <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
+        <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-foreground">All Companies</h2>
             <Building2 className="text-purple-400" size={24} />
@@ -260,7 +260,7 @@ export default function SuperAdminDashboard() {
 
       {/* System Health */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
-        <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
+        <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20">
           <h2 className="text-xl font-bold text-foreground mb-6">System Health</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
