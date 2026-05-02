@@ -75,8 +75,10 @@ __v0_jsx-dev-runtime.ts
 backend-c/
 frontend-c/
 
- notes.txt
- 
+notes.txt
+
+*.txt
+
 backend-c/
 frontend-c/
 # =========================
