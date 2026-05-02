@@ -1,3 +1,5 @@
+//frontend/components/dashboard/metric-card.tsx
+
 'use client';
 
 import { motion } from 'framer-motion';

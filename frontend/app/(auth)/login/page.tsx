@@ -51,20 +51,27 @@ export default function LoginPage() {
 
         {/* Content */}
         <div className="relative z-10">
-          <motion.div
-            className="flex items-center gap-3"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 cyber-glow">
-              <Shield className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white font-poppins">Attack Aware 3.0</h1>
-              <p className="text-sm text-purple-300">Enterprise Security Training</p>
-            </div>
-          </motion.div>
+         <Link href="/">
+  <motion.div
+    className="flex items-center gap-3 cursor-pointer"
+    initial={{ opacity: 0, y: -20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.2 }}
+  >
+    <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 cyber-glow">
+      <Shield className="w-6 h-6 text-white" />
+    </div>
+
+    <div>
+      <h1 className="text-2xl font-bold text-white font-poppins">
+        Attack Aware 3.0
+      </h1>
+      <p className="text-sm text-purple-300">
+        Enterprise Security Training
+      </p>
+    </div>
+  </motion.div>
+</Link>
 
           <motion.div
             className="mt-16 space-y-8"

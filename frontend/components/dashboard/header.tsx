@@ -1,25 +1,26 @@
+//frontend/components/dashboard/header.tsx
 'use client';
 
 import { useAuth } from '@/app/context/authContext';
 import { Menu, Bell, User, Sun, Moon } from 'lucide-react';
 import { useState, useEffect } from 'react';
-
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 interface HeaderProps {
   onMenuClick: () => void;
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
   const { state } = useAuth();
-  const [isDark, setIsDark] = useState(true);
+ // const [isDark, setIsDark] = useState(true);
 
-  useEffect(() => {
-    const html = document.documentElement;
-    if (isDark) {
-      html.classList.add('dark');
-    } else {
-      html.classList.remove('dark');
-    }
-  }, [isDark]);
+  // useEffect(() => {
+  //   const html = document.documentElement;
+  //   if (isDark) {
+  //     html.classList.add('dark');
+  //   } else {
+  //     html.classList.remove('dark');
+  //   }
+  // }, [isDark]);
 
   return (
     <header className="bg-card border-b border-border sticky top-0 z-40">
@@ -32,7 +33,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         {/* Right */}
         <div className="flex items-center gap-4 ml-auto">
           {/* Theme Toggle */}
-          <button
+          {/* <button
             onClick={() => setIsDark(!isDark)}
             className="p-2 hover:bg-muted rounded-lg transition-colors"
           >
@@ -41,8 +42,8 @@ export function Header({ onMenuClick }: HeaderProps) {
             ) : (
               <Moon className="w-5 h-5 text-foreground" />
             )}
-          </button>
-
+          </button> */}
+          <ThemeToggle />
           {/* Notifications */}
           <button className="p-2 hover:bg-muted rounded-lg transition-colors relative">
             <Bell className="w-5 h-5 text-foreground" />

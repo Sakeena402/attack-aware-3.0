@@ -69,7 +69,7 @@ export default function ReportsPage() {
       </motion.div>
 
       {/* Date Range Selector */}
-      <Card className="p-6">
+      <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20 hover:border-purple-500/30">
         <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
           <Calendar className="w-5 h-5 text-purple-400" /> Select Report Period
         </h2>
@@ -123,7 +123,7 @@ export default function ReportsPage() {
               { label: 'Avg Click Rate',    value: `${data.overall.clickRate}%` },
               { label: 'Avg Report Rate',   value: `${data.overall.reportRate}%` },
             ].map(({ label, value }) => (
-              <Card key={label} className="p-4">
+              <Card key={label} className="p-4 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20 hover:border-purple-500/30">
                 <p className="text-2xl font-bold text-foreground">{value}</p>
                 <p className="text-xs text-muted-foreground mt-1">{label}</p>
               </Card>
@@ -131,7 +131,7 @@ export default function ReportsPage() {
           </div>
 
           {/* Department Chart */}
-          <Card className="p-6">
+          <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20 hover:border-purple-500/30">
             <h2 className="text-lg font-bold text-foreground mb-4">Department Performance</h2>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={data.departmentBreakdown}>
@@ -148,7 +148,7 @@ export default function ReportsPage() {
           </Card>
 
           {/* Campaign List */}
-          <Card className="p-6">
+          <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20 hover:border-purple-500/30">
             <h2 className="text-lg font-bold text-foreground mb-4">Campaigns in Report ({data.campaigns.length})</h2>
             <div className="overflow-x-auto">
               <table className="w-full">

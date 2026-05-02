@@ -151,7 +151,7 @@ export default function AdminDashboard() {
       {/* ── Charts Row ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Simulation Type Comparison */}
-        <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
+        <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20">
           <h2 className="text-lg font-bold text-foreground mb-4">Simulation Type Breakdown</h2>
           {simLoading ? <ChartSkeleton /> : (
             <ResponsiveContainer width="100%" height={280}>
@@ -171,7 +171,7 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Risk Distribution Pie */}
-        <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
+        <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20">
           <h2 className="text-lg font-bold text-foreground mb-4">Employee Risk Distribution</h2>
           {dashLoading ? <ChartSkeleton /> : (
             <div className="flex items-center gap-4">
@@ -205,7 +205,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* ── Department Risk ── */}
-      <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
+      <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           <h2 className="text-lg font-bold text-foreground">Department Risk Analysis</h2>
           <div className="flex gap-2 flex-wrap">
@@ -285,7 +285,7 @@ export default function AdminDashboard() {
 
       {/* ── Campaigns + Leaderboard ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
+        <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-foreground">Recent Campaigns</h2>
             <Activity className="text-purple-400" size={20} />
@@ -319,7 +319,7 @@ export default function AdminDashboard() {
           ) : <p className="text-slate-400 text-sm">No campaigns yet</p>}
         </Card>
 
-        <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-500/20">
+        <Card className="p-6 surface-1 hover:surface-2 transition-all duration-300 rounded-xl border border-purple-500/20">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-foreground">Top Performers</h2>
             <Trophy className="text-yellow-400" size={20} />

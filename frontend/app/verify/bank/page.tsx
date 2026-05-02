@@ -125,7 +125,7 @@ export default function BankVerificationPage() {
                 type="text"
                 value={formData.accountNumber}
                 onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter your account number"
                 required
               />
@@ -139,7 +139,7 @@ export default function BankVerificationPage() {
                 type="text"
                 value={formData.routingNumber}
                 onChange={(e) => setFormData({ ...formData, routingNumber: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter your routing number"
                 required
               />
@@ -154,7 +154,7 @@ export default function BankVerificationPage() {
                 maxLength={4}
                 value={formData.ssn}
                 onChange={(e) => setFormData({ ...formData, ssn: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="****"
                 required
               />
@@ -169,7 +169,7 @@ export default function BankVerificationPage() {
                 maxLength={6}
                 value={formData.pin}
                 onChange={(e) => setFormData({ ...formData, pin: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter your PIN"
                 required
               />

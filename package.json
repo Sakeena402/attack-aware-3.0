@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/Sakeena402/attack-aware-3.0#readme",
   "dependencies": {
+    "next-themes": "^0.4.6",
     "swr": "^2.4.1"
   },
   "devDependencies": {
