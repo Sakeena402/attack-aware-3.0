@@ -235,7 +235,7 @@ export default function AdminDashboard() {
                 <Legend />
                 <Bar dataKey="risk"   name="Risk Score"  radius={[0,4,4,0]}>
                   {deptChart.map((d, i) => (
-                    <Cell key={i} fill={d.risk >= 60 ? '#ef4444' : d.risk >= 40 ? '#f59e0b' : '#10b981'} />
+                    <Cell key={i} fill={d.risk >= 36 ? '#ef4444' : d.risk >= 16 ? '#f59e0b' : '#10b981'} />
                   ))}
                 </Bar>
                 <Bar dataKey="click"  name="Click Rate"  fill="#f59e0b" radius={[0,4,4,0]} />
@@ -268,9 +268,9 @@ export default function AdminDashboard() {
                       <td className="py-2 px-2 text-center text-green-400">{d.reportRate}%</td>
                       <td className="py-2 px-2 text-center">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          d.avgRiskScore >= 60 ? 'bg-red-500/20 text-red-400' :
-                          d.avgRiskScore >= 40 ? 'bg-yellow-500/20 text-yellow-400' :
-                                                  'bg-green-500/20 text-green-400'
+                          d.avgRiskScore >= 36 ? 'bg-red-500/20 text-red-400' :
+d.avgRiskScore >= 16 ? 'bg-yellow-500/20 text-yellow-400' :
+                        'bg-green-500/20 text-green-4000'
                         }`}>
                           {d.avgRiskScore}
                         </span>

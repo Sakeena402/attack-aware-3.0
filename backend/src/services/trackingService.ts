@@ -15,7 +15,7 @@ import { Campaign } from '../models/Campaign.js';
 export const recordSmsSent = async (data: {
   campaignId:    string;
   userId:        string;
-  trackingToken: string;   // raw UUID — hashed here
+  trackingToken: string;   // raw UUaID — hashed here
   messageSid:    string;
   phoneNumber:   string;
   templateKey:   string;
