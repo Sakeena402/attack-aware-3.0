@@ -1,4 +1,3 @@
-// backend/src/controllers/analyticsController.ts
 import { Response } from 'express';
 import { AppError } from '../utils/errorHandler.js';
 import { AuthRequest, ApiResponse } from '../types/index.js';
@@ -9,7 +8,7 @@ import {
   computeUserAnalytics,
 } from '../services/analyticsService.js';
 
-// Resolve companyId — always prefer token, never trust query param for isolation
+// Resolve companyId based on role
 function resolveCompanyId(req: AuthRequest): string | undefined {
   if (req.user?.role === 'super_admin') {
     return (req.query.companyId as string) || undefined;
@@ -23,7 +22,8 @@ export const getDashboardStats = async (
 ): Promise<void> => {
   try {
     if (!req.user) throw new AppError('Not authenticated', 401);
-    const data = await computeDashboardStats(resolveCompanyId(req));
+    const period = req.query.period as string | undefined;  // ✅ read period
+    const data   = await computeDashboardStats(resolveCompanyId(req), period); // ✅ pass period
     res.json({ success: true, data });
   } catch (e: any) {
     res.status(e.statusCode ?? 500).json({ success: false, error: e.message ?? 'Failed' });
@@ -36,7 +36,8 @@ export const getSimulationAnalytics = async (
 ): Promise<void> => {
   try {
     if (!req.user) throw new AppError('Not authenticated', 401);
-    const data = await computeSimulationAnalytics(resolveCompanyId(req));
+    const period = req.query.period as string | undefined;  // ✅ read period
+    const data   = await computeSimulationAnalytics(resolveCompanyId(req), period); // ✅ pass period
     res.json({ success: true, data });
   } catch (e: any) {
     res.status(e.statusCode ?? 500).json({ success: false, error: e.message ?? 'Failed' });
@@ -49,7 +50,8 @@ export const getDepartmentRiskAnalysis = async (
 ): Promise<void> => {
   try {
     if (!req.user) throw new AppError('Not authenticated', 401);
-    const data = await computeDepartmentRisk(resolveCompanyId(req));
+    const period = req.query.period as string | undefined;  // ✅ read period
+    const data   = await computeDepartmentRisk(resolveCompanyId(req), period); // ✅ pass period
     res.json({ success: true, data });
   } catch (e: any) {
     res.status(e.statusCode ?? 500).json({ success: false, error: e.message ?? 'Failed' });
@@ -62,13 +64,10 @@ export const getUserAnalytics = async (
 ): Promise<void> => {
   try {
     if (!req.user) throw new AppError('Not authenticated', 401);
-
-    // Employee can only see their own data
     const targetId = req.params.id ?? req.user.id;
     if (req.user.role === 'employee' && targetId !== req.user.id) {
       throw new AppError('Access denied', 403);
     }
-
     const data = await computeUserAnalytics(targetId, resolveCompanyId(req));
     if (!data) throw new AppError('User not found', 404);
     res.json({ success: true, data });
@@ -77,7 +76,6 @@ export const getUserAnalytics = async (
   }
 };
 
-// Convenience endpoint for logged-in employee
 export const getMyAnalytics = async (
   req: AuthRequest,
   res: Response<ApiResponse>
@@ -86,8 +84,5 @@ export const getMyAnalytics = async (
   return getUserAnalytics(req, res);
 };
 
-// Keep these exports so existing imports don't break
-export const getCompanyAnalytics  = getDashboardStats;
-export const getGlobalAnalytics   = getDashboardStats;
-
-
+export const getCompanyAnalytics = getDashboardStats;
+export const getGlobalAnalytics  = getDashboardStats;
