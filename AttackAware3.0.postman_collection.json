@@ -1,0 +1,1192 @@
+{
+  "info": {
+    "name": "AttackAware 3.0 API",
+    "_postman_id": "attackaware-3-0-collection",
+    "description": "Full API collection for AttackAware 3.0 backend.\n\nBase URL: {{baseUrl}} (default: http://localhost:5000)\n\nAUTH: All protected routes use httpOnly cookies. Enable 'Automatically follow redirects' OFF and 'Send cookies' ON in Postman settings.\n\nQUICK START:\n1. Run 'Login' → cookies set automatically\n2. Run 'Get Current User' → copy userId\n3. Run 'Get All Companies' (super_admin) → copy companyId\n4. Update collection variables below\n\nROLE GUIDE:\n- super_admin: Full access, all companies, content creation\n- admin: Scoped to own company, campaigns, employees\n- employee: Own data only, training, progress\n- Public: /api/contact POST, /api/track/* (no auth)\n\nSEED CREDENTIALS (after running npm run seed):\n- super_admin: admin@attackaware.com / password123\n- admin: admin1@company1.com / password123\n- employee: emp1_<companyId>@mail.com / password123",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",        "value": "http://localhost:5000",          "type": "string" },
+    { "key": "companyId",      "value": "REPLACE_WITH_COMPANY_ID",        "type": "string" },
+    { "key": "userId",         "value": "REPLACE_WITH_USER_ID",           "type": "string" },
+    { "key": "campaignId",     "value": "REPLACE_WITH_CAMPAIGN_ID",       "type": "string" },
+    { "key": "employeeId",     "value": "REPLACE_WITH_EMPLOYEE_ID",       "type": "string" },
+    { "key": "videoId",        "value": "REPLACE_WITH_VIDEO_ID",          "type": "string" },
+    { "key": "quizId",         "value": "REPLACE_WITH_QUIZ_ID",           "type": "string" },
+    { "key": "gameId",         "value": "REPLACE_WITH_GAME_ID",           "type": "string" },
+    { "key": "postId",         "value": "REPLACE_WITH_POST_ID",           "type": "string" },
+    { "key": "planId",         "value": "REPLACE_WITH_PLAN_ID",           "type": "string" },
+    { "key": "taskId",         "value": "REPLACE_WITH_TASK_ID",           "type": "string" },
+    { "key": "messageId",      "value": "REPLACE_WITH_MESSAGE_ID",        "type": "string" },
+    { "key": "trackingToken",  "value": "REPLACE_WITH_TRACKING_TOKEN",    "type": "string" }
+  ],
+  "item": [
+
+    {
+      "name": "🔐 Auth  [/api/auth]",
+      "description": "Login sets httpOnly cookies automatically. All protected routes read from cookies.",
+      "item": [
+        {
+          "name": "Login",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "if(j.data && j.data.user) {",
+            "  pm.collectionVariables.set('userId', j.data.user.id);",
+            "  pm.collectionVariables.set('companyId', j.data.user.companyId || '');",
+            "  console.log('userId set:', j.data.user.id);",
+            "}"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@attackaware.com\",\n  \"password\": \"password123\"\n}" },
+            "description": "Roles: Public\nSets accessToken (15m) + refreshToken (7d) as httpOnly cookies.\nTest script auto-saves userId and companyId to collection variables."
+          }
+        },
+        {
+          "name": "Login — Company Admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin1@company1.com\",\n  \"password\": \"password123\"\n}" },
+            "description": "Login as company admin (role=admin). Created by seedData.ts."
+          }
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api","auth","register"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"testuser@company.com\",\n  \"password\": \"Password123!\",\n  \"role\": \"employee\"\n}" },
+            "description": "Roles: Public\nCreates user and sets cookies. Default role=employee."
+          }
+        },
+        {
+          "name": "Get Current User (me)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/auth/me", "host": ["{{baseUrl}}"], "path": ["api","auth","me"] },
+            "description": "Roles: Any authenticated\nReturns id, name, email, role, companyId, department, points, badge."
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api","auth","refresh"] },
+            "description": "Roles: Any authenticated\nRotates both accessToken and refreshToken cookies."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/auth/logout", "host": ["{{baseUrl}}"], "path": ["api","auth","logout"] },
+            "description": "Roles: Any authenticated\nClears both cookies."
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/forgot-password", "host": ["{{baseUrl}}"], "path": ["api","auth","forgot-password"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin1@company1.com\"\n}" },
+            "description": "Roles: Public\nGenerates SHA-256 reset token valid for 10 minutes.\nIn dev: token is logged to console (no email sent)."
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/reset-password", "host": ["{{baseUrl}}"], "path": ["api","auth","reset-password"] },
+            "body": { "mode": "raw", "raw": "{\n  \"token\": \"PASTE_TOKEN_FROM_CONSOLE_LOG\",\n  \"password\": \"NewPassword123!\"\n}" },
+            "description": "Roles: Public\nToken expires in 10 minutes. Paste raw token from console log."
+          }
+        },
+        {
+          "name": "Send Credentials to Employee (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/send-credentials", "host": ["{{baseUrl}}"], "path": ["api","auth","send-credentials"] },
+            "body": { "mode": "raw", "raw": "{\n  \"employeeId\": \"{{employeeId}}\",\n  \"newPassword\": \"TempPass123!\"\n}" },
+            "description": "Roles: admin, super_admin\nResets employee password. In dev: new password logged to console."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🏥 Health  [/health]",
+      "description": "No auth required. Use for uptime monitoring.",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] },
+            "description": "Roles: Public\nReturns status, timestamp, environment."
+          }
+        },
+        {
+          "name": "Health Check Detailed",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/health/detailed", "host": ["{{baseUrl}}"], "path": ["health","detailed"] },
+            "description": "Roles: Public\nReturns DB status, uptime, memory usage, API version."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "📋 Campaigns  [/api/campaigns]",
+      "description": "Roles: admin/super_admin for write ops. Any auth for GET.\nisolateByCompany middleware auto-scopes all queries to req.user.companyId.",
+      "item": [
+        {
+          "name": "Get All Campaigns",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/campaigns", "host": ["{{baseUrl}}"], "path": ["api","campaigns"] },
+            "description": "Roles: Any authenticated\nAuto-filtered by company via isolateByCompany middleware."
+          }
+        },
+        {
+          "name": "Create Campaign (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/campaigns", "host": ["{{baseUrl}}"], "path": ["api","campaigns"] },
+            "body": { "mode": "raw", "raw": "{\n  \"campaignName\": \"Q1 Phishing Test\",\n  \"type\": \"smishing\",\n  \"description\": \"Quarterly smishing awareness test\",\n  \"startDate\": \"2026-07-10T09:00:00Z\",\n  \"endDate\": \"2026-07-31T17:00:00Z\",\n  \"smsTemplate\": \"bank_alert\",\n  \"targetDepartments\": [\"Engineering\", \"Finance\"],\n  \"targetEmployees\": [\n    { \"_id\": \"{{employeeId}}\", \"phone\": \"+923001234567\" }\n  ]\n}" },
+            "description": "Roles: admin, super_admin\nType options: phishing | smishing | vishing\nSMS template options: bank_alert | package_delivery | hr_benefits | password_reset | prize_winner | tax_refund\ncompanyId is injected from JWT — do NOT send it in body."
+          }
+        },
+        {
+          "name": "Get Campaign By ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/campaigns/{{campaignId}}", "host": ["{{baseUrl}}"], "path": ["api","campaigns","{{campaignId}}"] },
+            "description": "Roles: Any authenticated (company-scoped)"
+          }
+        },
+        {
+          "name": "Update Campaign (PATCH — partial)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/campaigns/{{campaignId}}", "host": ["{{baseUrl}}"], "path": ["api","campaigns","{{campaignId}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"description\": \"Updated description\",\n  \"status\": \"paused\"\n}" },
+            "description": "Roles: admin, super_admin\nStatus options: draft | active | completed | paused"
+          }
+        },
+        {
+          "name": "Update Campaign (PUT — full replace)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/campaigns/{{campaignId}}", "host": ["{{baseUrl}}"], "path": ["api","campaigns","{{campaignId}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"campaignName\": \"Updated Campaign Name\",\n  \"type\": \"vishing\",\n  \"voiceScript\": \"bank_verification\",\n  \"targetDepartments\": [\"HR\"]\n}" },
+            "description": "Roles: admin, super_admin"
+          }
+        },
+        {
+          "name": "Launch Campaign (Admin)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/campaigns/{{campaignId}}/launch", "host": ["{{baseUrl}}"], "path": ["api","campaigns","{{campaignId}}","launch"] },
+            "description": "Roles: admin, super_admin\nFor smishing: sends SMS to all targetEmployees using p-limit(10) concurrency.\nFor vishing/phishing: sets status=active only.\nMOCK_SMS=true → prints tracking URL to server console instead of real SMS."
+          }
+        },
+        {
+          "name": "Pause Campaign (Admin)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/campaigns/{{campaignId}}/pause", "host": ["{{baseUrl}}"], "path": ["api","campaigns","{{campaignId}}","pause"] },
+            "description": "Roles: admin, super_admin\nCampaign must be in status=active."
+          }
+        },
+        {
+          "name": "Get Campaign Results (Admin)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/campaigns/{{campaignId}}/results", "host": ["{{baseUrl}}"], "path": ["api","campaigns","{{campaignId}}","results"] },
+            "description": "Roles: admin, super_admin\nDetailed per-user SimulationResults for this campaign."
+          }
+        },
+        {
+          "name": "Compare Campaigns (Admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/campaigns/compare",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","campaigns","compare"],
+              "query": [{ "key": "campaignIds", "value": "ID1,ID2,ID3", "description": "Comma-separated campaign IDs" }]
+            },
+            "description": "Roles: admin, super_admin\nSide-by-side metrics comparison across multiple campaigns."
+          }
+        },
+        {
+          "name": "Delete Campaign (Admin)",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/campaigns/{{campaignId}}", "host": ["{{baseUrl}}"], "path": ["api","campaigns","{{campaignId}}"] },
+            "description": "Roles: admin, super_admin\nAlso deletes all SimulationResults for this campaign."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "📊 Analytics  [/api/analytics]",
+      "description": "All routes require authentication. Company-scoped for admin, global for super_admin.",
+      "item": [
+        {
+          "name": "Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/analytics/dashboard", "host": ["{{baseUrl}}"], "path": ["api","analytics","dashboard"] },
+            "description": "Roles: Any authenticated\nReturns: totalEmployees, totalCampaigns, activeCampaigns, avgClickRate, avgReportRate, avgCompromiseRate, riskDistribution {low,medium,high}."
+          }
+        },
+        {
+          "name": "Overview (alias for Dashboard)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/analytics/overview", "host": ["{{baseUrl}}"], "path": ["api","analytics","overview"] },
+            "description": "Roles: Any authenticated\nSame as /dashboard."
+          }
+        },
+        {
+          "name": "Simulation Analytics (Admin)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/analytics/simulations", "host": ["{{baseUrl}}"], "path": ["api","analytics","simulations"] },
+            "description": "Roles: admin, super_admin\nBreakdown by type: phishing (clickRate, compromiseRate, reportRate), smishing (deliveryRate, clickRate), vishing (answerRate, engagementRate)."
+          }
+        },
+        {
+          "name": "Department Risk Analysis (Admin)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/analytics/department-risk", "host": ["{{baseUrl}}"], "path": ["api","analytics","department-risk"] },
+            "description": "Roles: admin, super_admin\nReturns departments sorted by avgRiskScore DESC. Each entry has: clickRate, reportRate, compromiseRate, highRiskCount, mediumRiskCount, lowRiskCount."
+          }
+        },
+        {
+          "name": "Company Analytics (Admin)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/analytics/company", "host": ["{{baseUrl}}"], "path": ["api","analytics","company"] },
+            "description": "Roles: admin, super_admin\nAlias for dashboard stats."
+          }
+        },
+        {
+          "name": "My Analytics (Current User)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/analytics/me", "host": ["{{baseUrl}}"], "path": ["api","analytics","me"] },
+            "description": "Roles: Any authenticated\nReturns own user stats, rank, percentile, last 20 simulation history."
+          }
+        },
+        {
+          "name": "User Analytics by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/analytics/user/{{userId}}", "host": ["{{baseUrl}}"], "path": ["api","analytics","user","{{userId}}"] },
+            "description": "Roles: admin/super_admin can see any. employee can only see own ID.\nReturns: stats, ranking, simulation history."
+          }
+        },
+        {
+          "name": "Global Analytics (Super Admin only)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/analytics/global", "host": ["{{baseUrl}}"], "path": ["api","analytics","global"] },
+            "description": "Roles: super_admin only\nAggregates across ALL companies."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "👥 Employees  [/api/employees]",
+      "description": "All routes require auth. isolateByCompany ensures admin only sees own company employees.",
+      "item": [
+        {
+          "name": "Get All Employees",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/employees?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","employees"],
+              "query": [
+                { "key": "page",       "value": "1" },
+                { "key": "limit",      "value": "20" },
+                { "key": "department", "value": "Engineering", "disabled": true },
+                { "key": "search",     "value": "jane",        "disabled": true }
+              ]
+            },
+            "description": "Roles: Any authenticated (company-scoped)\nSupports pagination: page, limit (max 100)\nFilter: department\nSearch: name or email (case-insensitive regex)"
+          }
+        },
+        {
+          "name": "Get Departments List",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/employees/departments", "host": ["{{baseUrl}}"], "path": ["api","employees","departments"] },
+            "description": "Roles: Any authenticated\nReturns distinct department names for the company.\nMust come BEFORE /:id route (static route takes priority)."
+          }
+        },
+        {
+          "name": "Get Employee By ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/employees/{{employeeId}}", "host": ["{{baseUrl}}"], "path": ["api","employees","{{employeeId}}"] },
+            "description": "Roles: Any authenticated (cross-company check enforced)\nReturns user without passwordHash."
+          }
+        },
+        {
+          "name": "Create Employee (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/employees", "host": ["{{baseUrl}}"], "path": ["api","employees"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane.doe@company.com\",\n  \"password\": \"TempPass123!\",\n  \"department\": \"Engineering\",\n  \"role\": \"employee\",\n  \"phoneNumber\": \"+923001234567\"\n}" },
+            "description": "Roles: admin, super_admin\nphoneNumber required for smishing/vishing campaigns.\nPassword is bcrypt-hashed before save."
+          }
+        },
+        {
+          "name": "Update Employee (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/employees/{{employeeId}}", "host": ["{{baseUrl}}"], "path": ["api","employees","{{employeeId}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Jane Smith\",\n  \"department\": \"Finance\",\n  \"phoneNumber\": \"+923009876543\",\n  \"role\": \"employee\"\n}" },
+            "description": "Roles: admin, super_admin\nCan update: name, email, department, role, points, badge, phoneNumber, password."
+          }
+        },
+        {
+          "name": "Delete Employee (Admin)",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/employees/{{employeeId}}", "host": ["{{baseUrl}}"], "path": ["api","employees","{{employeeId}}"] },
+            "description": "Roles: admin, super_admin\nCannot delete your own account (returns 400)."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🏢 Companies  [/api/companies]",
+      "description": "ALL routes: super_admin only.",
+      "item": [
+        {
+          "name": "Get All Companies",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/companies", "host": ["{{baseUrl}}"], "path": ["api","companies"] },
+            "description": "Roles: super_admin only"
+          }
+        },
+        {
+          "name": "Create Company",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/companies", "host": ["{{baseUrl}}"], "path": ["api","companies"] },
+            "body": { "mode": "raw", "raw": "{\n  \"companyName\": \"Acme Corp\",\n  \"industry\": \"Technology\"\n}" },
+            "description": "Roles: super_admin only\nCreates company. Creator is set as adminId. Creator's role elevated to admin."
+          }
+        },
+        {
+          "name": "Get Company By ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/companies/{{companyId}}", "host": ["{{baseUrl}}"], "path": ["api","companies","{{companyId}}"] },
+            "description": "Roles: super_admin only\nPopulates adminId with name+email."
+          }
+        },
+        {
+          "name": "Update Company (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/companies/{{companyId}}", "host": ["{{baseUrl}}"], "path": ["api","companies","{{companyId}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"companyName\": \"Acme Corporation\",\n  \"industry\": \"FinTech\"\n}" },
+            "description": "Roles: super_admin only"
+          }
+        },
+        {
+          "name": "Update Company (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/companies/{{companyId}}", "host": ["{{baseUrl}}"], "path": ["api","companies","{{companyId}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"companyName\": \"Acme Corporation\",\n  \"industry\": \"FinTech\"\n}" },
+            "description": "Roles: super_admin only"
+          }
+        },
+        {
+          "name": "Delete Company",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/companies/{{companyId}}", "host": ["{{baseUrl}}"], "path": ["api","companies","{{companyId}}"] },
+            "description": "Roles: super_admin only"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🎯 Simulations  [/api/simulations]",
+      "description": "GET endpoints: any auth. POST (send/launch): admin or super_admin only.",
+      "item": [
+        {
+          "name": "— SMISHING (SMS) —",
+          "item": [
+            {
+              "name": "Get SMS Templates",
+              "request": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/simulations/sms/templates", "host": ["{{baseUrl}}"], "path": ["api","simulations","sms","templates"] },
+                "description": "Roles: Any authenticated\nReturns: bank_alert, package_delivery, hr_benefits, password_reset, prize_winner, tax_refund"
+              }
+            },
+            {
+              "name": "Send Single Smishing (Admin)",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/api/simulations/sms/send", "host": ["{{baseUrl}}"], "path": ["api","simulations","sms","send"] },
+                "body": { "mode": "raw", "raw": "{\n  \"campaignId\": \"{{campaignId}}\",\n  \"userId\": \"{{userId}}\",\n  \"templateKey\": \"bank_alert\"\n}" },
+                "description": "Roles: admin, super_admin\nSends one SMS to a specific user. Uses user.phoneNumber from DB."
+              }
+            },
+            {
+              "name": "Launch Campaign Smishing (Admin)",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/api/simulations/sms/campaign/{{campaignId}}", "host": ["{{baseUrl}}"], "path": ["api","simulations","sms","campaign","{{campaignId}}"] },
+                "body": { "mode": "raw", "raw": "{\n  \"templateKey\": \"bank_alert\",\n  \"targetDepartment\": \"all\"\n}" },
+                "description": "Roles: admin, super_admin\nSends SMS to all users with phoneNumber in the campaign's company.\ntargetDepartment: 'all' or specific name.\nAdds 100ms delay between each send to respect Twilio rate limits."
+              }
+            },
+            {
+              "name": "Get Campaign Smishing Stats",
+              "request": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/simulations/sms/stats/{{campaignId}}", "host": ["{{baseUrl}}"], "path": ["api","simulations","sms","stats","{{campaignId}}"] },
+                "description": "Roles: Any authenticated\nReturns: deliveryRate, clickRate, compromiseRate, reportRate."
+              }
+            }
+          ]
+        },
+        {
+          "name": "— VISHING (VOICE) —",
+          "item": [
+            {
+              "name": "Get Voice Scripts",
+              "request": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/simulations/voice/scripts", "host": ["{{baseUrl}}"], "path": ["api","simulations","voice","scripts"] },
+                "description": "Roles: Any authenticated\nReturns: bank_verification, it_support, insurance_claim"
+              }
+            },
+            {
+              "name": "Send Single Vishing Call (Admin)",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/api/simulations/voice/call", "host": ["{{baseUrl}}"], "path": ["api","simulations","voice","call"] },
+                "body": { "mode": "raw", "raw": "{\n  \"campaignId\": \"{{campaignId}}\",\n  \"userId\": \"{{userId}}\",\n  \"scriptKey\": \"bank_verification\"\n}" },
+                "description": "Roles: admin, super_admin\nMOCK_SMS=true → logs mock callSid to console, no real call."
+              }
+            },
+            {
+              "name": "Launch Campaign Vishing (Admin)",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/api/simulations/voice/campaign/{{campaignId}}", "host": ["{{baseUrl}}"], "path": ["api","simulations","voice","campaign","{{campaignId}}"] },
+                "body": { "mode": "raw", "raw": "{\n  \"scriptKey\": \"bank_verification\",\n  \"targetDepartment\": \"all\",\n  \"callInterval\": 5000\n}" },
+                "description": "Roles: admin, super_admin\ncallInterval: ms between each call (default 5000). Twilio has concurrent call limits."
+              }
+            },
+            {
+              "name": "Get Campaign Vishing Stats",
+              "request": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/simulations/voice/stats/{{campaignId}}", "host": ["{{baseUrl}}"], "path": ["api","simulations","voice","stats","{{campaignId}}"] },
+                "description": "Roles: Any authenticated\nReturns: answerRate, engagementRate, reportRate."
+              }
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "name": "🔗 Tracking  [/api/track]  ← PUBLIC, no auth",
+      "description": "No authentication required. These are called by the phishing simulation flow.\nDISABLE auto-follow redirects in Postman for the /click route.",
+      "item": [
+        {
+          "name": "Track Link Click → redirects to phishing page",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/track/click?t={{trackingToken}}&c={{campaignId}}&u={{userId}}&p=bank",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","track","click"],
+              "query": [
+                { "key": "t", "value": "{{trackingToken}}", "description": "Raw UUID token from SMS link" },
+                { "key": "c", "value": "{{campaignId}}",   "description": "Campaign ObjectId" },
+                { "key": "u", "value": "{{userId}}",       "description": "User ObjectId" },
+                { "key": "p", "value": "bank",             "description": "Page type: bank | it | insurance" }
+              ]
+            },
+            "description": "Roles: Public (no auth)\nRecords click in SimulationResult. Returns 302 redirect to:\nhttp://localhost:3000/verify/{p}?token={t}&c={c}&u={u}\n\nSide effects:\n- Sets smsLinkClicked=true\n- Queues risk update (action=click)\n- Queues campaign clickedCount +1\n\nNote: Copy the tracking URL from server console (MOCK SMS mode) to get a real token."
+          }
+        },
+        {
+          "name": "Submit Credentials (Phishing Form Submit)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/track/submit", "host": ["{{baseUrl}}"], "path": ["api","track","submit"] },
+            "body": { "mode": "raw", "raw": "{\n  \"token\": \"{{trackingToken}}\",\n  \"campaignId\": \"{{campaignId}}\",\n  \"userId\": \"{{userId}}\",\n  \"username\": \"victim_user\",\n  \"password\": \"fake_password123\"\n}" },
+            "description": "Roles: Public (no auth)\nOnly field NAMES are stored (username, password). Values are NEVER saved.\nSide effects:\n- Sets credentialsSubmitted=true, formFieldsSubmitted=['username','password']\n- Queues risk update (action=credentials)\nReturns: { redirect: '/verify/caught' }"
+          }
+        },
+        {
+          "name": "Report Phishing",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/track/report", "host": ["{{baseUrl}}"], "path": ["api","track","report"] },
+            "body": { "mode": "raw", "raw": "{\n  \"token\": \"{{trackingToken}}\",\n  \"campaignId\": \"{{campaignId}}\",\n  \"userId\": \"{{userId}}\"\n}" },
+            "description": "Roles: Public (no auth)\nEmployee correctly identified the SMS as suspicious.\nSide effects:\n- Sets reportedPhishing=true\n- Queues risk update (action=report) → +10 points\n- Queues campaign reportedCount +1\nReturns: { pointsEarned: 10 }"
+          }
+        },
+        {
+          "name": "Tracking Pixel (Email Open Detection)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/track/pixel?t={{trackingToken}}&c={{campaignId}}&u={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","track","pixel"],
+              "query": [
+                { "key": "t", "value": "{{trackingToken}}" },
+                { "key": "c", "value": "{{campaignId}}" },
+                { "key": "u", "value": "{{userId}}" }
+              ]
+            },
+            "description": "Roles: Public (no auth)\nReturns 1x1 transparent GIF (no-cache). Used in phishing email body.\nLogs email open to console. Future: will call recordEmailOpened()."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🔔 Webhooks  [/api/webhooks]  ← Twilio callbacks",
+      "description": "Called by Twilio, not by the frontend. Twilio signature verification is SKIPPED in NODE_ENV=development.",
+      "item": [
+        {
+          "name": "SMS Delivery Status (Twilio → Backend)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "url": { "raw": "{{baseUrl}}/api/webhooks/twilio/sms-status", "host": ["{{baseUrl}}"], "path": ["api","webhooks","twilio","sms-status"] },
+            "body": { "mode": "urlencoded", "urlencoded": [
+              { "key": "MessageSid",    "value": "SM_EXAMPLE_SID" },
+              { "key": "MessageStatus", "value": "delivered",      "description": "queued|sending|sent|delivered|undelivered|failed" },
+              { "key": "ErrorCode",     "value": "" },
+              { "key": "ErrorMessage",  "value": "" }
+            ]},
+            "description": "Updates SimulationResult.smsDelivered, smsDeliveryStatus, smsDeliveryError.\nLookup is by messageSid."
+          }
+        },
+        {
+          "name": "Call Status Update (Twilio → Backend)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "url": { "raw": "{{baseUrl}}/api/webhooks/twilio/call-status", "host": ["{{baseUrl}}"], "path": ["api","webhooks","twilio","call-status"] },
+            "body": { "mode": "urlencoded", "urlencoded": [
+              { "key": "CallSid",      "value": "CA_EXAMPLE_SID" },
+              { "key": "CallStatus",   "value": "completed",     "description": "queued|ringing|in-progress|completed|busy|failed|no-answer" },
+              { "key": "CallDuration", "value": "30" },
+              { "key": "AnsweredBy",   "value": "human",          "description": "human|machine_start|fax|unknown" }
+            ]},
+            "description": "Updates callAnswered, callCompleted, callDuration, callStatus."
+          }
+        },
+        {
+          "name": "Voice Response — Keypress (Twilio → Backend)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "url": { "raw": "{{baseUrl}}/api/webhooks/twilio/voice-response", "host": ["{{baseUrl}}"], "path": ["api","webhooks","twilio","voice-response"] },
+            "body": { "mode": "urlencoded", "urlencoded": [
+              { "key": "CallSid", "value": "CA_EXAMPLE_SID" },
+              { "key": "Digits",  "value": "9",              "description": "1=talk to rep (engaged), 2=verify details (verified), 9=report suspicious (correct)" }
+            ]},
+            "description": "Processes keypress response:\n1 → voiceEngaged=true, queues action=click\n2 → voiceVerified=true, queues action=credentials\n9 → voiceReported=true, queues action=report (+10 pts)\nReturns TwiML with appropriate awareness message."
+          }
+        },
+        {
+          "name": "Voice Initial TwiML (Twilio → Backend)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "url": { "raw": "{{baseUrl}}/api/webhooks/twilio/voice-initial", "host": ["{{baseUrl}}"], "path": ["api","webhooks","twilio","voice-initial"] },
+            "body": { "mode": "urlencoded", "urlencoded": [
+              { "key": "CallSid", "value": "CA_EXAMPLE_SID" }
+            ]},
+            "description": "Returns TwiML script when call is first answered. Looks up callSid to get the voiceScript type."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "📈 Leaderboard  [/api/leaderboard]",
+      "description": "Static routes (/user/:userId, /department/:dept) must come before param routes (/:companyId).",
+      "item": [
+        {
+          "name": "Get General Leaderboard",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/leaderboard?limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","leaderboard"],
+              "query": [
+                { "key": "limit",      "value": "50" },
+                { "key": "department", "value": "Engineering", "disabled": true },
+                { "key": "companyId",  "value": "",            "disabled": true }
+              ]
+            },
+            "description": "Roles: Any authenticated\nFalls back to User.points sorted DESC if no Leaderboard documents exist.\nReturns: userId, userName, department, score, badge, rank, trend."
+          }
+        },
+        {
+          "name": "Get My Rank",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/leaderboard/user/{{userId}}", "host": ["{{baseUrl}}"], "path": ["api","leaderboard","user","{{userId}}"] },
+            "description": "Roles: checkOwnership (employee=own only, admin=any, super_admin=any)\nReturns: rank, score, percentile."
+          }
+        },
+        {
+          "name": "Get Leaderboard By Department (Admin)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/leaderboard/department/Engineering", "host": ["{{baseUrl}}"], "path": ["api","leaderboard","department","Engineering"] },
+            "description": "Roles: admin, super_admin\nReplace 'Engineering' with actual department name. Max 50 entries."
+          }
+        },
+        {
+          "name": "Update Leaderboard for Company (Admin)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/leaderboard/{{companyId}}", "host": ["{{baseUrl}}"], "path": ["api","leaderboard","{{companyId}}"] },
+            "description": "Roles: admin, super_admin\nRecalculates scores from SimulationResults and upserts Leaderboard docs for all employees."
+          }
+        },
+        {
+          "name": "Get Company Leaderboard (Admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/leaderboard/{{companyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","leaderboard","{{companyId}}"],
+              "query": [{ "key": "department", "value": "HR", "disabled": true }]
+            },
+            "description": "Roles: admin, super_admin\nOptional ?department filter. Returns entries sorted by score DESC with rank assigned."
+          }
+        },
+        {
+          "name": "Get Top Performers (Admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/leaderboard/{{companyId}}/top?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","leaderboard","{{companyId}}","top"],
+              "query": [{ "key": "limit", "value": "10" }]
+            },
+            "description": "Roles: admin, super_admin"
+          }
+        },
+        {
+          "name": "Get Department Rankings (Admin)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/leaderboard/{{companyId}}/departments", "host": ["{{baseUrl}}"], "path": ["api","leaderboard","{{companyId}}","departments"] },
+            "description": "Roles: admin, super_admin\nAggregates average score per department. Returns sorted by averageScore DESC."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "📄 Reports & PDF  [/api/reports]",
+      "description": "Roles: admin, super_admin. PDFs stream directly — in Postman click 'Save to file'.",
+      "item": [
+        {
+          "name": "Get Aggregate Report (JSON)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/aggregate?startDate=2026-01-01&endDate=2026-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","reports","aggregate"],
+              "query": [
+                { "key": "startDate",   "value": "2026-01-01" },
+                { "key": "endDate",     "value": "2026-12-31" },
+                { "key": "companyId",   "value": "{{companyId}}", "disabled": true },
+                { "key": "departments", "value": "Engineering,Finance", "disabled": true }
+              ]
+            },
+            "description": "Roles: admin, super_admin\nisolateByCompany applied. super_admin can pass ?companyId= to filter."
+          }
+        },
+        {
+          "name": "Download Campaign PDF",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/reports/campaign/{{campaignId}}/pdf", "host": ["{{baseUrl}}"], "path": ["api","reports","campaign","{{campaignId}}","pdf"] },
+            "description": "Roles: admin, super_admin\nStreams PDF. In Postman: Send → Save response → Save to file."
+          }
+        },
+        {
+          "name": "Download Aggregate PDF",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/aggregate/pdf?startDate=2026-01-01&endDate=2026-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","reports","aggregate","pdf"],
+              "query": [
+                { "key": "startDate",   "value": "2026-01-01" },
+                { "key": "endDate",     "value": "2026-12-31" },
+                { "key": "companyId",   "value": "{{companyId}}", "disabled": true },
+                { "key": "departments", "value": "HR,Finance",    "disabled": true }
+              ]
+            },
+            "description": "Roles: admin, super_admin"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🎬 Videos  [/api/videos]",
+      "description": "GET: any auth. POST (create): super_admin ONLY — global content library, no companyId. POST (watch): any auth.",
+      "item": [
+        {
+          "name": "Get All Videos",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/videos", "host": ["{{baseUrl}}"], "path": ["api","videos"] },
+            "description": "Roles: Any authenticated\nReturns all videos (global catalog)."
+          }
+        },
+        {
+          "name": "Create Video  ⚠ super_admin ONLY",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/videos", "host": ["{{baseUrl}}"], "path": ["api","videos"] },
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Phishing Awareness 101\",\n  \"description\": \"Learn to identify phishing attempts\",\n  \"filePath\": \"/videos/phishing-101.mp4\",\n  \"category\": \"phishing\",\n  \"language\": \"en\",\n  \"targetRoles\": [\"employee\", \"admin\"]\n}" },
+            "description": "Roles: super_admin ONLY\nLanguage: en | ur\nVideo has no companyId — it is platform-wide. admin cannot create videos."
+          }
+        },
+        {
+          "name": "Mark Video as Watched (any auth)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/videos/{{videoId}}/watch", "host": ["{{baseUrl}}"], "path": ["api","videos","{{videoId}}","watch"] },
+            "description": "Roles: Any authenticated\nUpserts UserVideo {userId, videoId, status=Completed}.\nSide effect: updateUserPoints(userId, 'video_completed') → +10 points."
+          }
+        }
+      ]
+    },
+    {
+      "name": "📝 Quizzes  [/api/quizzes]",
+      "description": "GET: any auth. POST (create): super_admin ONLY. POST (submit): any auth.",
+      "item": [
+        {
+          "name": "Get All Quizzes",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/quizzes", "host": ["{{baseUrl}}"], "path": ["api","quizzes"] },
+            "description": "Roles: Any authenticated"
+          }
+        },
+        {
+          "name": "Create Quiz  ⚠ super_admin ONLY",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/quizzes", "host": ["{{baseUrl}}"], "path": ["api","quizzes"] },
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Phishing Quiz\",\n  \"title_ur\": \"فشنگ کوئز\",\n  \"category\": \"phishing\",\n  \"difficulty\": \"medium\",\n  \"totalQuestions\": 10,\n  \"timeLimit\": 600,\n  \"targetRoles\": [\"employee\"]\n}" },
+            "description": "Roles: super_admin ONLY\ndifficulty: easy | medium | hard\ntitle_ur: Optional Urdu translation"
+          }
+        },
+        {
+          "name": "Get Quiz Questions",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/quizzes/{{quizId}}/questions", "host": ["{{baseUrl}}"], "path": ["api","quizzes","{{quizId}}","questions"] },
+            "description": "Roles: Any authenticated\nReturns QuizQuestion[] with Urdu variants if present."
+          }
+        },
+        {
+          "name": "Submit Quiz (any auth)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/quizzes/{{quizId}}/submit", "host": ["{{baseUrl}}"], "path": ["api","quizzes","{{quizId}}","submit"] },
+            "body": { "mode": "raw", "raw": "{\n  \"score\": 8\n}" },
+            "description": "Roles: Any authenticated\nscore = correct answer count.\nIf score/totalQuestions >= 70% → quiz_pass (+20 pts)\nIf score/totalQuestions < 70% → quiz_fail (+5 pts)\nCreates UserQuiz record."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🎮 Games  [/api/games]",
+      "description": "GET: any auth. POST (create): super_admin ONLY. POST (score): any auth.",
+      "item": [
+        {
+          "name": "Get All Games",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/games", "host": ["{{baseUrl}}"], "path": ["api","games"] },
+            "description": "Roles: Any authenticated"
+          }
+        },
+        {
+          "name": "Create Game  ⚠ super_admin ONLY",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/games", "host": ["{{baseUrl}}"], "path": ["api","games"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Phishing Detector\",\n  \"description\": \"Identify phishing emails in a race against time\",\n  \"category\": \"phishing\",\n  \"maxScore\": 1000,\n  \"gameUrl\": \"/games/phishing-detector\",\n  \"targetRoles\": [\"employee\"]\n}" },
+            "description": "Roles: super_admin ONLY\nmaxScore is used to determine high-score bonus (score >= 80% of maxScore)."
+          }
+        },
+        {
+          "name": "Save Game Score (any auth)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/games/{{gameId}}/save-score", "host": ["{{baseUrl}}"], "path": ["api","games","{{gameId}}","save-score"] },
+            "body": { "mode": "raw", "raw": "{\n  \"score\": 850\n}" },
+            "description": "Roles: Any authenticated\nAlways awards +5 pts (game_played).\nIf score >= maxScore * 0.8 → additional +15 pts (game_high_score).\nCreates UserGame record."
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚔️ Attacks  [/api/attacks]",
+      "description": "Reference library of attack types. GET: any auth. POST: super_admin ONLY.",
+      "item": [
+        {
+          "name": "Get All Attacks",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/attacks", "host": ["{{baseUrl}}"], "path": ["api","attacks"] },
+            "description": "Roles: Any authenticated"
+          }
+        },
+        {
+          "name": "Create Attack Type  ⚠ super_admin ONLY",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/attacks", "host": ["{{baseUrl}}"], "path": ["api","attacks"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Spear Phishing\",\n  \"description\": \"Targeted phishing using personal info about the victim\",\n  \"severity\": \"critical\"\n}" },
+            "description": "Roles: super_admin ONLY\nseverity: low | medium | high | critical"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "💳 Membership Plans  [/api/plans]",
+      "description": "GET: any auth. POST (create): super_admin ONLY. POST (subscribe): admin or super_admin.",
+      "item": [
+        {
+          "name": "Get All Plans",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/plans", "host": ["{{baseUrl}}"], "path": ["api","plans"] },
+            "description": "Roles: Any authenticated\nReturns global plan catalog."
+          }
+        },
+        {
+          "name": "Create Plan  ⚠ super_admin ONLY",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/plans", "host": ["{{baseUrl}}"], "path": ["api","plans"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Enterprise\",\n  \"price\": 299,\n  \"features\": [\"Unlimited campaigns\", \"PDF reports\", \"Advanced analytics\", \"Priority support\"],\n  \"maxEmployees\": 500,\n  \"isActive\": true\n}" },
+            "description": "Roles: super_admin ONLY\nMembershipPlan has no companyId — platform-wide catalog."
+          }
+        },
+        {
+          "name": "Subscribe Company to Plan (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/plans/subscribe", "host": ["{{baseUrl}}"], "path": ["api","plans","subscribe"] },
+            "body": { "mode": "raw", "raw": "{\n  \"planId\": \"{{planId}}\",\n  \"companyId\": \"{{companyId}}\"\n}" },
+            "description": "Roles: admin, super_admin\nUpdates Company.subscriptionPlan field."
+          }
+        }
+      ]
+    },
+    {
+      "name": "✅ Tasks  [/api/tasks]",
+      "description": "GET: admin, super_admin, employee. POST (create): admin or super_admin ONLY.",
+      "item": [
+        {
+          "name": "Get All Tasks",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/tasks", "host": ["{{baseUrl}}"], "path": ["api","tasks"] },
+            "description": "Roles: admin, super_admin, employee (company-scoped via companyId filter).\nindividual role is excluded — tasks are company-scoped."
+          }
+        },
+        {
+          "name": "Create Task  ⚠ admin/super_admin only",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/tasks", "host": ["{{baseUrl}}"], "path": ["api","tasks"] },
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Complete phishing awareness training\",\n  \"description\": \"Watch all phishing videos and pass the quiz before Friday\",\n  \"assignedTo\": \"{{employeeId}}\",\n  \"dueDate\": \"2026-07-31T17:00:00Z\",\n  \"status\": \"pending\"\n}" },
+            "description": "Roles: admin, super_admin\nassignedBy and companyId auto-set from JWT token."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "📨 Messages  [/api/messages]",
+      "description": "Both GET and POST: admin, super_admin, employee. individual role is EXCLUDED.",
+      "item": [
+        {
+          "name": "Get My Messages (Inbox)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/messages", "host": ["{{baseUrl}}"], "path": ["api","messages"] },
+            "description": "Roles: admin, super_admin, employee\nReturns messages where receiverId = current user ID."
+          }
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/messages", "host": ["{{baseUrl}}"], "path": ["api","messages"] },
+            "body": { "mode": "raw", "raw": "{\n  \"receiverId\": \"{{employeeId}}\",\n  \"content\": \"Please complete your security training module by end of week.\"\n}" },
+            "description": "Roles: admin, super_admin, employee\nsenderId and companyId auto-set from JWT token."
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Progress  [/api/progress]",
+      "description": "Employee's consolidated training dashboard. Any authenticated user.",
+      "item": [
+        {
+          "name": "Get My Progress",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/progress", "host": ["{{baseUrl}}"], "path": ["api","progress"] },
+            "description": "Roles: Any authenticated\nReturns:\n- points, badge, riskScore, riskLevel\n- videosCompleted count\n- quizzesTaken count\n- gamesPlayed count\n- history: { videos[], quizzes[], games[] } with populated references"
+          }
+        }
+      ]
+    },
+    {
+      "name": "💬 Forum  [/api/forum]",
+      "description": "All routes: any authenticated user. Posts/comments are company-scoped.",
+      "item": [
+        {
+          "name": "Get All Posts",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/forum/posts", "host": ["{{baseUrl}}"], "path": ["api","forum","posts"] },
+            "description": "Roles: Any authenticated"
+          }
+        },
+        {
+          "name": "Create Post",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/forum/posts", "host": ["{{baseUrl}}"], "path": ["api","forum","posts"] },
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"How to spot a phishing email?\",\n  \"content\": \"I recently received a suspicious email. Here are the red flags I noticed: sender domain mismatch, urgent language, suspicious link on hover...\",\n  \"isUrdu\": false\n}" },
+            "description": "Roles: Any authenticated\nuserId and companyId auto-injected from JWT."
+          }
+        },
+        {
+          "name": "Get Comments on Post",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/forum/posts/{{postId}}/comments", "host": ["{{baseUrl}}"], "path": ["api","forum","posts","{{postId}}","comments"] },
+            "description": "Roles: Any authenticated"
+          }
+        },
+        {
+          "name": "Add Comment to Post",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/forum/posts/{{postId}}/comments", "host": ["{{baseUrl}}"], "path": ["api","forum","posts","{{postId}}","comments"] },
+            "body": { "mode": "raw", "raw": "{\n  \"commentText\": \"Great post! I also check hover-over URLs before clicking any link.\",\n  \"isUrdu\": false\n}" },
+            "description": "Roles: Any authenticated\nuserId auto-injected from JWT."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "📬 Contact  [/api/contact]",
+      "description": "POST (submit): public, no auth. All other routes: super_admin only.",
+      "item": [
+        {
+          "name": "Submit Contact Form  ← PUBLIC, no auth",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/contact", "host": ["{{baseUrl}}"], "path": ["api","contact"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Ahmed Khan\",\n  \"email\": \"ahmed@example.com\",\n  \"subject\": \"Enterprise Enquiry\",\n  \"message\": \"We are a 200-person financial company looking for cybersecurity awareness training.\"\n}" },
+            "description": "Roles: Public (no auth required)\nValidates email format. Message max 1000 characters."
+          }
+        },
+        {
+          "name": "Get All Contact Messages  ⚠ super_admin ONLY",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/contact", "host": ["{{baseUrl}}"], "path": ["api","contact"] },
+            "description": "Roles: super_admin only\nReturns all messages sorted by createdAt DESC."
+          }
+        },
+        {
+          "name": "Mark Message as Read  ⚠ super_admin ONLY",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/contact/{{messageId}}", "host": ["{{baseUrl}}"], "path": ["api","contact","{{messageId}}"] },
+            "description": "Roles: super_admin only\nSets isRead=true."
+          }
+        },
+        {
+          "name": "Delete Contact Message  ⚠ super_admin ONLY",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/contact/{{messageId}}", "host": ["{{baseUrl}}"], "path": ["api","contact","{{messageId}}"] },
+            "description": "Roles: super_admin only"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🛡️ Super Admin  [/api/super-admin]",
+      "description": "ALL routes: super_admin ONLY. Duplicate of /api/companies but under a dedicated prefix.",
+      "item": [
+        {
+          "name": "Get All Companies",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/super-admin/companies", "host": ["{{baseUrl}}"], "path": ["api","super-admin","companies"] },
+            "description": "Roles: super_admin only"
+          }
+        },
+        {
+          "name": "Create Company",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/super-admin/companies", "host": ["{{baseUrl}}"], "path": ["api","super-admin","companies"] },
+            "body": { "mode": "raw", "raw": "{\n  \"companyName\": \"New Corp Ltd\",\n  \"industry\": \"Finance\"\n}" },
+            "description": "Roles: super_admin only"
+          }
+        },
+        {
+          "name": "Get Company By ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/super-admin/companies/{{companyId}}", "host": ["{{baseUrl}}"], "path": ["api","super-admin","companies","{{companyId}}"] },
+            "description": "Roles: super_admin only"
+          }
+        },
+        {
+          "name": "Update Company (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/super-admin/companies/{{companyId}}", "host": ["{{baseUrl}}"], "path": ["api","super-admin","companies","{{companyId}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"approvalStatus\": \"approved\"\n}" },
+            "description": "Roles: super_admin only\napprovalStatus: pending | approved | rejected"
+          }
+        },
+        {
+          "name": "Update Company (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/super-admin/companies/{{companyId}}", "host": ["{{baseUrl}}"], "path": ["api","super-admin","companies","{{companyId}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"companyName\": \"Updated Corp\",\n  \"industry\": \"Technology\"\n}" },
+            "description": "Roles: super_admin only"
+          }
+        },
+        {
+          "name": "Delete Company",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/super-admin/companies/{{companyId}}", "host": ["{{baseUrl}}"], "path": ["api","super-admin","companies","{{companyId}}"] },
+            "description": "Roles: super_admin only"
+          }
+        },
+        {
+          "name": "Global Analytics",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/super-admin/analytics/global", "host": ["{{baseUrl}}"], "path": ["api","super-admin","analytics","global"] },
+            "description": "Roles: super_admin only\nCurrently returns stub. Full implementation in analyticsController."
+          }
+        },
+        {
+          "name": "All Platform Users",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/super-admin/users", "host": ["{{baseUrl}}"], "path": ["api","super-admin","users"] },
+            "description": "Roles: super_admin only\nCurrently returns stub."
+          }
+        },
+        {
+          "name": "System Health",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/super-admin/system/health", "host": ["{{baseUrl}}"], "path": ["api","super-admin","system","health"] },
+            "description": "Roles: super_admin only\nReturns uptime, timestamp."
+          }
+        }
+      ]
+    }
+  ]
+}

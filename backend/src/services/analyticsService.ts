@@ -69,16 +69,30 @@ export function getRiskLevel(score: number): 'low' | 'medium' | 'high' {
 // ─────────────────────────────────────────────────────────────────────────────
 export function calculatePoints(
   currentPoints: number,
-  action: 'click' | 'credentials' | 'report' | 'ignored'
+  action:
+    | 'click'
+    | 'credentials'
+    | 'report'
+    | 'ignored'
+    | 'video_completed'
+    | 'quiz_pass'
+    | 'quiz_fail'
+    | 'game_played'
+    | 'game_high_score'
 ): number {
   const safePoints = Number.isFinite(currentPoints) ? currentPoints : 0;
 
   const delta =
     action === 'report' ? +50 :
-      action === 'ignored' ? +5 :
-        action === 'click' ? -30 :
-          action === 'credentials' ? -60 :
-            0;
+    action === 'ignored' ? +5 :
+    action === 'click' ? -30 :
+    action === 'credentials' ? -60 :
+    action === 'video_completed' ? +10 :
+    action === 'quiz_pass' ? +20 :
+    action === 'quiz_fail' ? +5 :
+    action === 'game_played' ? +5 :
+    action === 'game_high_score' ? +15 :
+    0;
 
   return Math.max(0, safePoints + delta);
 }
@@ -149,7 +163,16 @@ export async function recalculateUserRisk(userId: string): Promise<void> {
 // ─────────────────────────────────────────────────────────────────────────────
 export async function updateUserPoints(
   userId: string,
-  action: 'click' | 'credentials' | 'report' | 'ignored'
+  action:
+    | 'click'
+    | 'credentials'
+    | 'report'
+    | 'ignored'
+    | 'video_completed'
+    | 'quiz_pass'
+    | 'quiz_fail'
+    | 'game_played'
+    | 'game_high_score'
 ): Promise<void> {
   const user = await User.findById(userId).select('points').lean();
   if (!user) return;
