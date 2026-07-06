@@ -2,7 +2,7 @@ import { Document, Types } from 'mongoose';
 import { Request, Response, NextFunction } from 'express';
 
 
-export type UserRole = 'super_admin' | 'admin' | 'employee';
+export type UserRole = 'super_admin' | 'admin' | 'employee' | 'individual';
 export type CampaignType = 'phishing' | 'smishing' | 'vishing';
 export type CampaignStatus = 'draft' | 'active' | 'completed' | 'paused';
 
@@ -15,9 +15,20 @@ export interface IUser extends Document {
   role: UserRole;
   companyId: Types.ObjectId;
   department: string;
+  phoneNumber?: string;
   points: number;
+  badge: string;
   badges: string[];
+  riskScore: number;
+  riskLevel: 'low' | 'medium' | 'high';
   lastLogin: Date;
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  subscriptionPlan?: string;
+  subscriptionPackage?: string;
+  isUrduPreferred?: boolean;
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
+  bio?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,6 +40,11 @@ export interface ICompany extends Document {
   industry: string;
   adminId: Types.ObjectId;
   employeeCount: number;
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
+  enterpriseCode?: string;
+  contactPerson?: string;
+  taxId?: string;
+  subscriptionPlan?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
