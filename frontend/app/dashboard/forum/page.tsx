@@ -335,7 +335,7 @@ function PostCard({
 
 export default function ForumPage() {
   const { state } = useAuth();
-  const currentUserId = state.user?._id ?? '';
+  const currentUserId = state.user?.id ?? '';
 
   const [isUrdu, setIsUrdu]         = useState(false);
   const [newPost, setNewPost]       = useState('');
