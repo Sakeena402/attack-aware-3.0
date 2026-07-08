@@ -48,7 +48,7 @@ export interface Campaign {
   description?: string;
   startDate?: string;
   endDate?: string;
-  targetEmployees?: { _id: string; phone: string }[];
+  targetEmployees?: { _id: string; phone?: string; email?: string }[];
   targetDepartments?: string[];
   emailTemplate?: string;
   smsTemplate?: string;

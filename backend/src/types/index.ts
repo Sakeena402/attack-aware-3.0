@@ -34,6 +34,7 @@ export interface ICompany extends Document {
 }
 
 //hifza code
+//hifza code
 export interface ICampaign extends Document {
   _id: Types.ObjectId;
   campaignName: string;
@@ -48,7 +49,7 @@ export interface ICampaign extends Document {
   completedCount: number;
 
   // Arrays
-  targetEmployees: Array<{ _id: Types.ObjectId; phone: string }>;
+  targetEmployees: Array<{ _id: Types.ObjectId; phone?: string; email?: string }>;
   targetDepartments: string[];
 
   // Templates

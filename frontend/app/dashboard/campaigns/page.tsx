@@ -81,9 +81,8 @@ interface CampaignFormData {
   type: 'phishing' | 'smishing' | 'vishing';
   startDate: string;
   endDate: string;
-  //line below is added by hifza, the original line is commented out
-  targetEmployees: { _id: string; phone: string }[];  // string[] ki jagah
- //(sakeenaa line is commented) targetEmployees: string[];
+  //line below is updated by hifza, was: { _id: string; phone: string }[]
+  targetEmployees: { _id: string; phone?: string; email?: string }[];
   targetDepartments: string[];
   emailTemplate: string;
   smsTemplate: string;
@@ -286,30 +285,54 @@ const employees = Array.isArray(data) ? data : [];
 //hifza code 
 const toggleEmployee = (employee: Employee) => {
   setFormData(prev => {
-    const exists = prev.targetEmployees.some((e) => e._id === employee._id);
+    const exists = prev.targetEmployees?.some((e) => e._id === employee._id);
+    
+    let employeeData: any;
+    
+    if (formData.type === 'phishing') {
+      employeeData = {
+        _id: employee._id,
+        email: employee.email || ''
+      };
+    } else if (formData.type === 'smishing') {
+      employeeData = {
+        _id: employee._id,
+        phone: employee.phoneNumber || employee.phone || ''
+      };
+    } else {
+      employeeData = {
+        _id: employee._id,
+        phone: employee.phoneNumber || employee.phone || '',
+        email: employee.email || ''
+      };
+    }
+    
     return {
       ...prev,
       targetEmployees: exists
-        ? prev.targetEmployees.filter((e) => e._id !== employee._id)
-        : [...prev.targetEmployees, { 
-            _id: employee._id, 
-            phone: employee.phoneNumber || employee.phone || ''  // ← ye fix
-          }],
+        ? (prev.targetEmployees || []).filter((e) => e._id !== employee._id)
+        : [...(prev.targetEmployees || []), employeeData]
     };
   });
 };
 
 const selectAllEmployees = () => {
   if (employees) {
-    const allSelected = formData.targetEmployees.length === employees.length;
+    const allSelected = (formData.targetEmployees || []).length === employees.length;
+    
+    const mapped = employees.map(e => {
+      if (formData.type === 'phishing') {
+        return { _id: e._id, email: e.email || '' };
+      } else if (formData.type === 'smishing') {
+        return { _id: e._id, phone: e.phoneNumber || e.phone || '' };
+      } else {
+        return { _id: e._id, email: e.email || '', phone: e.phoneNumber || e.phone || '' };
+      }
+    });
+    
     setFormData(prev => ({
       ...prev,
-      targetEmployees: allSelected
-        ? []
-        : employees.map(e => ({ 
-            _id: e._id, 
-            phone: e.phoneNumber || e.phone || ''  // ← ye fix
-          })),
+      targetEmployees: allSelected ? [] : mapped
     }));
   }
 };

@@ -1,438 +1,291 @@
-
-// backend/src/services/trackingService.ts  (QUEUE VERSION)
-
-
-import mongoose from 'mongoose';
 import SimulationResult from '../models/SimulationResult.js';
-import { generateTrackingToken, hashToken } from './twilioService.js';
-import {
-  enqueueRiskUpdate,
-  enqueueCampaignCounter,
-} from '../queues/trackingQueue.js';
-import { recalculateUserRisk, updateUserPoints } from './analyticsService.js';
 import { Campaign } from '../models/Campaign.js';
+import { hashToken } from './twilioService.js';
 
-export const recordSmsSent = async (data: {
-  campaignId:    string;
-  userId:        string;
-  trackingToken: string;   // raw UUaID — hashed here
-  messageSid:    string;
-  phoneNumber:   string;
-  templateKey:   string;
-}): Promise<void> => {
-  const hashedToken = hashToken(data.trackingToken);
-
-  // 1 upsert — creates or updates
-  await SimulationResult.findOneAndUpdate(
-    {
-      campaignId:    new mongoose.Types.ObjectId(data.campaignId),
-      userId:        new mongoose.Types.ObjectId(data.userId),
-      trackingToken: hashedToken,
-    },
-    {
-      $set: {
-        simulationType: 'smishing',
-        smsSent:        true,
-        smsSentAt:      new Date(),
-        smsDelivered:   true,
-        smsDeliveredAt: new Date(),
-        messageSid:     data.messageSid,
-        phoneNumber:    data.phoneNumber,
-        smsTemplate:    data.templateKey,
-        timestamp:      new Date(),
-      },
-      $setOnInsert: {
-        smsLinkClicked:       false,
-        credentialsSubmitted: false,
-        reportedPhishing:     false,
-        formFieldsSubmitted:  [],
-      },
-    },
-    { upsert: true, new: true }
-  );
-
-  // Queue counter update (don't await — fire and forget)
-  enqueueCampaignCounter({
-    campaignId: data.campaignId,
-    field:      'deliveredCount',
-    increment:  1,
-  }).catch(err => console.error('[QUEUE] Failed to enqueue deliveredCount:', err));
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// recordCallInitiated
-// ─────────────────────────────────────────────────────────────────────────────
-export const recordCallInitiated = async (data: {
-  campaignId:    string;
-  userId:        string;
-  trackingToken: string;
-  callSid:       string;
-  phoneNumber:   string;
-  scriptKey:     string;
-}): Promise<void> => {
-  const hashedToken = hashToken(data.trackingToken);
-
-  await SimulationResult.findOneAndUpdate(
-    {
-      campaignId:    new mongoose.Types.ObjectId(data.campaignId),
-      userId:        new mongoose.Types.ObjectId(data.userId),
-      trackingToken: hashedToken,
-    },
-    {
-      $set: {
-        simulationType:  'vishing',
-        callInitiated:   true,
-        callInitiatedAt: new Date(),
-        callSid:         data.callSid,
-        phoneNumber:     data.phoneNumber,
-        voiceScript:     data.scriptKey,
-        timestamp:       new Date(),
-      },
-    },
-    { upsert: true, new: true }
-  );
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// recordSmsClick
-//
-// DB CALLS: 1 write (was 7)
-// Risk/points: queued → background
-// ─────────────────────────────────────────────────────────────────────────────
 export const recordSmsClick = async (
-  trackingToken: string,
-  campaignId:    string,
-  userId:        string,
-  ipAddress?:    string,
-  userAgent?:    string
-): Promise<{ success: boolean; alreadyClicked: boolean }> => {
-  const hashedToken = hashToken(trackingToken);
+  token: string,
+  campaignId: string,
+  userId: string,
+  ipAddress?: string,
+  userAgent?: string
+): Promise<{ success: boolean; alreadyClicked?: boolean }> => {
+  try {
+    const hashedToken = hashToken(token);
 
-  // 1 atomic write
-  const updated = await SimulationResult.findOneAndUpdate(
-    {
-      campaignId:     new mongoose.Types.ObjectId(campaignId),
-      userId:         new mongoose.Types.ObjectId(userId),
-      trackingToken:  hashedToken,
-      smsLinkClicked: { $ne: true },
-    },
-    {
-      $set: {
-        smsLinkClicked: true,
-        smsClickedAt:   new Date(),
-        clickIpAddress: ipAddress ?? '',
-        clickUserAgent: userAgent ?? '',
-      },
-    },
-    { new: true }
-  );
-
-  if (!updated) {
-    const exists = await SimulationResult.exists({
-      campaignId:    new mongoose.Types.ObjectId(campaignId),
-      userId:        new mongoose.Types.ObjectId(userId),
+    const result = await SimulationResult.findOne({
       trackingToken: hashedToken,
+      campaignId,
+      userId,
     });
-    return { success: !!exists, alreadyClicked: !!exists };
+
+    if (!result) {
+      return { success: false };
+    }
+
+    if (result.smsClicked) {
+      return { success: true, alreadyClicked: true };
+    }
+
+    result.smsClicked = true;
+    result.smsClickedAt = new Date();
+    result.clickIpAddress = ipAddress;
+    result.clickUserAgent = userAgent;
+
+    await result.save();
+
+    await Campaign.findByIdAndUpdate(
+      campaignId,
+      { $inc: { clickedCount: 1 } }
+    );
+
+    return { success: true };
+  } catch (error) {
+    console.error('recordSmsClick error:', error);
+    return { success: false };
   }
-
-  // Queue background work — DO NOT await
-  enqueueRiskUpdate({ userId, action: 'click', campaignId })
-    .catch(err => console.error('[QUEUE] Failed to enqueue risk:', err));
-
-  enqueueCampaignCounter({ campaignId, field: 'clickedCount', increment: 1 })
-    .catch(err => console.error('[QUEUE] Failed to enqueue counter:', err));
-
-  return { success: true, alreadyClicked: false };
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// recordCredentialsSubmitted
-//
-// DB CALLS: 1-2 writes (was 6)
-// ─────────────────────────────────────────────────────────────────────────────
-export const recordCredentialsSubmitted = async (
-  trackingToken: string,
-  campaignId:    string,
-  userId:        string,
-  formData:      Record<string, unknown>
+export const recordSmsStatus = async (
+  messageSid: string,
+  status: string,
+  errorCode?: string
+): Promise<void> => {
+  try {
+    const result = await SimulationResult.findOne({ messageSid });
+
+    if (!result) {
+      console.warn(`SimulationResult not found for messageSid: ${messageSid}`);
+      return;
+    }
+
+    result.smsStatus = status;
+    if (status === 'delivered') {
+      result.smsDelivered = true;
+      result.smsDeliveredAt = new Date();
+    } else if (status === 'failed' || status === 'undelivered') {
+      result.smsFailed = true;
+      result.smsFailedAt = new Date();
+      result.smsErrorCode = errorCode;
+    }
+
+    await result.save();
+
+    if (result.simulationType === 'smishing') {
+      const campaign = await Campaign.findById(result.campaignId);
+      if (campaign) {
+        if (status === 'delivered') {
+          campaign.deliveredCount = (campaign.deliveredCount || 0) + 1;
+        } else if (status === 'failed') {
+          campaign.reportedCount = (campaign.reportedCount || 0) + 1;
+        }
+        await campaign.save();
+      }
+    }
+  } catch (error) {
+    console.error('recordSmsStatus error:', error);
+  }
+};
+
+export const recordCallStatus = async (
+  callSid: string,
+  status: string,
+  duration?: number
+): Promise<void> => {
+  try {
+    const result = await SimulationResult.findOne({ callSid });
+
+    if (!result) {
+      console.warn(`SimulationResult not found for callSid: ${callSid}`);
+      return;
+    }
+
+    result.callStatus = status;
+    result.callStatusUpdatedAt = new Date();
+
+    if (status === 'completed' && duration) {
+      result.callDuration = duration;
+    }
+
+    await result.save();
+  } catch (error) {
+    console.error('recordCallStatus error:', error);
+  }
+};
+
+export const recordVoiceResponse = async (
+  callSid: string,
+  digits: string,
+  campaignId: string,
+  userId: string
 ): Promise<{ success: boolean }> => {
-  const hashedToken = hashToken(trackingToken);
-  const formFields  = Object.keys(formData).filter(
-    k => !['token', 'campaignId', 'userId'].includes(k)
-  );
-
-  // PRIMARY: find by full key
-  let updated = await SimulationResult.findOneAndUpdate(
-    {
-      campaignId:           new mongoose.Types.ObjectId(campaignId),
-      userId:               new mongoose.Types.ObjectId(userId),
-      trackingToken:        hashedToken,
-      credentialsSubmitted: { $ne: true },
-    },
-    {
-      $set: {
-        credentialsSubmitted:   true,
-        credentialsSubmittedAt: new Date(),
-        formFieldsSubmitted:    formFields,
-      },
-    },
-    { new: true }
-  );
-
-  // FALLBACK: find by campaignId + userId only
-  if (!updated) {
-    const existing = await SimulationResult.findOne({
-      campaignId: new mongoose.Types.ObjectId(campaignId),
-      userId:     new mongoose.Types.ObjectId(userId),
+  try {
+    const result = await SimulationResult.findOne({
+      callSid,
+      campaignId,
+      userId,
     });
 
-    if (existing) {
-      if (existing.credentialsSubmitted) return { success: true };
-      existing.credentialsSubmitted   = true;
-      existing.credentialsSubmittedAt = new Date();
-      existing.formFieldsSubmitted    = formFields;
-      await existing.save();
-      updated = existing;
-    } else {
-      // Create new (bypassed link)
-      await SimulationResult.findOneAndUpdate(
-        {
-          campaignId:    new mongoose.Types.ObjectId(campaignId),
-          userId:        new mongoose.Types.ObjectId(userId),
-          trackingToken: hashedToken,
-        },
-        {
-          $set: {
-            simulationType:         'smishing',
-            credentialsSubmitted:   true,
-            credentialsSubmittedAt: new Date(),
-            formFieldsSubmitted:    formFields,
-            timestamp:              new Date(),
-          },
-        },
-        { upsert: true, new: true }
+    if (!result) {
+      console.warn(`SimulationResult not found for callSid: ${callSid}`);
+      return { success: false };
+    }
+
+    result.voiceResponse = digits;
+    result.voiceResponseAt = new Date();
+
+    if (digits === '1' || digits === '2') {
+      result.callAnswered = true;
+      result.callAnsweredAt = new Date();
+
+      await Campaign.findByIdAndUpdate(
+        campaignId,
+        { $inc: { clickedCount: 1 } }
       );
     }
+
+    await result.save();
+    return { success: true };
+  } catch (error) {
+    console.error('recordVoiceResponse error:', error);
+    return { success: false };
   }
-
-  // Queue background work
-  enqueueRiskUpdate({ userId, action: 'credentials', campaignId })
-    .catch(err => console.error('[QUEUE] Failed to enqueue risk:', err));
-
-  return { success: true };
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// recordPhishingReported
-//
-// DB CALLS: 1-2 writes (was 7)
-// ─────────────────────────────────────────────────────────────────────────────
-export const recordPhishingReported = async (
-  trackingToken: string,
-  campaignId:    string,
-  userId:        string,
-  reportMethod:  string = 'button'
-): Promise<{ success: boolean }> => {
-  const hashedToken = hashToken(trackingToken);
+export const recordEmailClick = async (
+  token: string,
+  campaignId: string,
+  userId: string,
+  ipAddress?: string,
+  userAgent?: string
+): Promise<{ success: boolean; alreadyClicked?: boolean }> => {
+  try {
+    const hashedToken = hashToken(token);
 
-  let updated = await SimulationResult.findOneAndUpdate(
-    {
-      campaignId:       new mongoose.Types.ObjectId(campaignId),
-      userId:           new mongoose.Types.ObjectId(userId),
-      trackingToken:    hashedToken,
-      reportedPhishing: { $ne: true },
-    },
-    {
-      $set: {
-        reportedPhishing: true,
-        reportedAt:       new Date(),
-        reportMethod,
-      },
-    },
-    { new: true }
-  );
-
-  if (!updated) {
-    const existing = await SimulationResult.findOne({
-      campaignId: new mongoose.Types.ObjectId(campaignId),
-      userId:     new mongoose.Types.ObjectId(userId),
+    const result = await SimulationResult.findOne({
+      trackingToken: hashedToken,
+      campaignId,
+      userId,
     });
 
-    if (existing) {
-      if (existing.reportedPhishing) return { success: true };
-      existing.reportedPhishing = true;
-      existing.reportedAt       = new Date();
-      existing.reportMethod     = reportMethod;
-      await existing.save();
-      updated = existing;
-    } else {
-      await SimulationResult.findOneAndUpdate(
-        {
-          campaignId:    new mongoose.Types.ObjectId(campaignId),
-          userId:        new mongoose.Types.ObjectId(userId),
-          trackingToken: hashedToken,
-        },
-        {
-          $set: {
-            simulationType:   'smishing',
-            reportedPhishing: true,
-            reportedAt:       new Date(),
-            reportMethod,
-            timestamp:        new Date(),
-          },
-        },
-        { upsert: true, new: true }
+    if (!result) {
+      return { success: false };
+    }
+
+    if (result.emailClicked) {
+      return { success: true, alreadyClicked: true };
+    }
+
+    result.emailClicked = true;
+    result.emailClickedAt = new Date();
+    result.clickIpAddress = ipAddress;
+    result.clickUserAgent = userAgent;
+
+    await result.save();
+
+    await Campaign.findByIdAndUpdate(
+      campaignId,
+      { $inc: { clickedCount: 1 } }
+    );
+
+    return { success: true };
+  } catch (error) {
+    console.error('recordEmailClick error:', error);
+    return { success: false };
+  }
+};
+
+export const recordEmailSent = async (
+  campaignId: string,
+  userId: string,
+  email: string,
+  messageId: string,
+  trackingToken: string
+): Promise<void> => {
+  try {
+    const hashedToken = hashToken(trackingToken);
+
+    const result = new SimulationResult({
+      userId,
+      campaignId,
+      simulationType: 'phishing',
+      trackingToken: hashedToken,
+      emailSent: true,
+      emailSentAt: new Date(),
+      emailAddress: email,
+      messageId,
+    });
+
+    await result.save();
+
+    await Campaign.findByIdAndUpdate(
+      campaignId,
+      { $inc: { sentCount: 1 } }
+    );
+  } catch (error) {
+    console.error('recordEmailSent error:', error);
+  }
+};
+
+export const recordEmailOpened = async (
+  messageId: string
+): Promise<void> => {
+  try {
+    const result = await SimulationResult.findOne({ messageId });
+
+    if (!result) {
+      return;
+    }
+
+    if (!result.emailOpened) {
+      result.emailOpened = true;
+      result.emailOpenedAt = new Date();
+
+      await result.save();
+
+      await Campaign.findByIdAndUpdate(
+        result.campaignId,
+        { $inc: { deliveredCount: 1 } }
       );
     }
+  } catch (error) {
+    console.error('recordEmailOpened error:', error);
   }
-
-  enqueueRiskUpdate({ userId, action: 'report', campaignId })
-    .catch(err => console.error('[QUEUE] Failed to enqueue risk:', err));
-
-  enqueueCampaignCounter({ campaignId, field: 'reportedCount', increment: 1 })
-    .catch(err => console.error('[QUEUE] Failed to enqueue counter:', err));
-
-  return { success: true };
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// recordVoiceResponse
-// ─────────────────────────────────────────────────────────────────────────────
-export const recordVoiceResponse = async (data: {
-  callSid:       string;
-  digitsPressed: string;
-  campaignId:    string;
-  userId:        string;
-}): Promise<{ success: boolean; responseType: string }> => {
-  const result = await SimulationResult.findOne({ callSid: data.callSid });
-  if (!result) return { success: false, responseType: 'unknown' };
+export const getCampaignPhishingStats = async (
+  campaignId: string
+): Promise<{
+  total: number;
+  sent: number;
+  opened: number;
+  clicked: number;
+  submittedCredentials: number;
+}> => {
+  try {
+    const campaign = await Campaign.findById(campaignId);
 
-  let responseType = 'unknown';
-  let action: 'click' | 'credentials' | 'report' | null = null;
+    if (!campaign) {
+      return { total: 0, sent: 0, opened: 0, clicked: 0, submittedCredentials: 0 };
+    }
 
-  switch (data.digitsPressed) {
-    case '1':
-      responseType        = 'engaged';
-      result.voiceEngaged = true;
-      action              = 'click';
-      break;
-    case '2':
-      responseType         = 'verified';
-      result.voiceVerified = true;
-      action               = 'credentials';
-      break;
-    case '9':
-      responseType         = 'reported';
-      result.voiceReported = true;
-      action               = 'report';
-      enqueueCampaignCounter({ campaignId: data.campaignId, field: 'reportedCount', increment: 1 })
-        .catch(() => {});
-      break;
-    default:
-      responseType              = 'other';
-      result.voiceOtherResponse = data.digitsPressed;
+    const results = await SimulationResult.find({
+      campaignId,
+      simulationType: 'phishing',
+    });
+
+    const opened = results.filter((r) => r.emailOpened).length;
+    const clicked = results.filter((r) => r.emailClicked).length;
+    const submitted = results.filter((r) => r.credentialsSubmitted).length;
+
+    return {
+      total: campaign.targetCount || results.length,
+      sent: campaign.sentCount || results.length,
+      opened,
+      clicked,
+      submittedCredentials: submitted,
+    };
+  } catch (error) {
+    console.error('getCampaignPhishingStats error:', error);
+    return { total: 0, sent: 0, opened: 0, clicked: 0, submittedCredentials: 0 };
   }
-
-  result.callResponse   = data.digitsPressed;
-  result.callResponseAt = new Date();
-  await result.save();
-
-  if (action) {
-    enqueueRiskUpdate({ userId: data.userId, action, campaignId: data.campaignId })
-      .catch(() => {});
-  }
-
-  return { success: true, responseType };
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// recordCallStatus + recordSmsStatus — unchanged (webhook callbacks, not hot path)
-// ─────────────────────────────────────────────────────────────────────────────
-export const recordCallStatus = async (data: {
-  callSid: string; status: string; duration?: number; answeredBy?: string;
-}): Promise<void> => {
-  const result = await SimulationResult.findOne({ callSid: data.callSid });
-  if (!result) return;
-
-  result.callStatus = data.status;
-  if (data.status === 'answered' || data.status === 'in-progress') {
-    result.callAnswered = true; result.callAnsweredAt = new Date();
-  }
-  if (data.status === 'completed') {
-    result.callCompleted = true; result.callCompletedAt = new Date();
-    result.callDuration = data.duration;
-  }
-  if (data.answeredBy) result.answeredBy = data.answeredBy;
-  await result.save();
-};
-
-export const recordSmsStatus = async (data: {
-  messageSid: string; status: string; errorCode?: string; errorMessage?: string;
-}): Promise<void> => {
-  const result = await SimulationResult.findOne({ messageSid: data.messageSid });
-  if (!result) return;
-
-  result.smsDeliveryStatus = data.status;
-  if (data.status === 'delivered') {
-    result.smsDelivered = true; result.smsDeliveredAt = new Date();
-  }
-  if (data.status === 'failed' || data.status === 'undelivered') {
-    result.smsDelivered     = false;
-    result.smsDeliveryError = data.errorMessage;
-    result.smsErrorCode     = data.errorCode;
-  }
-  await result.save();
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// getCampaignSimulationStats — aggregation-based
-// ─────────────────────────────────────────────────────────────────────────────
-export const getCampaignSimulationStats = async (campaignId: string) => {
-  const cid = new mongoose.Types.ObjectId(campaignId);
-
-  const [agg] = await SimulationResult.aggregate([
-    { $match: { campaignId: cid } },
-    {
-      $group: {
-        _id:                  null,
-        total:                { $sum: 1 },
-        smsSent:              { $sum: { $cond: [{ $eq: ['$smsSent',              true] }, 1, 0] } },
-        smsDelivered:         { $sum: { $cond: [{ $eq: ['$smsDelivered',         true] }, 1, 0] } },
-        smsClicked:           { $sum: { $cond: [{ $eq: ['$smsLinkClicked',       true] }, 1, 0] } },
-        credentialsSubmitted: { $sum: { $cond: [{ $eq: ['$credentialsSubmitted', true] }, 1, 0] } },
-        reported: {
-          $sum: { $cond: [{ $or: [{ $eq: ['$reportedPhishing', true] }, { $eq: ['$voiceReported', true] }] }, 1, 0] },
-        },
-        callsInitiated: { $sum: { $cond: [{ $eq: ['$callInitiated', true] }, 1, 0] } },
-        callsAnswered:  { $sum: { $cond: [{ $eq: ['$callAnswered',  true] }, 1, 0] } },
-        callsEngaged: {
-          $sum: { $cond: [{ $or: [{ $eq: ['$voiceEngaged', true] }, { $eq: ['$voiceVerified', true] }] }, 1, 0] },
-        },
-        callsReported: { $sum: { $cond: [{ $eq: ['$voiceReported', true] }, 1, 0] } },
-      },
-    },
-  ]);
-
-  return agg ?? {
-    total: 0, smsSent: 0, smsDelivered: 0, smsClicked: 0,
-    credentialsSubmitted: 0, reported: 0, callsInitiated: 0,
-    callsAnswered: 0, callsEngaged: 0, callsReported: 0,
-  };
-};
-
-export const createTrackingRecord = async (data: {
-  campaignId: string; userId: string; type: 'sms' | 'voice' | 'email';
-  templateKey: string; phoneNumber?: string;
-}) => {
-  const token      = generateTrackingToken();
-  const hashedToken = hashToken(token);
-  return { ...data, token, hashedToken };
-};
-
-export default {
-  createTrackingRecord, recordSmsSent, recordCallInitiated,
-  recordSmsClick, recordCredentialsSubmitted, recordPhishingReported,
-  recordVoiceResponse, recordCallStatus, recordSmsStatus,
-  getCampaignSimulationStats,
 };

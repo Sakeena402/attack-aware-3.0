@@ -936,7 +936,7 @@ export default function LandingPage() {
               <Shield className="w-6 h-6 text-white relative z-10" />
             </div>
             <span className="text-xl font-bold font-poppins bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">
-              AttackAware3.0
+              AttackAware
             </span>
           </motion.div>
 
@@ -1281,7 +1281,7 @@ export default function LandingPage() {
             className="grid md:grid-cols-3 gap-8"
           >
             {[
-              { name: 'Sarah Mitchell', role: 'Security Manager', company: 'Tech Corp Inc.', content: 'AttackAware3.0 transformed our security culture. Our phishing click rates dropped by 65% in just 6 months.', initials: 'SM' },
+              { name: 'Sarah Mitchell', role: 'Security Manager', company: 'Tech Corp Inc.', content: 'AttackAware transformed our security culture. Our phishing click rates dropped by 65% in just 6 months.', initials: 'SM' },
               { name: 'James Chen', role: 'IT Director', company: 'Financial Services LLC', content: 'The interactive simulations are incredibly effective. Employees now take security seriously and actively report suspicious emails.', initials: 'JC' },
               { name: 'Lisa Anderson', role: 'Compliance Officer', company: 'Healthcare Solutions', content: 'Outstanding platform for compliance training. The detailed analytics help us meet audit requirements effortlessly.', initials: 'LA' },
             ].map((t, idx) => (
@@ -1489,7 +1489,7 @@ export default function LandingPage() {
             <motion.div variants={itemVariants}>
               <div className="flex items-center gap-2 mb-4">
                 <Shield className="w-5 h-5 text-purple-500" />
-                <span className="font-bold text-foreground">AttackAware3.0</span>
+                <span className="font-bold text-foreground">AttackAware</span>
               </div>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 Protecting organizations from social engineering threats.
@@ -1536,7 +1536,7 @@ export default function LandingPage() {
 
           {/* Bottom bar */}
           <div className="border-t border-purple-500/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-muted-foreground text-sm">&copy; 2024 AttackAware3.0. All rights reserved.</p>
+            <p className="text-muted-foreground text-sm">&copy; 2024 AttackAware. All rights reserved.</p>
             <div className="flex gap-3">
               {[Github, Linkedin, Twitter].map((Icon, idx) => (
                 <a
