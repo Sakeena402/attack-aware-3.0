@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scam Check</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+    <style>
+        /* importing google fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        body {
+            background-image: url(https://imageio.forbes.com/specials-images/imageserve/642445004586b4330e81b689//960x0.jpg?height=406&width=711&fit=bounds);
+            background-repeat: no-repeat;
+            background-size: cover;
+            position: relative;
+            height: 100vh; /* Ensure body takes the full height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result_box {
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 
+                        0 6px 20px 0 rgba(0, 0, 0, 0.19);
+            background: whitesmoke;
+            padding: 50px 70px;
+            border-radius: 10px;
+            text-align: center;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        .icon {
+            margin-bottom: 20px;
+        }
+
+        .icon img {
+            width: 140px;
+            height: 140px;
+        }
+
+        .complete_text {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            animation: pulse 2s infinite;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: center;
+            padding-bottom: 20px;
+        }
+
+        .buttons button {
+            margin: 0 15px;
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .buttons button.quit {
+            background-color: #dc3545;
+            color: #fff;
+        }
+
+        .buttons button.restart {
+            background-color: #28a745;
+            color: #fff;
+        }
+
+        .buttons button:hover {
+            opacity: 0.9;
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .bottom-left-image {
+            position: absolute;
+            bottom: 20px;
+            left: -65px;
+            width: 100px; /* Adjust size as needed */
+            height: auto;
+            z-index: 1; /* Ensure it appears above the grid */
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="result_box">
+        <div class="icon">
+            <img src="4.png" alt="Thinking Image">
+        </div>
+        <div class="complete_text">Do you think it's a scam?</div>
+        
+        <div class="buttons">
+            <a href="tv_yes.html"><button class="restart">Yes</button></a>
+            <a href="tv_no.html"><button class="quit">No</button></a>
+        </div>
+    </div>
+
+    <div class="bottom-left-image">
+        <img src="3.png" alt="Bottom Left Image">
+    </div>
+</body>
+</html>

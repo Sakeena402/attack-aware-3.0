@@ -15,6 +15,8 @@ export interface IQuizQuestion extends Document {
   option_c_ur?: string;
   option_d_ur?: string;
   correctOption: 'a' | 'b' | 'c' | 'd';
+  answer: string;
+  explanation?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +37,8 @@ const quizQuestionSchema = new Schema<IQuizQuestion>(
     option_c_ur: { type: String },
     option_d_ur: { type: String },
     correctOption: { type: String, enum: ['a', 'b', 'c', 'd'], required: true },
+    answer: { type: String, required: true },
+    explanation: { type: String },
   },
   { timestamps: true }
 );

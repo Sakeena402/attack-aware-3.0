@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scam Alert</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+        .back-button {
+  position: fixed;
+  top: 10px; /* Adjust the distance from the top */
+  left: 10px; /* Adjust the distance from the left */
+  background-color: rgba(0, 0, 0, 0.7); /* Dark background for better visibility */
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: bold;
+  z-index: 10; /* Ensure it stays on top of other elements */
+  transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+  background-color: rgba(0, 0, 0, 0.9); /* Darker background on hover */
+}
+
+        .pager {
+            height: 100vh;
+            background-image: url('https://www.shutterstock.com/shutterstock/videos/1109199521/thumb/5.jpg?ip=x480');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            color: white;
+            position: relative;
+        }
+
+        .content {
+            margin-bottom: auto;
+            padding: 24px;
+            background: rgba(0, 0, 0, 0.7); /* Slightly darker for better contrast */
+            width: 41%;
+            margin-top: 53px;
+            border-radius: 10px; /* Rounded corners */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); /* Shadow for depth */
+        }
+
+        .content h1 {
+            margin: 0;
+            color: red;
+            font-size: 2.5em;
+            font-weight: bold; /* Bold text */
+            text-transform: uppercase; /* Uppercase text */
+            letter-spacing: 1px; /* Spacing between letters */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Text shadow */
+        }
+
+        .content p {
+            margin: 10px 0 0;
+            font-size: 1.2em;
+            line-height: 1.5em; /* Increased line height for readability */
+            letter-spacing: 0.5px; /* Slight spacing between letters */
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7); /* Text shadow */
+        }
+
+        .center-image {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            margin-top: 20px;
+        }
+
+        .next-button {
+            position: absolute;
+            bottom: 7px;
+            right: 143px;
+            padding: 15px 30px;
+            background-color: red;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .next-button:hover {
+            background-color: darkred;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+<a href="../medium_game.html" class="back-button">Back</a>
+
+    <div class="pager">
+        <div class="content">
+            <h1>Scam Alert!!</h1>
+            <p>Help Sam and his family decide if they are being scammed.</p>
+        </div>
+        <img src="1.png" alt="Center Image" class="center-image">
+        <a href="room.html" class="next-button">Next</a>
+    </div>
+</body>
+</html>

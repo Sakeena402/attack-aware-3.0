@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cybersecurity Simulation Game</title>
+    <link rel="stylesheet" href="styles.css">
+
+<style>
+    body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+
+#game-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+h1, h2 {
+    text-align: center;
+}
+
+#accounts {
+    margin-bottom: 20px;
+}
+
+#account-list {
+    border: 1px solid #ccc;
+    padding: 10px;
+}
+
+#actions button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+#actions button:hover {
+    background-color: #0056b3;
+}
+
+</style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>Cybersecurity Simulation Game</h1>
+        <div id="accounts">
+            <h2>Accounts</h2>
+            <div id="account-list"></div>
+        </div>
+        <div id="actions">
+            <h2>Actions</h2>
+            <button onclick="implement2FA()">Implement 2FA</button>
+            <button onclick="simulateAttack()">Simulate Attack</button>
+        </div>
+        <div id="feedback"></div>
+        <div id="score">Score: <span id="score-value">0</span></div>
+    </div>
+    <script>
+        // Sample list of accounts
+const accounts = [
+    { name: "Email", has2FA: false },
+    { name: "Banking", has2FA: true },
+    { name: "Social Media", has2FA: false }
+];
+
+// Function to display accounts
+function displayAccounts() {
+    const accountList = document.getElementById("account-list");
+    accountList.innerHTML = "";
+    accounts.forEach(account => {
+        const listItem = document.createElement("div");
+        listItem.textContent = `${account.name} - 2FA: ${account.has2FA ? "Enabled" : "Disabled"}`;
+        accountList.appendChild(listItem);
+    });
+}
+
+// Function to implement 2FA for a random account
+function implement2FA() {
+    const randomIndex = Math.floor(Math.random() * accounts.length);
+    accounts[randomIndex].has2FA = true;
+    displayAccounts();
+}
+
+// Display initial accounts list
+displayAccounts();
+
+    </script>
+</body>
+</html>

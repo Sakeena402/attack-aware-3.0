@@ -26,6 +26,6 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "scripts/seedGames.ts"],
   "exclude": ["node_modules", "dist"]
 }
