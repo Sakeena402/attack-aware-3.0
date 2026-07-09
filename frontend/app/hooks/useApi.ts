@@ -1,11 +1,12 @@
 'use client';
 
 import useSWR, { SWRConfiguration } from 'swr';
-import { api, DashboardStats, Employee, Campaign, LeaderboardEntry, AnalyticsOverview, Activity } from '../services/api';
+import { apiService } from '../services/api';
+import { DashboardStats, Employee, Campaign, LeaderboardEntry, AnalyticsOverview, Activity } from '../services/types';
 
 // Generic fetcher using our API service
 const fetcher = async <T>(endpoint: string): Promise<T> => {
-  const response = await api.get<T>(endpoint);
+  const response = await apiService.get<T>(endpoint);
   if (!response.success) {
     throw new Error(response.error || 'Failed to fetch data');
   }

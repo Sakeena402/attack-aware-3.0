@@ -63,8 +63,24 @@ const userSchema = new Schema<IUser>(
     },
     riskLevel: {
       type: String,
-      enum: ['low', 'medium', 'high'],
+      enum: ['very_low', 'low', 'medium', 'high', 'critical'],
       default: 'low',
+    },
+    riskTrend: {
+      type: String,
+      enum: ['improving', 'stable', 'declining', 'insufficient_data'],
+      default: 'insufficient_data',
+    },
+    riskConfidence: {
+      type: String,
+      enum: ['low', 'medium', 'high', 'very_high'],
+      default: 'low',
+    },
+    riskBreakdown: {
+      type: Schema.Types.Mixed,
+    },
+    riskCalculatedAt: {
+      type: Date,
     },
     trainingProgress: {
       type: Number,
@@ -104,6 +120,7 @@ const userSchema = new Schema<IUser>(
 );
 
 userSchema.index({ companyId: 1 });
+userSchema.index({ riskLevel: 1 });
 
 // At the bottom of User.ts
 export const User = mongoose.model<IUser>('User', userSchema);

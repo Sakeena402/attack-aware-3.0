@@ -10,10 +10,13 @@ import { useToast } from '@/components/ui/toast-notification';
 import { Building2, Plus, Edit2, Trash2, Users, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const fetcher = async (url: string) => {
-  const response = await apiService.get(url);
-  return response.data.data || response.data;
+const fetcher = async (url: string): Promise<{ companies: Company[] }> => {
+  const response = await apiService.get<{ companies: Company[] } | Company[]>(url);
+  const data = response.data;
+  if (Array.isArray(data)) return { companies: data };
+  return (data as { companies: Company[] });
 };
+
 
 interface Company {
   _id: string;
@@ -60,7 +63,7 @@ export default function CompaniesPage() {
   // Handle delete
   const handleDelete = async (companyId: string) => {
     try {
-      await api.delete(`/super-admin/companies/${companyId}`);
+      await apiService.delete(`/super-admin/companies/${companyId}`);
       success('Company deleted successfully');
       mutate();
       setIsDeleteDialogOpen(false);

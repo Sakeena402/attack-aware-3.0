@@ -19,9 +19,11 @@ import {
 } from 'lucide-react';
 
 const riskLevelColors = {
-  high:   { bg: 'bg-red-500/20',    text: 'text-red-400',    border: 'border-red-500/30',    icon: AlertTriangle },
-  medium: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30', icon: Shield },
-  low:    { bg: 'bg-green-500/20',  text: 'text-green-400',  border: 'border-green-500/30',  icon: CheckCircle },
+  critical: { bg: 'bg-red-900/40',    text: 'text-red-400',    border: 'border-red-900/50',    icon: AlertTriangle },
+  high:     { bg: 'bg-red-500/20',    text: 'text-red-400',    border: 'border-red-500/30',    icon: AlertTriangle },
+  moderate: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/30', icon: Shield },
+  low:      { bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/30', icon: CheckCircle },
+  very_low: { bg: 'bg-green-500/20',  text: 'text-green-400',  border: 'border-green-500/30',  icon: CheckCircle },
 };
 // phone field added in Employee interface by hifza and phone number is being sent to backend when adding target employees to campaign. This is required for smishing campaigns where we need to send SMS to employees.
 interface EmployeeFormData {
@@ -30,7 +32,7 @@ interface EmployeeFormData {
   password: string;
   department: string;
   role: string;
-  riskLevel: 'low' | 'medium' | 'high';
+  riskLevel: 'very_low' | 'low' | 'moderate' | 'high' | 'critical';
   phoneNumber: string;  // ← ADD
 }
 
@@ -66,7 +68,7 @@ export default function EmployeesPage() {
 
   const stats = {
     total:     employees.length,
-    highRisk:  employees.filter(e => e.riskLevel === 'high').length,
+    highRisk:  employees.filter(e => e.riskLevel === 'high' || e.riskLevel === 'critical').length,
     trained:   employees.filter(e => (e.trainingProgress ?? 0) >= 80).length,
     avgPoints: employees.length
       ? Math.round(employees.reduce((acc, e) => acc + (e.points ?? 0), 0) / employees.length)
@@ -91,8 +93,8 @@ export default function EmployeesPage() {
         email:      employee.email,
         password:   '',
         department: employee.department ?? '',
-        role:       employee.role,
-        riskLevel:  (employee.riskLevel as 'low' | 'medium' | 'high') ?? 'low',
+        role:       employee.role ?? 'employee',
+        riskLevel:  (employee.riskLevel as 'very_low' | 'low' | 'moderate' | 'high' | 'critical') ?? 'low',
         phoneNumber: employee.phoneNumber ?? '',  // ←PH NO ADDED BY HIFZA
       });
     } else {
@@ -291,9 +293,11 @@ setFormData({ name: '', email: '', password: '', department: '', role: 'employee
           className="px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-sm text-foreground focus:outline-none focus:border-purple-500/50 transition-all"
         >
           <option value="all">All Risk Levels</option>
+          <option value="very_low">Very Low Risk</option>
           <option value="low">Low Risk</option>
-          <option value="medium">Medium Risk</option>
+          <option value="moderate">Moderate Risk</option>
           <option value="high">High Risk</option>
+          <option value="critical">Critical Risk</option>
         </select>
       </motion.div>
 
@@ -383,7 +387,10 @@ setFormData({ name: '', email: '', password: '', department: '', role: 'employee
                           <p className="text-xs text-muted-foreground">Points</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-lg font-bold text-green-400 capitalize">{employee.riskLevel ?? 'low'}</p>
+                          <p className={`text-lg font-bold capitalize ${riskConfig.text}`}>
+                            {(employee.riskLevel ?? 'low').replace('_', ' ')}
+                            {employee.riskTrend === 'improving' ? ' 📉' : employee.riskTrend === 'declining' ? ' 📈' : ''}
+                          </p>
                           <p className="text-xs text-muted-foreground">Risk Level</p>
                         </div>
                       </div>
@@ -505,20 +512,22 @@ setFormData({ name: '', email: '', password: '', department: '', role: 'employee
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">Risk Level</label>
-            <div className="flex gap-3">
-              {(['low', 'medium', 'high'] as const).map(level => (
+            <div className="flex gap-2">
+              {(['very_low', 'low', 'moderate', 'high', 'critical'] as const).map(level => (
                 <button
                   key={level} type="button"
                   onClick={() => setFormData({ ...formData, riskLevel: level })}
-                  className={`flex-1 px-4 py-2 rounded-lg border transition-all capitalize ${
+                  className={`flex-1 px-1 py-2 rounded-lg border transition-all text-xs font-semibold capitalize ${
                     formData.riskLevel === level
-                      ? level === 'low'   ? 'bg-green-500/20 border-green-500/50 text-green-400'
-                      : level === 'medium'? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
-                                          : 'bg-red-500/20 border-red-500/50 text-red-400'
+                      ? level === 'very_low' ? 'bg-green-500/20 border-green-500/50 text-green-400'
+                      : level === 'low'      ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
+                      : level === 'moderate' ? 'bg-orange-500/20 border-orange-500/50 text-orange-400'
+                      : level === 'high'     ? 'bg-red-500/20 border-red-500/50 text-red-400'
+                                             : 'bg-red-900/40 border-red-900/50 text-red-400'
                       : 'bg-muted/50 border-purple-500/20 text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  {level}
+                  {level.replace('_', ' ')}
                 </button>
               ))}
             </div>

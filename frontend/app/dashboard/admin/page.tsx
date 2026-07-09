@@ -23,7 +23,7 @@ import { campaignApi }    from '@/app/services/campaignApi';
 import { leaderboardApi } from '@/app/services/leaderboardApi';
 import type { Campaign, LeaderboardEntry } from '@/app/services/types';
 
-const RISK_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#10b981' };
+const RISK_COLORS = { critical: '#991b1b', high: '#ef4444', moderate: '#f97316', low: '#eab308', very_low: '#10b981' };
 const TYPE_COLORS = { phishing: '#ef4444', smishing: '#f59e0b', vishing: '#3b82f6' };
 
 // Small stat card used in tables and metric blocks
@@ -54,34 +54,36 @@ export default function AdminDashboard() {
   const { data: dash,      isLoading: dashLoading }  = useSWR<DashboardStats>(
     cid ? `dash:${cid}`  : null,
     () => analyticsApi.getDashboard(cid),
-    { onError: () => showError('Failed to load dashboard stats') }
+    { onError: () => showError('Failed to load dashboard stats'), refreshInterval: 5000 }
   );
   const { data: simData,   isLoading: simLoading }   = useSWR<SimulationAnalytics>(
     cid ? `sim:${cid}`   : null,
     () => analyticsApi.getSimulations(cid),
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false, refreshInterval: 5000 }
   );
   const { data: deptRisk = [], isLoading: deptLoading } = useSWR<DepartmentRisk[]>(
     cid ? `dept:${cid}`  : null,
     () => analyticsApi.getDepartmentRisk(cid),
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false, refreshInterval: 5000 }
   );
   const { data: campaigns = [], isLoading: campLoading } = useSWR<Campaign[]>(
     cid ? `campaigns:${cid}` : null,
     () => campaignApi.getAll(cid),
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false, refreshInterval: 5000 }
   );
   const { data: leaderboard = [], isLoading: lbLoading } = useSWR<LeaderboardEntry[]>(
     cid ? ['lb', cid]    : null,
     () => leaderboardApi.getAll({ companyId: cid, limit: 5 }),
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false, refreshInterval: 5000 }
   );
 
-  const riskPie = dash ? [
-    { name: 'High',   value: dash.riskDistribution.high,   color: RISK_COLORS.high },
-    { name: 'Medium', value: dash.riskDistribution.medium, color: RISK_COLORS.medium },
-    { name: 'Low',    value: dash.riskDistribution.low,    color: RISK_COLORS.low },
-  ] : [];
+  const riskPie = dash && dash.riskDistribution ? [
+    { name: 'Critical', value: dash.riskDistribution.critical || 0, color: RISK_COLORS.critical },
+    { name: 'High',     value: dash.riskDistribution.high || 0,     color: RISK_COLORS.high },
+    { name: 'Moderate', value: dash.riskDistribution.moderate || 0, color: RISK_COLORS.moderate },
+    { name: 'Low',      value: dash.riskDistribution.low || 0,      color: RISK_COLORS.low },
+    { name: 'Very Low', value: dash.riskDistribution.very_low || 0, color: RISK_COLORS.very_low },
+  ].filter(item => item.value > 0) : [];
 
   const simTypeBar = simData ? [
     { name: 'Phishing', total: simData.phishing.total, clicked: simData.phishing.clicked, reported: simData.phishing.reported, compromised: simData.phishing.compromised },
@@ -235,7 +237,7 @@ export default function AdminDashboard() {
                 <Legend />
                 <Bar dataKey="risk"   name="Risk Score"  radius={[0,4,4,0]}>
                   {deptChart.map((d, i) => (
-                    <Cell key={i} fill={d.risk >= 36 ? '#ef4444' : d.risk >= 16 ? '#f59e0b' : '#10b981'} />
+                    <Cell key={i} fill={d.risk > 85 ? RISK_COLORS.critical : d.risk > 70 ? RISK_COLORS.high : d.risk > 50 ? RISK_COLORS.moderate : d.risk > 25 ? RISK_COLORS.low : RISK_COLORS.very_low} />
                   ))}
                 </Bar>
                 <Bar dataKey="click"  name="Click Rate"  fill="#f59e0b" radius={[0,4,4,0]} />
@@ -268,9 +270,11 @@ export default function AdminDashboard() {
                       <td className="py-2 px-2 text-center text-green-400">{d.reportRate}%</td>
                       <td className="py-2 px-2 text-center">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          d.avgRiskScore >= 36 ? 'bg-red-500/20 text-red-400' :
-d.avgRiskScore >= 16 ? 'bg-yellow-500/20 text-yellow-400' :
-                        'bg-green-500/20 text-green-4000'
+                          d.avgRiskScore > 85 ? 'bg-red-900/40 text-red-400' :
+                          d.avgRiskScore > 70 ? 'bg-red-500/20 text-red-400' :
+                          d.avgRiskScore > 50 ? 'bg-orange-500/20 text-orange-400' :
+                          d.avgRiskScore > 25 ? 'bg-yellow-500/20 text-yellow-400' :
+                          'bg-green-500/20 text-green-400'
                         }`}>
                           {d.avgRiskScore}
                         </span>

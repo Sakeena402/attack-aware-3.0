@@ -155,8 +155,9 @@ const simulationResultSchema = new Schema<ISimulationResult>(
 // ─────────────────────────────────────────────────────────────────────────────
 simulationResultSchema.index({ userId:     1 });
 simulationResultSchema.index({ campaignId: 1 });
-simulationResultSchema.index({ userId:     1, campaignId: 1 });
+// The { campaignId: 1, userId: 1 } index is redundant because { campaignId: 1, userId: 1, trackingToken: 1 } covers it.
 simulationResultSchema.index({ simulationType: 1 });
+simulationResultSchema.index({ userId: 1, createdAt: -1 });
 
 // Lookup index for token-based queries (NOT unique — see note above)
 simulationResultSchema.index({ campaignId: 1, userId: 1, trackingToken: 1 });

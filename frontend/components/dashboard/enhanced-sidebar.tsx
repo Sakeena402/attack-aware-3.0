@@ -1,8 +1,10 @@
 //frontend/components/dashboard/enhanced-sidebar.tsx
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebar } from '@/app/context/sidebarContext';
 import {
@@ -26,44 +28,49 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/app/context/authContext';
 
-const getMenuItems = (role: string | undefined) => {
-  const baseMenuItems = [
+interface MenuItem {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  href: string;
+  roles: string[];
+  badge?: string;
+}
+
+const getMenuItems = (role: string | undefined): MenuItem[] => {
+  const baseMenuItems: MenuItem[] = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', roles: ['super_admin', 'admin', 'employee'] },
   ];
 
-  // Find this in enhanced-sidebar.tsx and replace the whole roleBasedItems object:
+  const roleBasedItems: Record<string, MenuItem[]> = {
+    super_admin: [
+      { icon: Building2,        label: 'Companies',        href: '/dashboard/companies',   roles: ['super_admin'] },
+      { icon: BarChart3,        label: 'Global Analytics', href: '/dashboard/analytics',   roles: ['super_admin'] },
+      { icon: Activity,         label: 'System Health',    href: '/dashboard/system',      roles: ['super_admin'] },
+    ],
+    admin: [
+      { icon: Zap,              label: 'Campaigns',        href: '/dashboard/campaigns',   roles: ['admin'], badge: 'NEW' },
+      { icon: Trophy,           label: 'Leaderboard',      href: '/dashboard/leaderboard', roles: ['admin'] },
+      { icon: Users,            label: 'Employees',        href: '/dashboard/employees',   roles: ['admin'] },
+      { icon: BarChart3,        label: 'Analytics',        href: '/dashboard/analytics',   roles: ['admin'] },
+      { icon: FileText,         label: 'Reports',          href: '/dashboard/reports',     roles: ['admin'] },
+      { icon: BookOpen,         label: 'Training',         href: '/dashboard/training',    roles: ['admin'] },
+      { icon: MessageCircle,    label: 'Forum',            href: '/dashboard/forum',       roles: ['admin'] },
+    ],
+    employee: [
+      { icon: Trophy,           label: 'Leaderboard',      href: '/dashboard/leaderboard', roles: ['employee'] },
+      { icon: BookOpen,         label: 'Training',         href: '/dashboard/training',    roles: ['employee'] },
+      { icon: Zap,              label: 'Simulations',      href: '/dashboard/simulations', roles: ['employee'] },
+      { icon: MessageCircle,    label: 'Forum',            href: '/dashboard/forum',       roles: ['employee'] },
+      { icon: CheckSquare,      label: 'Tasks',            href: '/dashboard/tasks',       roles: ['employee'] },
+      { icon: TrendingUp,       label: 'My Progress',      href: '/dashboard/progress',    roles: ['employee'] },
+    ],
+  };
 
-const roleBasedItems: Record<string, Array<any>> = {
-  super_admin: [
-    { icon: Building2,        label: 'Companies',      href: '/dashboard/companies',  roles: ['super_admin'] },
-    { icon: BarChart3,        label: 'Global Analytics', href: '/dashboard/analytics', roles: ['super_admin'] },
-    { icon: Activity,         label: 'System Health',  href: '/dashboard/system',     roles: ['super_admin'] },
-  ],
-  admin: [
-    { icon: Zap,              label: 'Campaigns',      href: '/dashboard/campaigns',  roles: ['admin'], badge: 'NEW' },
-    { icon: Trophy,           label: 'Leaderboard',    href: '/dashboard/leaderboard', roles: ['admin'] },
-    { icon: Users,            label: 'Employees',      href: '/dashboard/employees',  roles: ['admin'] },
-    { icon: BarChart3,        label: 'Analytics',      href: '/dashboard/analytics',  roles: ['admin'] },
-    { icon: FileText,         label: 'Reports',        href: '/dashboard/reports',    roles: ['admin'] },
-    { icon: BookOpen,         label: 'Training',       href: '/dashboard/training',   roles: ['admin'] },
-    { icon: MessageCircle,    label: 'Forum',          href: '/dashboard/forum',      roles: ['admin'] },
-  ],
-  employee: [
-    { icon: Trophy,           label: 'Leaderboard',    href: '/dashboard/leaderboard', roles: ['employee'] },
-    { icon: BookOpen,         label: 'Training',       href: '/dashboard/training',   roles: ['employee'] },
-    { icon: Zap,              label: 'Simulations',    href: '/dashboard/simulations', roles: ['employee'] },
-    { icon: MessageCircle,    label: 'Forum',          href: '/dashboard/forum',      roles: ['employee'] },
-    { icon: CheckSquare,      label: 'Tasks',          href: '/dashboard/tasks',      roles: ['employee'] },
-    { icon: TrendingUp,       label: 'My Progress',    href: '/dashboard/progress',   roles: ['employee'] },
-  ],
-};
-
-  const items = [...baseMenuItems];
+  const items: MenuItem[] = [...baseMenuItems];
   if (role && roleBasedItems[role]) {
     items.push(...roleBasedItems[role]);
   }
 
-  // Settings and logout available to all
   items.push(
     { icon: Settings, label: 'Settings', href: '/dashboard/settings', roles: ['super_admin', 'admin', 'employee'] },
   );

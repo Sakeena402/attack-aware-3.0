@@ -82,8 +82,38 @@ type ErrorHandler = (error: ApiError) => void;
 const errorHandlers = new Set<ErrorHandler>();
 export const onApiError = (handler: ErrorHandler) => {
   errorHandlers.add(handler);
-  return () => errorHandlers.delete(handler);
+  return () => {
+    errorHandlers.delete(handler);
+  };
 };
+
+export function getErrorMessage(error: ApiError): string {
+  if (!error.errorCode) return error.message || 'An unexpected error occurred';
+  
+  switch (error.errorCode) {
+    case ErrorCodes.INVALID_CREDENTIALS:
+      return 'Invalid email or password.';
+    case ErrorCodes.TOKEN_EXPIRED:
+      return 'Your session has expired. Please login again.';
+    case ErrorCodes.TOKEN_INVALID:
+      return 'Invalid session. Please login again.';
+    case ErrorCodes.UNAUTHORIZED:
+      return 'You must be logged in to access this resource.';
+    case ErrorCodes.FORBIDDEN:
+      return 'You do not have permission to access this resource.';
+    case ErrorCodes.VALIDATION_ERROR:
+      return error.message || 'Please check your inputs.';
+    case ErrorCodes.NOT_FOUND:
+      return 'The requested resource was not found.';
+    case ErrorCodes.ALREADY_EXISTS:
+      return 'This resource already exists.';
+    case ErrorCodes.RATE_LIMIT_EXCEEDED:
+      return 'Too many requests. Please try again later.';
+    default:
+      return error.message || 'An unexpected error occurred';
+  }
+}
+
 const notifyErrorHandlers = (error: ApiError) =>
   errorHandlers.forEach((h) => {
     try {
