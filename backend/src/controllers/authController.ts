@@ -30,7 +30,7 @@ function buildUserPayload(user: InstanceType<typeof User>) {
     companyId: user.companyId,
     department: user.department,
     points: user.points,
-    badge: user.badges?.[0] ?? null,
+    badge: user.badge ?? 'Rookie',
   };
 }
 

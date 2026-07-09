@@ -59,7 +59,12 @@ export const submitQuiz = async (req: AuthRequest, res: Response<ApiResponse>) =
     if (!quiz) throw new AppError('Quiz not found', 404);
 
     const percentage = (score / quiz.totalQuestions) * 100;
-    const actionType = percentage >= 70 ? 'quiz_pass' : 'quiz_fail';
+    let actionType: 'quiz_90' | 'quiz_75' | 'quiz_60' | 'quiz_40' | 'quiz_0' = 'quiz_0';
+    if (percentage >= 90) actionType = 'quiz_90';
+    else if (percentage >= 75) actionType = 'quiz_75';
+    else if (percentage >= 60) actionType = 'quiz_60';
+    else if (percentage >= 40) actionType = 'quiz_40';
+    else actionType = 'quiz_0';
 
     const userQuiz = await UserQuiz.create({
       userId,

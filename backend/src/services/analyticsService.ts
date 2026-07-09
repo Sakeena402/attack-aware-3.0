@@ -1,9 +1,9 @@
 import SimulationResult from '../models/SimulationResult.js';
 import { Campaign } from '../models/Campaign.js';
 import { User } from '../models/User.js';
+import { UserGame } from '../models/UserGame.js';
+import { UserQuiz } from '../models/UserQuiz.js';
 import mongoose from 'mongoose';
-
-// ─────────────────────────────────────────────────────────────────────────────
 // PERIOD DATE RANGE HELPER
 // Converts period string to a start date for filtering
 // ─────────────────────────────────────────────────────────────────────────────
@@ -75,8 +75,11 @@ export function calculatePoints(
     | 'report'
     | 'ignored'
     | 'video_completed'
-    | 'quiz_pass'
-    | 'quiz_fail'
+    | 'quiz_90'
+    | 'quiz_75'
+    | 'quiz_60'
+    | 'quiz_40'
+    | 'quiz_0'
     | 'game_played'
     | 'game_high_score'
 ): number {
@@ -88,8 +91,11 @@ export function calculatePoints(
     action === 'click' ? -30 :
     action === 'credentials' ? -60 :
     action === 'video_completed' ? +10 :
-    action === 'quiz_pass' ? +20 :
-    action === 'quiz_fail' ? +5 :
+    action === 'quiz_90' ? +30 :
+    action === 'quiz_75' ? +20 :
+    action === 'quiz_60' ? +15 :
+    action === 'quiz_40' ? +8 :
+    action === 'quiz_0' ? +3 :
     action === 'game_played' ? +5 :
     action === 'game_high_score' ? +15 :
     0;
@@ -169,18 +175,65 @@ export async function updateUserPoints(
     | 'report'
     | 'ignored'
     | 'video_completed'
-    | 'quiz_pass'
-    | 'quiz_fail'
+    | 'quiz_90'
+    | 'quiz_75'
+    | 'quiz_60'
+    | 'quiz_40'
+    | 'quiz_0'
     | 'game_played'
     | 'game_high_score'
 ): Promise<void> {
-  const user = await User.findById(userId).select('points').lean();
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  if (action === 'game_played' || action === 'game_high_score') {
+    const count = await UserGame.countDocuments({ userId, createdAt: { $gte: startOfDay } });
+    if (count >= 5) return;
+  } else if (action.startsWith('quiz_')) {
+    const count = await UserQuiz.countDocuments({ userId, createdAt: { $gte: startOfDay } });
+    if (count >= 5) return;
+  }
+
+  const user = await User.findById(userId).select('points achievements').lean() as any;
   if (!user) return;
 
   const newPoints = calculatePoints(user.points ?? 0, action);
   const badge = calculateBadge(newPoints);
 
-  await User.findByIdAndUpdate(userId, { points: newPoints, badge });
+  const newAchievements: string[] = [];
+  
+  if (action === 'report') {
+    newAchievements.push('First Reporter');
+  }
+
+  if (action === 'quiz_90') {
+    const highScores = await UserQuiz.find({ userId }).select('score totalQuestions').lean();
+    const count90 = highScores.filter((q: any) => (q.score / (q.totalQuestions || 1)) * 100 >= 90).length;
+    if (count90 >= 10) {
+      newAchievements.push('Quiz Master');
+    }
+  }
+
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  const clickCount = await SimulationResult.countDocuments({
+    userId,
+    createdAt: { $gte: sixMonthsAgo },
+    $or: [{ smsLinkClicked: true }, { linkClicked: true }, { credentialsSubmitted: true }]
+  });
+  const totalSims = await SimulationResult.countDocuments({
+    userId,
+    createdAt: { $gte: sixMonthsAgo }
+  });
+  if (totalSims > 0 && clickCount === 0) {
+    newAchievements.push('Zero Clicks — 6 Months');
+  }
+
+  await User.findByIdAndUpdate(userId, { 
+    points: newPoints, 
+    badge,
+    $addToSet: { achievements: { $each: newAchievements } }
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -242,6 +295,38 @@ export async function computeDashboardStats(
         smsDelivered: { $sum: { $cond: [{ $eq: ['$smsDelivered', true] }, 1, 0] } },
         callsInit: { $sum: { $cond: [{ $eq: ['$callInitiated', true] }, 1, 0] } },
         callsAnswered: { $sum: { $cond: [{ $eq: ['$callAnswered', true] }, 1, 0] } },
+        respExcellent: {
+          $sum: {
+            $cond: [
+              { $and: [
+                { $ne: ['$reportedAt', null] },
+                { $lt: [ { $subtract: ['$reportedAt', { $ifNull: ['$smsSentAt', { $ifNull: ['$callInitiatedAt', '$createdAt'] }] }] }, 300000 ] }
+              ]}, 1, 0
+            ]
+          }
+        },
+        respGood: {
+          $sum: {
+            $cond: [
+              { $and: [
+                { $ne: ['$reportedAt', null] },
+                { $gte: [ { $subtract: ['$reportedAt', { $ifNull: ['$smsSentAt', { $ifNull: ['$callInitiatedAt', '$createdAt'] }] }] }, 300000 ] },
+                { $lt: [ { $subtract: ['$reportedAt', { $ifNull: ['$smsSentAt', { $ifNull: ['$callInitiatedAt', '$createdAt'] }] }] }, 1800000 ] }
+              ]}, 1, 0
+            ]
+          }
+        },
+        respAverage: {
+          $sum: {
+            $cond: [
+              { $and: [
+                { $ne: ['$reportedAt', null] },
+                { $gte: [ { $subtract: ['$reportedAt', { $ifNull: ['$smsSentAt', { $ifNull: ['$callInitiatedAt', '$createdAt'] }] }] }, 1800000 ] },
+                { $lt: [ { $subtract: ['$reportedAt', { $ifNull: ['$smsSentAt', { $ifNull: ['$callInitiatedAt', '$createdAt'] }] }] }, 10800000 ] }
+              ]}, 1, 0
+            ]
+          }
+        },
       },
     },
   ]);
@@ -249,6 +334,7 @@ export async function computeDashboardStats(
   const s = agg ?? {
     total: 0, clicks: 0, credentials: 0, reports: 0,
     smsSent: 0, smsDelivered: 0, callsInit: 0, callsAnswered: 0,
+    respExcellent: 0, respGood: 0, respAverage: 0
   };
 
   const pct = (n: number, d: number) =>
@@ -292,6 +378,12 @@ riskCounts.forEach((r: any) => {
     trainingProgress: pct(s.reports, Math.max(totalEmployees, 1)),
     overallRiskScore: calculateRiskScore(s.clicks, s.credentials, s.reports, s.total),
     riskDistribution: riskDist,
+    responseTimeBuckets: {
+      excellent: s.respExcellent || 0,
+      good: s.respGood || 0,
+      average: s.respAverage || 0,
+      poor: Math.max(0, s.total - (s.respExcellent || 0) - (s.respGood || 0) - (s.respAverage || 0)),
+    },
     period: period || 'all',                     // ✅ echo back period for UI
   };
 }
@@ -600,11 +692,21 @@ export async function computeUserAnalytics(userId: string, companyId?: string) {
     else if (r.reportedPhishing || r.voiceReported) action = 'reported';
     else if (r.voiceEngaged || r.voiceVerified) action = 'engaged';
 
+    const start = r.smsSentAt || r.callInitiatedAt || r.createdAt;
+    let responseTimeBucket = 'poor';
+    if (r.reportedAt && start) {
+      const diff = r.reportedAt.getTime() - start.getTime();
+      if (diff < 300000) responseTimeBucket = 'excellent';
+      else if (diff < 1800000) responseTimeBucket = 'good';
+      else if (diff < 10800000) responseTimeBucket = 'average';
+    }
+
     return {
-      date: r.smsSentAt || r.callInitiatedAt || r.createdAt,
+      date: start,
       campaignName: campaign?.campaignName ?? 'Unknown',
       type: r.simulationType || campaign?.type || 'unknown',
       action,
+      responseTimeBucket,
       pointsEarned:
         action === 'reported' ? +50 :
           action === 'ignored' ? +5 :

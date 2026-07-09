@@ -199,6 +199,29 @@ export interface ApiResponse<T = any> {
   error?: string;
 }
 
+// Company request bodies
+export interface CreateCompanyBody {
+  companyName: string;
+  industry: string;
+  /** Optional: the userId to assign as company admin. If omitted, company is created with no admin. */
+  adminId?: string;
+}
+
+export interface UpdateCompanyBody {
+  companyName?: string;
+  industry?: string;
+  adminId?: string;
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
+}
+
+// Contact request body
+export interface CreateContactBody {
+  name: string;
+  email: string;
+  subject?: string;
+  message: string;
+}
+
 // Login Request
 export interface LoginRequest {
   email: string;

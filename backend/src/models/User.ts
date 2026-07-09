@@ -51,6 +51,10 @@ const userSchema = new Schema<IUser>(
       type: [String],
       default: [],
     },
+    achievements: {
+      type: [String],
+      default: [],
+    },
     riskScore: {
       type: Number,
       default: 0,
