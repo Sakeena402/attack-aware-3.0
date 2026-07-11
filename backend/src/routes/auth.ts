@@ -12,6 +12,12 @@ authRouter.post('/register', validate(registerSchema), register);
 authRouter.post('/refresh', validate(refreshTokenSchema));
 authRouter.get('/me', authenticate, getCurrentUser);
 authRouter.post('/logout', authenticate, logout);
+
+import { forgotPassword, resetPassword, sendCredentials } from '../controllers/authController.js';
+authRouter.post('/forgot-password', forgotPassword);
+authRouter.post('/reset-password', resetPassword);
+authRouter.post('/send-credentials', authenticate, sendCredentials);
+
 export default authRouter;
 
 

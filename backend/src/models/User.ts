@@ -22,7 +22,7 @@ const userSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ['super_admin', 'admin', 'employee'],
+      enum: ['super_admin', 'admin', 'employee', 'individual'],
       default: 'employee',
     },
     companyId: {
@@ -42,6 +42,7 @@ const userSchema = new Schema<IUser>(
       type: Number,
       default: 0,
     },
+    // singular badge — the current highest-earned badge, updated by updateUserPoints()
     badge: {
       type: String,
       default: 'Rookie',
@@ -70,6 +71,29 @@ const userSchema = new Schema<IUser>(
     lastLogin: {
       type: Date,
       default: null,
+    },
+    gender: {
+      type: String,
+      enum: ['male', 'female', 'other', 'prefer_not_to_say'],
+    },
+    subscriptionPlan: {
+      type: String,
+    },
+    subscriptionPackage: {
+      type: String,
+    },
+    isUrduPreferred: {
+      type: Boolean,
+      default: false,
+    },
+    passwordResetToken: {
+      type: String,
+    },
+    passwordResetExpires: {
+      type: Date,
+    },
+    bio: {
+      type: String,
     },
   },
   { timestamps: true }
