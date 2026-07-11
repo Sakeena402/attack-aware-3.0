@@ -1,0 +1,351 @@
+@startuml AttackAware3_Complete_ER
+title AttackAware 3.0 — Complete ER Diagram\n(main + feature/theme-system + feature/kainat-migration branches)
+
+skinparam linetype ortho
+skinparam defaultFontSize 11
+skinparam entity {
+  BackgroundColor White
+  BorderColor #2563EB
+  HeaderBackgroundColor #2563EB
+  HeaderFontColor White
+}
+
+' ── CORE IDENTITY ─────────────────────────────────────────────────────────────
+
+entity "User" as User {
+  * _id : ObjectId <<PK>>
+  --
+  name : String (required)
+  email : String (unique, lowercase)
+  passwordHash : String
+  role : enum(super_admin|admin|employee|individual)
+  companyId : ObjectId <<ref:Company>>
+  department : String (default:General)
+  phoneNumber : String
+  points : Number (default:0)
+  badge : String (default:Rookie)
+  badges : [String]
+  riskScore : Number 0-100
+  riskLevel : enum(low|medium|high)
+  trainingProgress : Number 0-100
+  lastLogin : Date
+  createdAt / updatedAt : Date
+}
+
+entity "Company" as Company {
+  * _id : ObjectId <<PK>>
+  --
+  companyName : String (required)
+  industry : String (required)
+  adminId : ObjectId <<ref:User>>
+  employeeCount : Number (default:0)
+  approvalStatus : enum(pending|approved|rejected)
+  enterpriseCode : String
+  contactPerson : String
+  taxId : String
+  subscriptionPlan : ObjectId <<ref:MembershipPlan>>
+  createdAt / updatedAt : Date
+}
+
+entity "MembershipPlan" as Plan {
+  * _id : ObjectId <<PK>>
+  --
+  name : String (required)
+  price : Number (required)
+  features : [String]
+  maxEmployees : Number (required)
+  isActive : Boolean (default:true)
+  createdAt / updatedAt : Date
+}
+
+' ── SIMULATION ────────────────────────────────────────────────────────────────
+
+entity "Campaign" as Campaign {
+  * _id : ObjectId <<PK>>
+  --
+  campaignName : String (required)
+  type : enum(phishing|smishing|vishing)
+  createdBy : ObjectId <<ref:User>>
+  companyId : ObjectId <<ref:Company>>
+  status : enum(draft|active|completed|paused)
+  startDate / endDate : Date
+  targetDepartments : [String]
+  targetEmployees : [{_id:ObjectId, phone:String}]
+  emailTemplate : String
+  smsTemplate / customSmsMessage : String
+  voiceScript : String
+  scheduledTime : Date
+  sentCount / deliveredCount : Number
+  clickedCount / reportedCount : Number
+  clickRate / reportRate : Number
+  createdAt / updatedAt : Date
+}
+
+entity "SimulationResult" as SimResult {
+  * _id : ObjectId <<PK>>
+  --
+  userId : ObjectId <<ref:User>>
+  campaignId : ObjectId <<ref:Campaign>>
+  simulationType : enum(phishing|smishing|vishing)
+  trackingToken : String
+  -- Phishing --
+  emailOpened / emailOpenedAt : Boolean/Date
+  linkClicked / clickedAt : Boolean/Date
+  -- Smishing --
+  smsSent / smsSentAt : Boolean/Date
+  smsDelivered / smsDeliveredAt : Boolean/Date
+  smsLinkClicked / smsClickedAt : Boolean/Date
+  smsDeliveryStatus / smsErrorCode : String
+  messageSid / phoneNumber : String
+  -- Vishing --
+  callInitiated / callInitiatedAt : Boolean/Date
+  callAnswered / callAnsweredAt : Boolean/Date
+  callCompleted / callCompletedAt : Boolean/Date
+  callDuration : Number
+  callStatus / callResponse / callSid : String
+  voiceEngaged / voiceVerified / voiceReported : Boolean
+  answeredBy : String
+  -- Shared --
+  credentialsSubmitted / credentialsSubmittedAt : Boolean/Date
+  formFieldsSubmitted : [String]
+  reportedPhishing / reportedAt : Boolean/Date
+  reportMethod : String
+  clickIpAddress / clickUserAgent : String
+  timestamp / createdAt / updatedAt : Date
+}
+
+entity "SimulationEvent" as SimEvent {
+  * _id : ObjectId <<PK>>
+  --
+  idempotencyKey : String <<unique>>
+  eventType : enum(sms_sent|sms_delivered|sms_failed|link_clicked\ncredentials_submitted|phishing_reported\ncall_initiated|call_answered|call_completed\nvoice_engaged|voice_verified|voice_reported)
+  campaignId : ObjectId <<ref:Campaign>>
+  userId : ObjectId <<ref:User>>
+  simulationResultId : ObjectId <<ref:SimulationResult>>
+  occurredAt / recordedAt : Date
+  metadata.ipAddress / userAgent : String
+  metadata.isBot / isBypassed : Boolean
+  metadata.messageSid / callSid : String
+  metadata.priorState : Object
+  rejected : Boolean
+  rejectionReason : String
+  createdAt : Date
+}
+
+entity "Leaderboard" as Leaderboard {
+  * _id : ObjectId <<PK>>
+  --
+  userId : ObjectId <<ref:User>> <<unique>>
+  companyId : ObjectId <<ref:Company>>
+  department : String
+  score : Number (default:0)
+  rank : Number
+  createdAt / updatedAt : Date
+}
+
+' ── LEARNING CONTENT ──────────────────────────────────────────────────────────
+
+entity "Video" as Video {
+  * _id : ObjectId <<PK>>
+  --
+  title : String (required)
+  description : String
+  filePath : String (required)
+  category : String (required)
+  language : enum(en|ur) (default:en)
+  targetRoles : [String]
+  createdAt / updatedAt : Date
+}
+
+entity "UserVideo" as UserVideo {
+  * _id : ObjectId <<PK>>
+  --
+  userId : ObjectId <<ref:User>> (required)
+  videoId : ObjectId <<ref:Video>> (required)
+  status : enum(Incomplete|Completed) (default:Incomplete)
+  watchedAt : Date
+  companyId : ObjectId <<ref:Company>>
+  createdAt / updatedAt : Date
+}
+
+entity "Quiz" as Quiz {
+  * _id : ObjectId <<PK>>
+  --
+  title : String (required)
+  title_ur : String
+  category : String (required)
+  difficulty : enum(easy|medium|hard) (default:medium)
+  totalQuestions : Number (default:0)
+  timeLimit : Number
+  targetRoles : [String]
+  createdAt / updatedAt : Date
+}
+
+entity "QuizQuestion" as QuizQ {
+  * _id : ObjectId <<PK>>
+  --
+  quizId : ObjectId <<ref:Quiz>>
+  category : String
+  difficulty : enum(easy|medium|hard) (default:medium)
+  question : String (required)
+  question_ur : String
+  option_a / option_b / option_c / option_d : String (required)
+  option_a_ur / option_b_ur / option_c_ur / option_d_ur : String
+  correctOption : enum(a|b|c|d) (required)
+  createdAt / updatedAt : Date
+}
+
+entity "UserQuiz" as UserQuiz {
+  * _id : ObjectId <<PK>>
+  --
+  userId : ObjectId <<ref:User>> (required)
+  quizId : ObjectId <<ref:Quiz>> (required)
+  score : Number (default:0)
+  totalQuestions : Number (required)
+  completedAt : Date (default:now)
+  companyId : ObjectId <<ref:Company>>
+  createdAt / updatedAt : Date
+}
+
+entity "Game" as Game {
+  * _id : ObjectId <<PK>>
+  --
+  name : String (required)
+  description : String
+  category : String (required)
+  maxScore : Number (required)
+  gameUrl : String (required)
+  targetRoles : [String]
+  createdAt / updatedAt : Date
+}
+
+entity "UserGame" as UserGame {
+  * _id : ObjectId <<PK>>
+  --
+  userId : ObjectId <<ref:User>> (required)
+  gameId : ObjectId <<ref:Game>> (required)
+  score : Number (default:0)
+  playedAt : Date (default:now)
+  companyId : ObjectId <<ref:Company>>
+  createdAt / updatedAt : Date
+}
+
+' ── COMMUNITY ─────────────────────────────────────────────────────────────────
+
+entity "ForumPost" as ForumPost {
+  * _id : ObjectId <<PK>>
+  --
+  userId : ObjectId <<ref:User>> (required)
+  title : String (required)
+  content : String (required)
+  isUrdu : Boolean (default:false)
+  companyId : ObjectId <<ref:Company>>
+  createdAt / updatedAt : Date
+}
+
+entity "ForumComment" as ForumComment {
+  * _id : ObjectId <<PK>>
+  --
+  postId : ObjectId <<ref:ForumPost>> (required)
+  userId : ObjectId <<ref:User>> (required)
+  commentText : String (required)
+  isUrdu : Boolean (default:false)
+  createdAt / updatedAt : Date
+}
+
+' ── THREAT INTEL ──────────────────────────────────────────────────────────────
+
+entity "Attack" as Attack {
+  * _id : ObjectId <<PK>>
+  --
+  name : String (required)
+  description : String
+  severity : enum(low|medium|high|critical) (required)
+  createdAt / updatedAt : Date
+}
+
+' ── EMPLOYEE MANAGEMENT ───────────────────────────────────────────────────────
+
+entity "Task" as Task {
+  * _id : ObjectId <<PK>>
+  --
+  assignedTo : ObjectId <<ref:User>> (required)
+  assignedBy : ObjectId <<ref:User>> (required)
+  companyId : ObjectId <<ref:Company>>
+  title : String (required)
+  description : String
+  status : enum(pending|in_progress|completed) (default:pending)
+  dueDate : Date
+  createdAt / updatedAt : Date
+}
+
+entity "Message" as Message {
+  * _id : ObjectId <<PK>>
+  --
+  senderId : ObjectId <<ref:User>> (required)
+  receiverId : ObjectId <<ref:User>> (required)
+  companyId : ObjectId <<ref:Company>>
+  content : String (required)
+  isRead : Boolean (default:false)
+  createdAt / updatedAt : Date
+}
+
+' ── PLATFORM ──────────────────────────────────────────────────────────────────
+
+entity "ContactMessage" as Contact {
+  * _id : ObjectId <<PK>>
+  --
+  name : String (required)
+  email : String (required, lowercase)
+  message : String (required)
+  createdAt / updatedAt : Date
+}
+
+entity "Setting" as Setting {
+  * _id : ObjectId <<PK>>
+  --
+  platformName : String (default:My Platform)
+}
+
+' ── SEED DATA (backend/scripts/seed.ts) ───────────────────────────────────────
+note "Seed Script (backend/scripts/seed.ts)\nSeeds: MembershipPlan, Video, Quiz, Game, Attack\n\nFixExistingRecords (backend/scripts/fixExistingRecords.ts)\nOne-time migration: fixes SimulationResult index bug\n\nSeedData (backend/scripts/seedData.ts)\nLegacy seed script (commented out)" as SeedNote
+
+' ── RELATIONSHIPS ─────────────────────────────────────────────────────────────
+
+Company ||--o{ User : "employees\n(companyId)"
+Company }o--|| User : "admin\n(adminId)"
+Company }o--o| Plan : "subscription\n(subscriptionPlan)"
+Company ||--o{ Campaign : "companyId"
+Company ||--o{ Leaderboard : "companyId"
+Company ||--o{ UserVideo : "companyId"
+Company ||--o{ UserQuiz : "companyId"
+Company ||--o{ UserGame : "companyId"
+Company ||--o{ ForumPost : "companyId"
+Company ||--o{ Task : "companyId"
+Company ||--o{ Message : "companyId"
+
+User ||--o{ Campaign : "createdBy"
+User ||--o{ SimResult : "userId"
+User ||--o{ SimEvent : "userId"
+User ||--|| Leaderboard : "userId (unique)"
+User ||--o{ UserVideo : "userId"
+User ||--o{ UserQuiz : "userId"
+User ||--o{ UserGame : "userId"
+User ||--o{ ForumPost : "userId"
+User ||--o{ ForumComment : "userId"
+User ||--o{ Task : "assignedTo"
+User ||--o{ Task : "assignedBy"
+User ||--o{ Message : "senderId"
+User ||--o{ Message : "receiverId"
+
+Campaign ||--o{ SimResult : "campaignId"
+Campaign ||--o{ SimEvent : "campaignId"
+SimResult ||--o{ SimEvent : "simulationResultId"
+
+Video ||--o{ UserVideo : "videoId"
+Quiz ||--o{ QuizQ : "quizId"
+Quiz ||--o{ UserQuiz : "quizId"
+Game ||--o{ UserGame : "gameId"
+ForumPost ||--o{ ForumComment : "postId"
+
+@enduml

@@ -1,0 +1,269 @@
+@startuml AttackAware3_Architecture
+title AttackAware 3.0 — Complete System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam defaultFontSize 11
+
+actor "Super Admin" as SA
+actor "Company Admin" as CA
+actor "Employee" as EMP
+actor "Individual User" as IND
+actor "Phishing Target" as PUB
+
+package "Frontend — Next.js 15" as FE {
+
+  package "Auth Pages" {
+    [login/page.tsx]
+    [register/page.tsx]
+  }
+
+  package "Dashboard Pages" {
+    [dashboard/page.tsx]
+    [admin/page.tsx]
+    [employee/page.tsx]
+    [super-admin/page.tsx]
+    [campaigns/page.tsx]
+    [companies/page.tsx]
+    [employees/page.tsx]
+    [analytics/page.tsx]
+    [leaderboard/page.tsx]
+    [reports/page.tsx]
+    [settings/page.tsx]
+    [forum/page.tsx]
+    [individual/page.tsx]
+    [profile/page.tsx]
+    [progress/page.tsx]
+    [tasks/page.tsx]
+    [messages/page.tsx]
+    [attacks/page.tsx]
+  }
+
+  package "Phishing Lure Pages" {
+    [verify-bank]
+    [verify-hr]
+    [verify-it]
+    [verify-delivery]
+    [verify-password]
+    [verify-caught]
+    [verify-reported]
+  }
+
+  package "Frontend Services" {
+    [api.ts]
+    [authApi.ts]
+    [campaignApi.ts]
+    [analyticsApi.ts]
+    [employeeApi.ts]
+    [companyApi.ts]
+    [simulationApi.ts]
+    [leaderboardApi.ts]
+    [superAdminApi.ts]
+    [campaignReportsApi.ts]
+    [contactApi.ts]
+    [forumApi.ts]
+    [attacksApi.ts]
+  }
+
+  package "UI Components" {
+    [enhanced-sidebar.tsx]
+    [enhanced-header.tsx]
+    [metric-card.tsx]
+    [theme-provider.tsx]
+    [ProtectedRoute.ts]
+    [shadcn-ui-components]
+  }
+}
+
+package "Backend — Express + TypeScript" as BE {
+
+  package "Middleware" {
+    [security]
+    [rateLimiter]
+    [auth-JWT-verify]
+    [rbac]
+    [validation]
+    [featureGating]
+  }
+
+  package "Routes" {
+    [/api/auth]
+    [/api/campaigns]
+    [/api/analytics]
+    [/api/company]
+    [/api/employees]
+    [/api/leaderboard]
+    [/api/track]
+    [/api/webhooks]
+    [/api/simulations]
+    [/api/super-admin]
+    [/api/reports]
+    [/api/settings]
+    [/api/videos]
+    [/api/quizzes]
+    [/api/games]
+    [/api/forum]
+    [/api/messages]
+    [/api/tasks]
+    [/api/attacks]
+    [/api/plans]
+    [/api/progress]
+  }
+
+  package "Controllers" {
+    [authController]
+    [campaignController]
+    [analyticsController]
+    [companyController]
+    [employeeController]
+    [smishingController]
+    [vishingController]
+    [trackingController]
+    [webhookController]
+    [leaderboardController]
+    [pdfReportController]
+    [videoController]
+    [quizController]
+    [gameController]
+    [forumController]
+    [messageController]
+    [taskController]
+    [attackController]
+    [planController]
+    [progressController]
+  }
+
+  package "Services" {
+    [analyticsService]
+    [trackingService]
+    [twilioService]
+    [pdfReportService]
+    [planService]
+  }
+
+  package "Queue" {
+    [trackingQueue-Bull]
+    [workers]
+  }
+
+  package "Lib" {
+    [stateMachine]
+    [botDetection]
+    [idempotency]
+    [jwt]
+    [logger]
+  }
+}
+
+database "MongoDB" as DB {
+  [User]
+  [Company]
+  [Campaign]
+  [SimulationResult]
+  [SimulationEvent]
+  [Leaderboard]
+  [Video]
+  [UserVideo]
+  [Quiz]
+  [QuizQuestion]
+  [UserQuiz]
+  [Game]
+  [UserGame]
+  [ForumPost]
+  [ForumComment]
+  [Attack]
+  [Task]
+  [Message]
+  [MembershipPlan]
+  [ContactMessage]
+  [Setting]
+}
+
+cloud "External Services" {
+  [TwilioAPI]
+  [SMTPService]
+  [RedisQueue]
+}
+
+SA --> [login/page.tsx]
+CA --> [login/page.tsx]
+EMP --> [login/page.tsx]
+IND --> [login/page.tsx]
+PUB --> [verify-bank]
+PUB --> [verify-hr]
+PUB --> [verify-it]
+
+SA --> [super-admin/page.tsx]
+CA --> [admin/page.tsx]
+EMP --> [employee/page.tsx]
+IND --> [individual/page.tsx]
+
+[authApi.ts] --> [/api/auth]
+[campaignApi.ts] --> [/api/campaigns]
+[analyticsApi.ts] --> [/api/analytics]
+[employeeApi.ts] --> [/api/employees]
+[companyApi.ts] --> [/api/company]
+[simulationApi.ts] --> [/api/simulations]
+[leaderboardApi.ts] --> [/api/leaderboard]
+[forumApi.ts] --> [/api/forum]
+[attacksApi.ts] --> [/api/attacks]
+[verify-bank] --> [/api/track]
+[verify-hr] --> [/api/track]
+[verify-it] --> [/api/track]
+
+[/api/auth] --> [rateLimiter]
+[rateLimiter] --> [authController]
+[/api/campaigns] --> [auth-JWT]
+[auth-JWT] --> [rbac]
+[rbac] --> [featureGating]
+[featureGating] --> [campaignController]
+[/api/track] --> [trackingController]
+[/api/forum] --> [forumController]
+[/api/videos] --> [videoController]
+[/api/quizzes] --> [quizController]
+[/api/games] --> [gameController]
+[/api/progress] --> [progressController]
+[/api/tasks] --> [taskController]
+[/api/messages] --> [messageController]
+[/api/attacks] --> [attackController]
+[/api/plans] --> [planController]
+
+[smishingController] --> [twilioService]
+[vishingController] --> [twilioService]
+[trackingController] --> [trackingQueue-Bull]
+[trackingQueue-Bull] --> [workers]
+[workers] --> [trackingService]
+[trackingService] --> [stateMachine]
+[stateMachine] --> [botDetection]
+[stateMachine] --> [idempotency]
+[analyticsController] --> [analyticsService]
+[planController] --> [planService]
+
+[twilioService] --> [TwilioAPI]
+[campaignController] --> [SMTPService]
+[trackingQueue-Bull] --> [RedisQueue]
+
+[authController] --> [User]
+[authController] --> [Company]
+[campaignController] --> [Campaign]
+[trackingService] --> [SimulationResult]
+[trackingService] --> [SimulationEvent]
+[videoController] --> [Video]
+[videoController] --> [UserVideo]
+[quizController] --> [Quiz]
+[quizController] --> [QuizQuestion]
+[quizController] --> [UserQuiz]
+[gameController] --> [Game]
+[gameController] --> [UserGame]
+[forumController] --> [ForumPost]
+[forumController] --> [ForumComment]
+[progressController] --> [UserVideo]
+[progressController] --> [UserQuiz]
+[progressController] --> [UserGame]
+[taskController] --> [Task]
+[messageController] --> [Message]
+[attackController] --> [Attack]
+[planController] --> [MembershipPlan]
+[leaderboardController] --> [Leaderboard]
+
+@enduml
