@@ -25,6 +25,8 @@ import {
   BookOpen,
   MessageCircle,
   CheckSquare,
+  Bell,
+  User,
 } from 'lucide-react';
 import { useAuth } from '@/app/context/authContext';
 
@@ -38,31 +40,49 @@ interface MenuItem {
 
 const getMenuItems = (role: string | undefined): MenuItem[] => {
   const baseMenuItems: MenuItem[] = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', roles: ['super_admin', 'admin', 'employee'] },
+    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', roles: ['super_admin', 'admin', 'employee', 'individual'] },
   ];
 
   const roleBasedItems: Record<string, MenuItem[]> = {
     super_admin: [
-      { icon: Building2,        label: 'Companies',        href: '/dashboard/companies',   roles: ['super_admin'] },
-      { icon: BarChart3,        label: 'Global Analytics', href: '/dashboard/analytics',   roles: ['super_admin'] },
-      { icon: Activity,         label: 'System Health',    href: '/dashboard/system',      roles: ['super_admin'] },
+      { icon: Building2,     label: 'Companies',           href: '/dashboard/companies',            roles: ['super_admin'] },
+      { icon: BarChart3,     label: 'Global Analytics',    href: '/dashboard/analytics',            roles: ['super_admin'] },
+      { icon: Activity,      label: 'User Activity',       href: '/dashboard/user-activity',        roles: ['super_admin'] },
+      { icon: Shield,        label: 'Attacks Catalog',     href: '/dashboard/attacks',              roles: ['super_admin'] },
+      { icon: Building2,     label: 'Enterprise Requests', href: '/dashboard/enterprise-requests',  roles: ['super_admin'] },
+      { icon: Settings,      label: 'Settings',            href: '/dashboard/settings',             roles: ['super_admin'] },
     ],
     admin: [
-      { icon: Zap,              label: 'Campaigns',        href: '/dashboard/campaigns',   roles: ['admin'], badge: 'NEW' },
-      { icon: Trophy,           label: 'Leaderboard',      href: '/dashboard/leaderboard', roles: ['admin'] },
-      { icon: Users,            label: 'Employees',        href: '/dashboard/employees',   roles: ['admin'] },
-      { icon: BarChart3,        label: 'Analytics',        href: '/dashboard/analytics',   roles: ['admin'] },
-      { icon: FileText,         label: 'Reports',          href: '/dashboard/reports',     roles: ['admin'] },
-      { icon: BookOpen,         label: 'Training',         href: '/dashboard/training',    roles: ['admin'] },
-      { icon: MessageCircle,    label: 'Forum',            href: '/dashboard/forum',       roles: ['admin'] },
+      { icon: Zap,           label: 'Campaigns',           href: '/dashboard/campaigns',            roles: ['admin'], badge: 'NEW' },
+      { icon: Trophy,        label: 'Leaderboard',         href: '/dashboard/leaderboard',          roles: ['admin'] },
+      { icon: Users,         label: 'Employees',           href: '/dashboard/employees',            roles: ['admin'] },
+      { icon: BarChart3,     label: 'Analytics',           href: '/dashboard/analytics',            roles: ['admin'] },
+      { icon: FileText,      label: 'Reports',             href: '/dashboard/reports',              roles: ['admin'] },
+      { icon: BookOpen,      label: 'Training',            href: '/dashboard/training',             roles: ['admin'] },
+      { icon: MessageCircle, label: 'Forum',               href: '/dashboard/forum',                roles: ['admin'] },
+      { icon: Activity,      label: 'User Activity',       href: '/dashboard/user-activity',        roles: ['admin'] },
+      { icon: Shield,        label: 'Attacks Catalog',     href: '/dashboard/attacks',              roles: ['admin'] },
+      { icon: Settings,      label: 'Settings',            href: '/dashboard/settings',             roles: ['admin'] },
     ],
     employee: [
-      { icon: Trophy,           label: 'Leaderboard',      href: '/dashboard/leaderboard', roles: ['employee'] },
-      { icon: BookOpen,         label: 'Training',         href: '/dashboard/training',    roles: ['employee'] },
-      { icon: Zap,              label: 'Simulations',      href: '/dashboard/simulations', roles: ['employee'] },
-      { icon: MessageCircle,    label: 'Forum',            href: '/dashboard/forum',       roles: ['employee'] },
-      { icon: CheckSquare,      label: 'Tasks',            href: '/dashboard/tasks',       roles: ['employee'] },
-      { icon: TrendingUp,       label: 'My Progress',      href: '/dashboard/progress',    roles: ['employee'] },
+      { icon: Trophy,        label: 'Leaderboard',         href: '/dashboard/leaderboard',          roles: ['employee'] },
+      { icon: BookOpen,      label: 'Training',            href: '/dashboard/training',             roles: ['employee'] },
+      { icon: MessageCircle, label: 'Forum',               href: '/dashboard/forum',                roles: ['employee'] },
+      { icon: CheckSquare,   label: 'Tasks',               href: '/dashboard/tasks',                roles: ['employee'] },
+      { icon: TrendingUp,    label: 'My Progress',         href: '/dashboard/progress',             roles: ['employee'] },
+      { icon: Shield,        label: 'Attacks Catalog',     href: '/dashboard/attacks',              roles: ['employee'] },
+      { icon: MessageCircle, label: 'Messages',            href: '/dashboard/messages',             roles: ['employee'] },
+      { icon: Users,         label: 'Profile',             href: '/dashboard/profile',              roles: ['employee'] },
+      { icon: Settings,      label: 'Settings',            href: '/dashboard/settings',             roles: ['employee'] },
+    ],
+    individual: [
+      { icon: Trophy,        label: 'Leaderboard',         href: '/dashboard/leaderboard',          roles: ['individual'] },
+      { icon: BookOpen,      label: 'Training',            href: '/dashboard/training',             roles: ['individual'] },
+      { icon: MessageCircle, label: 'Forum',               href: '/dashboard/forum',                roles: ['individual'] },
+      { icon: TrendingUp,    label: 'My Progress',         href: '/dashboard/progress',             roles: ['individual'] },
+      { icon: Shield,        label: 'Attacks Catalog',     href: '/dashboard/attacks',              roles: ['individual'] },
+      { icon: Users,         label: 'Profile',             href: '/dashboard/profile',              roles: ['individual'] },
+      { icon: Settings,      label: 'Settings',            href: '/dashboard/settings',             roles: ['individual'] },
     ],
   };
 
@@ -70,10 +90,6 @@ const getMenuItems = (role: string | undefined): MenuItem[] => {
   if (role && roleBasedItems[role]) {
     items.push(...roleBasedItems[role]);
   }
-
-  items.push(
-    { icon: Settings, label: 'Settings', href: '/dashboard/settings', roles: ['super_admin', 'admin', 'employee'] },
-  );
 
   return items;
 };
