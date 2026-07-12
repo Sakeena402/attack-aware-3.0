@@ -5,11 +5,24 @@ import { UserGame } from '../models/UserGame.js';
 import { updateUserPoints } from '../services/analyticsService.js';
 import { AppError } from '../utils/errorHandler.js';
 
-export const getGames = async (req: AuthRequest, res: Response<ApiResponse>) => {
+export const getGames = async (_req: AuthRequest, res: Response<ApiResponse>) => {
   try {
     const games = await Game.find();
     res.json({ success: true, data: games });
   } catch (e: any) { res.status(500).json({ success: false, error: e.message }); }
+};
+
+export const getGameById = async (req: AuthRequest, res: Response<ApiResponse>) => {
+  try {
+    const game = await Game.findById(req.params.id);
+    if (!game) {
+      return res.status(404).json({ success: false, error: 'Game not found' });
+    }
+    res.json({ success: true, data: game });
+  } catch (e: any) {
+    // Malformed ObjectId also lands here — treat as 404, not 500
+    res.status(404).json({ success: false, error: 'Game not found' });
+  }
 };
 
 export const createGame = async (req: AuthRequest, res: Response<ApiResponse>) => {

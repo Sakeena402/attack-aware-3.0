@@ -194,6 +194,21 @@ export const createEmployee = async (
       throw new AppError('Company ID is required', 400);
     }
 
+    // ── Company approval status check: admin must have approved company ──────────
+    if (employeeCompanyId && req.user.role !== 'super_admin') {
+      const company = await Company.findById(employeeCompanyId).select('approvalStatus').lean();
+      if (!company) {
+        throw new AppError('Company not found', 404);
+      }
+      if (company.approvalStatus !== 'approved') {
+        throw new AppError(
+          'Your company is pending approval. You cannot add employees yet. Please contact support.',
+          403
+        );
+      }
+    }
+    // ──────────────────────────────────────────────────────────────────────────
+
     // ── Plan enforcement: check maxEmployees limit ──────────────────────────
     if (employeeCompanyId) {
       const company = await Company.findById(employeeCompanyId).populate('subscriptionPlan').lean();

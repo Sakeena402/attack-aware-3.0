@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Security Quiz </title>
+
+    <!-- FontAweome CDN Link for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+<style>
+    /* importing google fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body{
+    background-image: url(https://imageio.forbes.com/specials-images/imageserve/642445004586b4330e81b689//960x0.jpg?height=406&width=711&fit=bounds);
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.info_box {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px; /* Increased width for a more spacious layout */
+    background: #f0f0f0; /* Light gray background */
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    opacity: 1; /* Set opacity to 1 to ensure visibility */
+    pointer-events: auto; /* Enable pointer events */
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.info-title {
+    position: relative;
+    color: white;
+    border-radius: 15px 15px 0 0;
+    padding: 22px;
+    text-align: center;
+    font-size: 58px;
+    font-weight: bold;
+    background-image: url(https://t4.ftcdn.net/jpg/05/04/23/09/360_F_504230989_OW6jMnT58tv0V8x8ZpizlnbmZhkDwAdg.jpg);
+    background-size: cover;
+    background-position: center;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.info-title img {
+    width: 209px;
+    height: 104px;
+    margin-left: -36px;
+}
+
+.info-list {
+    padding: 20px;
+}
+
+.info {
+    margin: 14px 0;
+    font-size: 20px;
+}
+
+.info span {
+    font-weight: bold;
+    color: #007bff;
+}
+
+.buttons {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 20px;
+}
+
+.buttons button {
+    margin: 0 10px;
+    padding: 10px 20px;
+    font-size: 16px; /* Reduced font size for simplicity */
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.buttons button.quit {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.buttons button.restart {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.buttons button:hover {
+    opacity: 0.8;
+}
+
+.info-title::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    filter: brightness(0.5); 
+}
+
+::selection{
+    color: #fff;
+    background: #007bff;
+}
+
+.start_btn,
+.info_box,
+.quiz_box,
+.result_box{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 
+                0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.info_box.activeInfo,
+.quiz_box.activeQuiz,
+.result_box.activeResult{
+    opacity: 1;
+    z-index: 5;
+    pointer-events: auto;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+</style>
+
+</head>
+<body>
+    <div class="info_box">
+        <div class="info-title">
+            <span>Well Done! </span>
+            <img src="5.png" alt="Congrats Image">
+        </div>
+        <div class="info-list">
+            <div class="info">1. It was a <span>scam</span></div>
+            <div class="info">2. The offer was too good to be true, promising high returns with no risk.</div>
+            <div class="info">3. No verifiable information about the company or offer was available.</div>
+            <div class="info">4. They asked for personal or financial details unnecessarily</div>
+            <div class="info">5. There were no clear terms, conditions, or privacy policies.</div>
+        </div>
+        <div class="buttons">
+            <a href="main.html"> <button class="quit">Exit</button></a>
+            <a href="tv_scam.html"> <button class="restart">Restart</button></a>
+        </div>
+    </div>
+</body>
+</html>

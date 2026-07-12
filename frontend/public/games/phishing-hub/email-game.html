@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Identify Phishing Attacks</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <style>
+        @keyframes success {
+            0% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes failure {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .success-icon {
+            color: green;
+            animation: success 1.5s ease-out forwards;
+        }
+
+        .failure-icon {
+            color: red;
+            animation: failure 0.5s ease-out forwards;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: url("email.jpg");
+        }
+
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        .attack {
+            width: 94%;
+            height: auto;
+            background-color: #e0e0e0;
+            position: relative;
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            text-align: left;
+            font-family: monospace;
+        }
+
+        .flaw {
+            width: 65px;
+            height: 20px;
+            position: absolute;
+            background-color: transparent;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+
+        #level1-flaw1 { top: 55px; left: 117px; } /* Suspicious sender email */
+        #level1-flaw2 { top: 112px; left: 31px; } /* Bad grammar */
+        #level1-flaw3 { top: 143px; left: 455px; } /* Unusual link */
+
+        #level2-flaw1 { top: 56px; left: 153px; } /* Mismatched URL */
+        #level2-flaw2 { top: 155px; left: 110px; } /* Threatening language */
+        #level2-flaw3 { top: 183px; left: 132px; } /* Suspicious attachment */
+
+        #level3-flaw1 { top: 57px; left: 159px; } /* Too good to be true */
+        #level3-flaw2 { top: 160px; left: 201px; } /* Fake login form */
+        #level3-flaw3 { top: 182px; left: 85px; } /* Urgent action required */
+
+        #level4-flaw1 { top: 54px; left: 200px; } /* Fake domain name */
+        #level4-flaw2 { top: 84px; left: 403px; } /* Suspicious download */
+        #level4-flaw3 { top: 143px; left: 21px; } /* Unusual request for personal info */
+
+        #level5-flaw1 { top: 55px; left: 119px; } /* Unusual sender number */
+        #level5-flaw2 { top: 88px; left: 414px; } /* Link shortener used */
+        #level5-flaw3 { top: 99px; left: 133px; } /* Suspicious urgency in message */
+
+        .flaw.found {
+            border: 2px solid red;
+        }
+
+        #feedback {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        #score {
+            margin-top: 10px;
+        }
+
+        #next-level, #hint-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #next-level:hover, #hint-button:hover {
+            background-color: #0056b3;
+        }
+
+        .rules {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .level-heading {
+            font-size: 1.5em;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        #hint {
+            margin-top: 10px;
+            color: #007bff;
+            display: none;
+        }
+        .startGame{
+            margin-top: 10px;
+            color: #007bff;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Identify Phishing Attacks</h1>
+        <div id="rules" class="rules">
+            <h2>How to Play:</h2>
+            <ul>
+                <li>You will be shown a series of attack samples.</li>
+                <li>Your task is to identify suspicious elements in each sample.</li>
+                <li>Click on the parts of the sample you think are suspicious.</li>
+                <li>You will earn points for each correct identification.</li>
+                <li>Try to find all suspicious elements to proceed to the next level.</li>
+            </ul>
+            <button id="start-game" onclick="startGame()">Start Game</button>
+        </div>
+        <div id="game-container" style="display: none;">
+            <div class="level-heading" id="level-heading"></div>
+            <div class="attack" id="level1" style="display: none;">
+                <p>Type of Attack: Email Phishing</p>
+                <p>From: account@bankofusa.com</p>
+                <p>Subject: Immediate Action Required</p>
+                <p>Dear User,</p>
+                <p>We have detected suspicious activity on your account. Please <a href="#">click here</a> to verify your account immediately.</p>
+                <p>Best regards,</p>
+                <p>The Bank of USA Team</p>
+                <div class="flaw" id="level1-flaw1"></div>
+                <div class="flaw" id="level1-flaw2"></div>
+                <div class="flaw" id="level1-flaw3"></div>
+            </div>
+            <div class="attack" id="level2" style="display: none;">
+                <p>Type of Attack: Account Locking</p>
+                <p>From: service@paypal-security.com</p>
+                <p>Subject: Your Account Has Been Locked</p>
+                <p>Dear Customer,</p>
+                <p>We have temporarily locked your account due to multiple failed login attempts. Please <a href="#">click here</a> to unlock your account.</p>
+                <p>If you do not respond within 24 hours, your account will be permanently locked.</p>
+                <p>Regards,</p>
+                <p>PayPal Security Team</p>
+                <div class="flaw" id="level2-flaw1"></div>
+                <div class="flaw" id="level2-flaw2"></div>
+                <div class="flaw" id="level2-flaw3"></div>
+            </div>
+            <div class="attack" id="level3" style="display: none;">
+                <p>Type of Attack: Prize Scam</p>
+                <p>From: support@yourluckyday.com</p>
+                <p>Subject: Congratulations! You've Won a Prize!</p>
+                <p>Dear Winner,</p>
+                <p>Congratulations! You've been selected to receive a $1000 gift card. To claim your prize, please <a href="#">click here</a> and fill out the form.</p>
+                <p>Act now! This offer is only available for a limited time.</p>
+                <p>Sincerely,</p>
+                <p>Your Lucky Day Support Team</p>
+                <div class="flaw" id="level3-flaw1"></div>
+                <div class="flaw" id="level3-flaw2"></div>
+                <div class="flaw" id="level3-flaw3"></div>
+            </div>
+            <div class="attack" id="level4" style="display: none;">
+                <p>Type of Attack: Website Spoofing</p>
+                <p>Website: http://www.bankofusa-security.com</p>
+                <p>Welcome to the Bank of USA security portal. Please <a href="#">download the latest security update</a> to protect your account.</p>
+                <p>For your security, we need to verify your personal information. Please <a href="#">click here</a> to update your details.</p>
+                <div class="flaw" id="level4-flaw1"></div>
+                <div class="flaw" id="level4-flaw2"></div>
+                <div class="flaw" id="level4-flaw3"></div>
+            </div>
+            <div class="attack" id="level5" style="display: none;">
+                <p>Type of Attack: SMS Phishing</p>
+                <p>SMS from: +1234567890</p>
+                <p>Urgent: Your bank account has been compromised. Please <a href="#">click here</a> to secure your account immediately. Failure to act will result in account suspension.</p>
+                <div class="flaw" id="level5-flaw1"></div>
+                <div class="flaw" id="level5-flaw2"></div>
+                <div class="flaw" id="level5-flaw3"></div>
+            </div>
+        </div>
+        <div id="feedback"></div>
+        <div id="hint"></div>
+        <div id="score">Score: 0</div>
+        <button id="hint-button" style="display: none;" onclick="showHint()">Hint</button>
+        <button id="next-level" style="display: none;" onclick="nextLevel()">Next Level</button>
+      
+    </div>
+    <script>
+       let score = 0;
+let currentLevel = 1;
+let hintsUsed = 0;
+
+const flawMessages = {
+    "level1-flaw1": "Suspicious sender email address.",
+    "level1-flaw2": "Bad grammar or spelling mistakes.",
+    "level1-flaw3": "Unusual or suspicious link.",
+    "level2-flaw1": "Mismatched URL that doesn't match the sender.",
+    "level2-flaw2": "Threatening language to create a sense of urgency.",
+    "level2-flaw3": "Suspicious attachment that could be malicious.",
+    "level3-flaw1": "Offer that seems too good to be true.",
+    "level3-flaw2": "Fake login form asking for personal information.",
+    "level3-flaw3": "Urgent action required to claim a prize.",
+    "level4-flaw1": "Fake domain name to mimic a legitimate site.",
+    "level4-flaw2": "Suspicious download link that could be harmful.",
+    "level4-flaw3": "Unusual request for personal information on a webpage.",
+    "level5-flaw1": "Unusual sender number for a legitimate organization.",
+    "level5-flaw2": "Link shortener used to hide the actual destination.",
+    "level5-flaw3": "Suspicious urgency in message content."
+};
+
+const hints = {
+    1: "Check the sender's email address, look for grammar mistakes, and verify the links.",
+    2: "Look at the URL closely, notice any threatening language, and be wary of attachments.",
+    3: "Is the offer realistic? Check for fake forms and urgent calls to action.",
+    4: "Examine the domain name, avoid suspicious downloads, and be cautious about sharing personal info.",
+    5: "Check the sender's number, be wary of link shorteners, and scrutinize the message's urgency."
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const flaws = document.querySelectorAll('.flaw');
+    flaws.forEach(flaw => {
+        flaw.addEventListener('click', () => {
+            if (!flaw.classList.contains('found')) {
+                flaw.classList.add('found');
+                document.getElementById('feedback').textContent = flawMessages[flaw.id];
+                score += 10;
+                document.getElementById('score').textContent = `Score: ${score}`;
+
+                const levelFlaws = document.querySelectorAll(`#level${currentLevel} .flaw`);
+                const allFound = Array.from(levelFlaws).every(flaw => flaw.classList.contains('found'));
+
+                if (allFound) {
+                    document.getElementById('next-level').style.display = 'block';
+                    document.getElementById('hint-button').style.display = 'none';
+                }
+            }
+        });
+    });
+});
+
+function startGame() {
+    // ✅ DB me log save karega
+    fetch("save_game_log.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "game_title=Identify Phishing Attacks&score=0"
+    })
+    .then(res => res.text())
+    .then(data => console.log("Game log response:", data))
+    .catch(err => console.error("Error saving log:", err));
+
+    // ✅ Game start karwana
+    document.getElementById('rules').style.display = 'none';
+    document.getElementById('game-container').style.display = 'block';
+    document.getElementById('hint-button').style.display = 'inline-block';
+    showLevel(currentLevel);
+}
+
+function showLevel(level) {
+    document.getElementById(`level${level}`).style.display = 'block';
+    document.getElementById('level-heading').textContent = `Level ${level}`;
+}
+
+function nextLevel() {
+    document.getElementById(`level${currentLevel}`).style.display = 'none';
+    currentLevel++;
+    if (currentLevel <= 5) {
+        showLevel(currentLevel);
+        document.getElementById('feedback').textContent = '';
+        document.getElementById('next-level').style.display = 'none';
+        document.getElementById('hint-button').style.display = 'inline-block';
+        document.getElementById('hint').style.display = 'none';
+    } else {
+        endGame();
+    }
+}
+
+function endGame() {
+    if (score < 50) {
+        document.getElementById('feedback').textContent = `Your score is ${score}. Try again for a better score!`;
+    } else {
+        document.getElementById('feedback').textContent = 'Congratulations! You have completed all levels with a great score!';
+    }
+    document.getElementById('replay-button').style.display = 'block';
+    document.getElementById('next-level').style.display = 'none';
+
+}
+
+function showHint() {
+    const hintElement = document.getElementById('hint');
+    hintElement.textContent = hints[currentLevel];
+    hintElement.style.display = 'block';
+
+    
+    levelFlaws.forEach(flaw => {
+        if (!flaw.classList.contains('found')) {
+            flaw.classList.add('found');
+            document.getElementById('feedback').textContent = flawMessages[flaw.id];
+        }
+    });
+
+    document.getElementById('next-level').style.display = 'block';
+    document.getElementById('hint-button').style.display = 'none';
+}
+</script>
+</body>
+</html>

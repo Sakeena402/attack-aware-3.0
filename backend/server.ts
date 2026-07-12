@@ -209,6 +209,7 @@ app.get('/health/detailed', async (req: Request, res: Response) => {
 // ============================================
 app.use('/api/auth', authRouter);
 app.use('/api/super-admin', apiRateLimiter, superAdminRouter);
+app.use('/api/companies', apiRateLimiter, companyRouter); // Self-service company creation for individual role
 app.use('/api/campaigns', apiRateLimiter, campaignRouter);
 app.use('/api/analytics', apiRateLimiter, analyticsRouter);
 app.use('/api/leaderboard', apiRateLimiter, leaderboardRouter);

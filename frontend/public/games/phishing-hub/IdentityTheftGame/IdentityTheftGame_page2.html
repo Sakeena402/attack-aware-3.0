@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+canvas {
+    border:5px solid #d3d3d3;
+    background-color: #f1f1f1;
+}
+h1{
+  color: #fcef00;
+}
+p, h3 {
+    color: #ffffff;
+}
+
+}
+</style>
+</head>
+<body  bgcolor="#000000" onload="startGame()">
+<h1 style="text-align:center"> Sherlock Holmes : Secure your Identity </h1>
+<p style="text-align:center"> If answer is "A", pass through Green door. If answer is "B", pass through Red door. If answer is "C", pass through Orange door.</p>
+<div style="position: absolute; top:260px; left:1150px; ">
+  <button onmousedown="moveup()" onmouseup="clearmove()" ontouchstart="moveup()" style="border:none; background: #ffffff; color: #000000; height:50px;width:150px; border-radius: 25px;">UP</button><br><br><br>
+  <button onmousedown="movedown()" onmouseup="clearmove()" ontouchstart="movedown()" style="border:none; background: #ffffff; color: #000000; height:50px;width:150px; border-radius: 25px;">DOWN</button>
+</div>
+<div style="position: absolute; top:150px; left:40px; width:380px; height:25px">
+<h3 id="question">Question will be displayed here</h3><br>
+<h3 id="ansA"><font color="white">If answer is "True", pass through Green door.</font></h3>
+<h3 id="ansB"><font color="white">If answer is "False", pass through Red door.</font></h3>
+<h3 id="ansC"><font color="white">If answer is "True", pass through Orange door.</font></h3>
+</div>
+
+<script>
+var myGamePiece;
+var myObstacles = [];
+var myBackgrounds = [];
+var questionNo = -1;
+var questionsList = ["What is Identity cloning?", "Which of the following combinations yields the strongest password:", "In case of stolen credit card information, victim should register an immediate complaint with:", "If you suspect an email to be a phishing attempt, you should "];
+var answersA = ["Getting duplicate identity card when you already have one.", "Uppercase letters, numbers and length of 11 characters.", "Bank authorities and Police department", "Reply to the sender about your concern."];
+var answersB = ["Using another's information to assume his or her identity in daily life.", "Lowercase letters and length of 15 characters", "Bank authorities", "Open the link in it to verify your doubt."];
+var answersC = ["Getting duplicate identity card when you loose your original card.", "Uppercase and lowercase letters, numbers, special characters and length of 11 characters", "Police department", "Delete it (so you don't open it again) and report to proper authorities."];
+var answersList = ["B","C","A","C"];
+var backgroundList = ["bg1.jpg","bg2.jpg","bg3.jpg","bg4.jpg","bg5.jpg","bg6.jpg"];
+var qstnInterval = 650;
+var mySound;
+var backgroundWidth = 680;
+var backgroundHeight = 370;
+var score = 0;
+var maxScore = 5;
+
+function startGame() {
+    myGamePiece = new component(30, 70, "Picture1.png", 50, 120, "image");
+    mySound = new sound("bounce.mp3");
+    myBackground = new component(backgroundWidth, backgroundHeight, backgroundList[0], 0, 0, "image");
+    myBackgrounds.push(myBackground);
+    myGameArea.start();
+}
+
+var myGameArea = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+        this.canvas.width = backgroundWidth;
+        this.canvas.height = backgroundHeight;
+        this.canvas.style.left = "430px";
+        this.canvas.style.top = "160px";
+        this.canvas.style.position = "absolute";
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        this.frameNo = 0;
+        this.interval = setInterval(updateGameArea, 20);
+    },
+    stop : function() {
+        clearInterval(this.interval);
+        window.setTimeout(function(){
+
+        // Move to a new location or you can do something else
+        window.location.href = "gameOver.php";
+
+    },  1000);
+    },
+    clear : function() {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+}
+
+function component(width, height, color, x, y, type) {
+    this.type = type;
+    if (type == "image") {
+        this.image = new Image();
+        this.image.src = color;
+    }
+    this.width = width;
+    this.height = height;
+    this.speedX = 0;
+    this.speedY = 0;
+    this.x = x;
+    this.y = y;
+    this.update = function() {
+        ctx = myGameArea.context;
+        if (type == "image") {
+            ctx.drawImage(this.image,
+                this.x,
+                this.y,
+                this.width, this.height);
+        } else {
+            ctx.fillStyle = color;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
+    }
+    this.newPos = function() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+    }
+	this.crashWith = function(otherobj) {
+
+        var myleft = this.x;
+        var myright = this.x + (this.width);
+        var mytop = this.y;
+        var mybottom = this.y + (this.height);
+        var otherleft = otherobj.x;
+        var otherright = otherobj.x + (otherobj.width);
+        var othertop = otherobj.y;
+        var otherbottom = otherobj.y + (otherobj.height);
+        var crash = true;
+        if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
+        <!-- document.getElementById("question").innerHTML = "True/False : 3";-->
+            crash = false;
+        }
+        else{
+        <!-- document.getElementById("question").innerHTML = "True/False : " + otherobj.fillStyle;-->
+        }
+        return crash;
+    }
+}
+
+function updateGameArea() {
+    if(score == maxScore)
+    {
+        /*winBack = new component(backgroundWidth, backgroundHeight,'win1.jpg', 0, 0, "image");
+        winBack.update();*/
+        window.location.href = "WinnerPage.php";
+        return;
+    }
+	var x, height, minHeight, maxHeight, minGap, maxGap;
+    if( myObstacles.length >1 )
+    {
+        if(answersList[questionNo] == "B" || answersList[questionNo] == "C")
+        {
+            if (myGamePiece.crashWith(myObstacles[0])) {
+                mySound.play();
+                myGameArea.stop();
+                return;
+            }
+        }
+        if(answersList[questionNo] == "A" || answersList[questionNo] == "C")
+        {
+            if (myGamePiece.crashWith(myObstacles[1])) {
+                mySound.play();
+                myGameArea.stop();
+                return;
+            }
+        }
+        if(answersList[questionNo] == "A" || answersList[questionNo] == "B")
+        {
+            if (myGamePiece.crashWith(myObstacles[2])) {
+                mySound.play();
+                myGameArea.stop();
+                return;
+            }
+        }
+    }
+    myGameArea.clear();
+	myGameArea.frameNo += 1;
+
+    if (myGameArea.frameNo == 1 || everyinterval(qstnInterval)) {
+        x = myGameArea.canvas.width;
+        minHeight = 100;
+        maxHeight = 120;
+        height = Math.floor(Math.random()*(maxHeight-minHeight+1)+minHeight);
+        myObstacles.pop();
+        myObstacles.pop();
+        myObstacles.pop();
+        myObstacles.push(new component(10, height, "green", x, 0));
+        var height2 = Math.floor(Math.random()*(maxHeight-minHeight+1)+minHeight);
+        myObstacles.push(new component(10, height2, "red", x, height));
+        myObstacles.push(new component(10, myGameArea.canvas.height - height - height2, "orange", x, height+height2));
+        questionNo += 1;
+        document.getElementById("question").innerHTML = questionsList[questionNo];
+        document.getElementById("ansA").innerHTML = "<font color=\"white\">A. "+answersA[questionNo]+"</font>";
+        document.getElementById("ansB").innerHTML = "<font color=\"white\">B. "+answersB[questionNo]+"</font>";
+        document.getElementById("ansC").innerHTML = "<font color=\"white\">C. "+answersC[questionNo]+"</font>";
+        myBackground = new component(backgroundWidth, backgroundHeight, backgroundList[questionNo+1], x, 0, "image");
+        <!--myBackgrounds.pop();-->
+        myBackgrounds.push(myBackground);
+        score += 1;
+        if( score == maxScore)
+        {
+            document.getElementById("question").innerHTML = "Congratulations! You have finished this level." ;
+            var button = document.createElement("input");
+            button.type = "button";
+            button.value = "Next Level";
+            button.style.position = "absolute";
+            button.style.top="550px";
+            button.style.left="430px";
+            button.onclick = function() {
+                window.location.href = "IdentityTheftGame_page2.php";
+            };
+            document.body.appendChild(button)
+
+            for (i = 0; i < myBackgrounds.length; i += 1) {
+                myBackgrounds.pop();
+            }
+            for (i = 0; i < myObstacles.length; i += 1) {
+                myObstacles.pop();
+            }
+            return;
+        }
+    }
+
+    for (i = 0; i < myBackgrounds.length; i += 1) {
+        myBackgrounds[i].speedX = -1;
+        myBackgrounds[i].newPos();
+        myBackgrounds[i].update();
+    }
+    for (i = 0; i < myObstacles.length; i += 1) {
+        myObstacles[i].x += -1;
+        myObstacles[i].update();
+    }
+    myGamePiece.newPos();
+    myGamePiece.update();
+}
+
+function sound(src) {
+    this.sound = document.createElement("audio");
+    this.sound.src = src;
+    this.sound.setAttribute("preload", "auto");
+    this.sound.setAttribute("controls", "none");
+    this.sound.style.display = "none";
+    document.body.appendChild(this.sound);
+    this.play = function(){
+        this.sound.play();
+    }
+    this.stop = function(){
+        this.sound.pause();
+    }
+}
+
+function everyinterval(n) {
+    if ((myGameArea.frameNo / n) % 1 == 0) {return true;}
+    return false;
+}
+
+function moveup() {
+    myGamePiece.image.src = "Picture2.png";
+    myGamePiece.speedY = -1;
+}
+
+function movedown() {
+    myGamePiece.image.src = "Picture2.png";
+    myGamePiece.speedY = 1;
+}
+
+function clearmove() {
+    myGamePiece.image.src = "Picture1.png";
+    myGamePiece.speedX = 0;
+    myGamePiece.speedY = 0;
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,433 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose Your Plan</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <style>
+           .lis-bg-light {
+            background-color: #00000005;
+        }
+
+        section {
+            padding-top: 6.25em;
+            padding-bottom: 6.25em;
+            position: relative;
+        }
+
+        .pb-4, .py-4 {
+            padding-bottom: 1.5rem!important;
+        }
+
+        h2 {
+            font-size: 2rem;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: #222222;
+            margin: 0 0 15px;
+            font-family: "Poppins", sans-serif;
+            line-height: 1.75rem;
+        }
+
+        .lis-light {
+            color: #707070;
+        }
+
+        .font-weight-normal {
+            font-weight: 400!important;
+        }
+
+        h5 {
+            font-size: 1.25rem;
+        }
+
+        .price-table {
+            -webkit-transition: 0.3s ease;
+        }
+
+        .lis-brd-light {
+            border-color: #dadada !important;
+        }
+
+        .lis-rounded-top {
+            border-top-right-radius: 20px;
+            border-top-left-radius: 20px;
+        }
+
+        .lis-bg-light {
+            background-color: #f7f7f7;
+        }
+
+        .pb-4, .py-4 {
+            padding-bottom: 1.5rem!important;
+        }
+
+        .lis-latter-spacing-2 {
+            letter-spacing: 2px;
+        }
+
+        .text-uppercase {
+            text-transform: uppercase!important;
+        }
+
+        .lis-font-weight-500 {
+            font-weight: 500;
+        }
+
+        .display-4 {
+            font-size: 3.5rem;
+        }
+
+        .price-table sup {
+            top: -1.5em;
+        }
+
+        .price-table sup, .price-table small {
+            font-size: 1.25rem;
+        }
+        .price-table small {
+            font-size: 1.25rem;
+        }
+
+        .mb-0, .my-0 {
+            margin-bottom: 0!important;
+        }
+
+        sup {
+            position: relative;
+            font-size: 75%;
+            line-height: 0;
+        }
+
+        .lis-brd-light {
+            border-color: #dadada !important;
+        }
+
+        .bg-white {
+            background-color: #fff!important;
+        }
+
+        .py-5 {
+            padding-bottom: 3rem!important;
+        }
+
+        .lis-line-height-3 {
+            line-height: 3 !important;
+        }
+
+        .list-unstyled {
+            padding-left: 0;
+            list-style: none;
+        }
+
+        .lis-line-height-3 {
+            line-height: 3 !important;
+        }
+
+        .btn-primary-outline {
+            background-color: transparent;
+            color: #ff214f !important;
+            border-color: #ff214f;
+        }
+
+        .btn {
+            color: #fff;
+            padding: .5rem 1.3rem;
+            font-size: 1rem;
+            word-wrap: break-word;
+        }
+
+        .lis-rounded-circle-50 {
+            border-radius: 50px;
+        }
+
+        .pl-2, .px-2 {
+            padding-right: .5rem!important;
+        }
+
+        .btn-primary-outline:hover, .btn-primary-outline:focus {
+            background-color: #ff214f;
+            border-color: #ff214f;
+            color: #fff !important;
+        }
+
+        .lis-bg-primary {
+            background-color: #ff214f;
+        }
+
+        .btn-primary {
+            background-color: #ff214f;
+            border-color: #ff214f;
+        }
+
+        .btn-primary:hover, .btn-primary:focus {
+            background-color: #ff214f;
+            border-color: #ff214f;
+        }
+
+        .price-table.active {
+            transform: scale(1.045);
+            -webkit-transform: scale(1.045);
+        }
+
+        .price-table {
+            -webkit-transition: 0.3s ease;
+        }
+
+        .lis-rounded-bottom {
+            border-bottom-right-radius: 20px;
+            border-bottom-left-radius: 20px;
+        }
+
+        ul.list-unstyled {
+    padding-left: 0;
+    list-style: none;
+    text-align: left; /* Align items to the left */
+    padding-left: 20px; /* Add some padding for indentation */
+}
+
+.lis-line-height-3 {
+    line-height: 2 !important; /* Adjusted for better spacing */
+}
+
+.price-table ul li {
+    font-size: 1rem; /* Consistent font size */
+    color: #707070;
+    margin-bottom: 5px; /* Spacing between list items */
+}
+
+.feature-list {
+    text-align: left; /* Align text to the left */
+    display: inline-block; /* Make the list inline-block to center it within the parent */
+}
+.close-btn {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 24px;
+            color: #ff214f;
+            cursor: pointer;
+        }
+
+        .close-btn:hover {
+            color: #ff0000;
+        }
+        @media (max-width: 768px) {
+            .price-header h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.75rem;
+            }
+
+            h5 {
+                font-size: 1rem;
+            }
+
+            .close-btn {
+                top: 8px;
+                right: 15px;
+                font-size: 20px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .price-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .close-btn {
+                top: 6px;
+                right: 10px;
+                font-size: 18px;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            h5 {
+                font-size: 0.9rem;
+            }
+        }
+
+
+    </style>
+</head>
+<body>
+    <section class="lis-bg-light">
+    <span class="close-btn" onclick="goBack()">&times;</span>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 col-md-10 text-center">
+                    <div class="heading pb-4">
+                        <h2>Choose Your Plan</h2>
+                        <h5 class="font-weight-normal lis-light">Select the best plan for you and gain access to exclusive content.</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 col-md-6 col-lg-4 wow fadeInUp mb-5 mb-lg-0 text-center">
+                    <div class="price-table">
+                        <div class="price-header lis-bg-light lis-rounded-top py-4 border border-bottom-0 lis-brd-light">
+                            <h5 class="text-uppercase lis-latter-spacing-2">Basic</h5>
+                            <h1 class="display-4 lis-font-weight-500"><sup>$</sup> 2 <small>/mo</small></h1>
+                            <p class="mb-0">Basic User Membership</p>
+                        </div>
+                        <div class="border border-top-0 lis-brd-light bg-white py-5 lis-rounded-bottom">
+                        <ul class="list-unstyled lis-line-height-3 text-left mx-auto feature-list">
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>English & Urdu Videos</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Discussion Forum</li>
+                            
+                            </ul><br>
+                            <a href="purchase_confirmation.html?plan=basic" class="btn btn-primary-outline btn-md lis-rounded-circle-50"><i class="fa fa-shopping-cart pl-2"></i>Buy Now</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-4 wow fadeInUp mb-5 mb-lg-0 text-center">
+                    <div class="price-table active">
+                        <div class="price-header lis-bg-primary py-4 text-white lis-rounded-top">
+                            <h5 class="text-uppercase lis-latter-spacing-2 text-white">Ultimate</h5>
+                            <h1 class="display-4 lis-font-weight-500 text-white"><sup>$</sup> 10 <small>/mo</small></h1>
+                            <p class="mb-0">Ultimate User Membership</p>
+                        </div>
+                        <div class="border border-top-0 lis-brd-light bg-white py-5 lis-rounded-bottom">
+                            <ul class="list-unstyled lis-line-height-3 text-left mx-auto feature-list">
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>English & Urdu Videos</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Discussion Forum</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Quiz All levels</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Professional Certificate</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Leaderboard</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Games All level</li>
+                            </ul><br>
+                            <a href="purchase_confirmation.html?plan=premium" class="btn btn-primary btn-md lis-rounded-circle-50"><i class="fa fa-shopping-cart pl-2"></i>Buy Now</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-4 wow fadeInUp text-center">
+                    <div class="price-table">
+                        <div class="price-header lis-bg-light lis-rounded-top py-4 border border-bottom-0 lis-brd-light">
+                            <h5 class="text-uppercase lis-latter-spacing-2">Premium</h5>
+                            <h1 class="display-4 lis-font-weight-500"><sup>$</sup> 5 <small>/mo</small></h1>
+                            <p class="mb-0">Premium User Membership</p>
+                        </div>
+                        <div class="border border-top-0 lis-brd-light bg-white py-5 lis-rounded-bottom">
+                        <ul class="list-unstyled lis-line-height-3 text-left mx-auto feature-list">
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>English & Urdu Videos</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Discussion Forum</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Easy Quiz</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Certification</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Leaderboard</li>
+                            </ul><br>
+                            <a href="purchase_confirmation.html?plan=business" class="btn btn-primary-outline btn-md lis-rounded-circle-50"><i class="fa fa-shopping-cart pl-2"></i>Buy Now</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="row justify-content-center mt-5"> <!-- Added 'mt-5' class here for extra top space -->
+                <div class="col-12 col-md-10 text-center">
+                    <div class="heading pb-4">
+                        <h2 style="margin-top: 3rem;">Choose Your Enterprise Plan</h2> <!-- Additional margin added here -->
+                        <h5 class="font-weight-normal lis-light">Select the best plan for you and gain access to exclusive content.</h5>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="row mt-5">
+    <!-- Enterprise Basic Plan -->
+    <div class="col-12 col-md-6 col-lg-4 wow fadeInUp mb-5 mb-lg-0 text-center">
+        <div class="price-table">
+            <div class="price-header lis-bg-light lis-rounded-top py-4 border border-bottom-0 lis-brd-light">
+                <h5 class="text-uppercase lis-latter-spacing-2">Enterprise Basic Membership</h5>
+                <h1 class="display-4 lis-font-weight-500"><sup>$</sup> 7 <small>/mo</small></h1>
+                <p class="mb-0">Limit of Users upto: 50 - 99</p>
+            </div>
+            <div class="border border-top-0 lis-brd-light bg-white py-5 lis-rounded-bottom">
+            <ul class="list-unstyled lis-line-height-3 text-left mx-auto feature-list">
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>English & Urdu Videos</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Discussion Forum</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Quiz All levels</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Professional Certificate</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Leaderboard</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Games All level</li>
+                            </ul><br>
+                <a href="purchase_confirmation.html?plan=enterprise_basic" class="btn btn-primary-outline btn-md lis-rounded-circle-50">
+                    <i class="fa fa-shopping-cart pl-2"></i>Buy Now
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enterprise Premium Plan -->
+    <div class="col-12 col-md-6 col-lg-4 wow fadeInUp mb-5 mb-lg-0 text-center">
+        <div class="price-table active">
+            <div class="price-header lis-bg-primary py-4 text-white lis-rounded-top">
+                <h5 class="text-uppercase lis-latter-spacing-2 text-white">Enterprise Ultimate Membership</h5>
+                <h1 class="display-4 lis-font-weight-500 text-white"><sup>$</sup> 5 <small>/mo</small></h1>
+                <p class="mb-0">Limit of Users upto: 200+</p>
+            </div>
+            <div class="border border-top-0 lis-brd-light bg-white py-5 lis-rounded-bottom">
+            <ul class="list-unstyled lis-line-height-3 text-left mx-auto feature-list">
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>English & Urdu Videos</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Discussion Forum</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Quiz All levels</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Professional Certificate</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Leaderboard</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Games All level</li>
+                            </ul><br>
+                <a href="purchase_confirmation.html?plan=enterprise_premium" class="btn btn-primary btn-md lis-rounded-circle-50">
+                    <i class="fa fa-shopping-cart pl-2"></i>Buy Now
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enterprise Ultimate Plan -->
+    <div class="col-12 col-md-6 col-lg-4 wow fadeInUp text-center">
+        <div class="price-table">
+            <div class="price-header lis-bg-light lis-rounded-top py-4 border border-bottom-0 lis-brd-light">
+                <h5 class="text-uppercase lis-latter-spacing-2">Enterprise Premium Membership</h5>
+                <h1 class="display-4 lis-font-weight-500"><sup>$</sup> 6 <small>/mo</small></h1>
+                <p class="mb-0">Limit of Users upto: 100 - 200</p>
+            </div>
+            <div class="border border-top-0 lis-brd-light bg-white py-5 lis-rounded-bottom">
+            <ul class="list-unstyled lis-line-height-3 text-left mx-auto feature-list">
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>English & Urdu Videos</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Discussion Forum</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Quiz All levels</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Professional Certificate</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Leaderboard</li>
+                            <li><i class="fas fa-check-circle text-success mr-2"></i>Games All level</li>
+                            </ul><br>
+                <a href="purchase_confirmation.html?plan=enterprise_ultimate" class="btn btn-primary-outline btn-md lis-rounded-circle-50">
+                    <i class="fa fa-shopping-cart pl-2"></i>Buy Now
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+        </div>
+    </section>
+    <script>
+        // Function to go back to the previous page
+        function goBack() {
+            window.history.back();
+        }
+    </script>
+</body>
+</html>

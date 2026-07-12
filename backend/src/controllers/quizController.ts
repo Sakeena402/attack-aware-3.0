@@ -8,9 +8,30 @@ import { AppError } from '../utils/errorHandler.js';
 
 export const getQuizzes = async (req: AuthRequest, res: Response<ApiResponse>) => {
   try {
-    const quizzes = await Quiz.find();
-    res.json({ success: true, data: quizzes });
-  } catch (e: any) { res.status(500).json({ success: false, error: e.message }); }
+    const quizzes = await Quiz.find().sort({ order: 1 });
+
+    let unlockedCount = 5; // default: free tier
+
+    if (req.user?.role === 'super_admin') {
+      unlockedCount = quizzes.length; // super_admin always sees everything
+    } else {
+      // TODO: fetch the company's actual plan name here
+      // const company = await Company.findById(req.user?.companyId).populate('subscriptionPlan');
+      // const planName = company?.subscriptionPlan?.name?.toLowerCase().replace(/[^a-z]/g, '');
+      // if (planName === 'inspiremax') unlockedCount = quizzes.length;
+      // else if (planName === 'focuspro') unlockedCount = 10;
+      // else unlockedCount = 5;
+    }
+
+    const withLockStatus = quizzes.map((q, index) => ({
+      ...q.toObject(),
+      isLocked: index >= unlockedCount,
+    }));
+
+    res.json({ success: true, data: withLockStatus });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
 };
 
 export const createQuiz = async (req: AuthRequest, res: Response<ApiResponse>) => {
@@ -38,7 +59,12 @@ export const submitQuiz = async (req: AuthRequest, res: Response<ApiResponse>) =
     if (!quiz) throw new AppError('Quiz not found', 404);
 
     const percentage = (score / quiz.totalQuestions) * 100;
-    const actionType = percentage >= 70 ? 'quiz_pass' : 'quiz_fail';
+    let actionType: 'quiz_90' | 'quiz_75' | 'quiz_60' | 'quiz_40' | 'quiz_0' = 'quiz_0';
+    if (percentage >= 90) actionType = 'quiz_90';
+    else if (percentage >= 75) actionType = 'quiz_75';
+    else if (percentage >= 60) actionType = 'quiz_60';
+    else if (percentage >= 40) actionType = 'quiz_40';
+    else actionType = 'quiz_0';
 
     const userQuiz = await UserQuiz.create({
       userId,

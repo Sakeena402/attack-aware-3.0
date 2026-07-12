@@ -49,8 +49,8 @@ analyticsRouter.use(authenticate);
 // ── Admin ─────────────────────────────────────────────────────────────────────
 analyticsRouter.get('/dashboard',       isolateByCompany, getDashboardStats);
 analyticsRouter.get('/overview',        isolateByCompany, getDashboardStats);       // alias — keeps existing callers working
-analyticsRouter.get('/simulations',     requireAdmin, isolateByCompany, requireFeature('Advanced analytics'), getSimulationAnalytics);
-analyticsRouter.get('/department-risk', requireAdmin, isolateByCompany, requireFeature('Advanced analytics'), getDepartmentRiskAnalysis);
+analyticsRouter.get('/simulations',     requireAdmin, isolateByCompany, getSimulationAnalytics);
+analyticsRouter.get('/department-risk', requireAdmin, isolateByCompany, getDepartmentRiskAnalysis);
 analyticsRouter.get('/company',         requireAdmin, isolateByCompany, getCompanyAnalytics);
 
 // ── User-level (employee sees own, admin sees any) ────────────────────────────

@@ -14,7 +14,8 @@ router.get('/', getPlans);
 // (MembershipPlan has no companyId — it is a platform-wide catalog)
 router.post('/', authorizeRoles('super_admin'), createPlan);
 
-// A company admin subscribes their own company to a plan
-router.post('/subscribe', authorizeRoles('admin', 'super_admin'), subscribeToPlan);
+// A company admin or individual subscribes their company to a plan
+// Individual needs this to subscribe before creating their own company
+router.post('/subscribe', authorizeRoles('admin', 'super_admin', 'individual'), subscribeToPlan);
 
 export default router;

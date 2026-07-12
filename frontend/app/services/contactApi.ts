@@ -11,7 +11,7 @@ export interface ContactMessage {
 
 export const contactApi = {
   submit: (data: { name: string; email: string; message: string }) =>
-    apiService.post<{ success: boolean }>('/contact', data, { skipAuth: true }),
+    apiService.post<{ success: boolean }>('/contact', data),
   getAll: () => apiService.get<ContactMessage[]>('/contact'),
 };
 

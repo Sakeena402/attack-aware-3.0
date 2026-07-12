@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scam Alert</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+        .back-button {
+  position: fixed;
+  top: 10px; /* Adjust the distance from the top */
+  left: 10px; /* Adjust the distance from the left */
+  background-color: rgba(0, 0, 0, 0.7); /* Dark background for better visibility */
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: bold;
+  z-index: 10; /* Ensure it stays on top of other elements */
+  transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+  background-color: rgba(0, 0, 0, 0.9); /* Darker background on hover */
+}
+        .pager {
+            height: 100vh;
+            background-image: url('https://i.pinimg.com/736x/c9/fc/d4/c9fcd457372b001d3dad76f413cc5516.jpg');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            color: white;
+            position: relative;
+        }
+
+        .heading {
+            position: absolute;
+            color: whitesmoke;
+            top: 20px;
+            font-size: 2.5em;
+            font-weight: bold;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            animation: fadeIn 2s;
+            margin-left: -770px;
+        }
+        .heading1 {
+            position: absolute;
+    color: red;
+    right: 339px;
+    bottom: 85px;
+    font-size: 3.5em;
+    font-weight: bold;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            animation: fadeIn 2s;
+        }
+        .thought-cloud {
+            position: absolute;
+            top: 8%;
+    left: 57%;
+            width: 260px;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            font-size: 1.2em;
+            color: black;
+            text-align: left;
+          
+        }
+
+        .thought-cloud::before {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 30px;
+            width: 0;
+            height: 0;
+            border: 10px solid transparent;
+            border-top-color: rgba(255, 255, 255, 0.8);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .next-button {
+            position: absolute;
+            bottom: 7px;
+            right: 111px;
+            padding: 15px 30px;
+            background-color: red;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .next-button:hover {
+            background-color: darkred;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+<a href="main.html" class="back-button">Back</a>
+
+    <div class="pager">
+        <div class="heading">Mum want to buy a tablet.</div>
+        <div class="heading1">Scam <br>Alert!</div>
+        <div class="thought-cloud">
+            Can you help mum check if the website is okay?
+        </div>
+        <a href="kitchen_scam.html" class="next-button">Next</a>
+    </div>
+</body>
+</html>

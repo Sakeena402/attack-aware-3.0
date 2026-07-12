@@ -11,7 +11,7 @@ import { StatCardSkeleton }            from '@/components/ui/skeleton-loader';
 import { Card }                        from '@/components/ui/card';
 import {
   Award, TrendingUp, Trophy, Medal, Shield,
-  AlertTriangle, CheckCircle, XCircle, Minus,
+  AlertTriangle, CheckCircle, XCircle, Minus, Star, Clock,
 } from 'lucide-react';
 import { RadialBarChart, RadialBar, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts';
 import type { LeaderboardEntry } from '@/app/services/types';
@@ -32,6 +32,19 @@ const ACTION_CFG = {
   engaged:     { label: 'Call Engaged',  icon: AlertTriangle,  cls: 'text-orange-400', bg: 'bg-orange-500/20' },
   received:    { label: 'No Action',     icon: Minus,          cls: 'text-slate-400',  bg: 'bg-slate-700' },
 } as const;
+
+const RESP_BUCKET_CFG: Record<string, { label: string; cls: string }> = {
+  excellent: { label: '< 5 min',   cls: 'text-green-400'  },
+  good:      { label: '< 30 min',  cls: 'text-blue-400'   },
+  average:   { label: '< 3 hrs',   cls: 'text-yellow-400' },
+  poor:      { label: '> 3 hrs',   cls: 'text-red-400'    },
+};
+
+const ACHIEVEMENT_CFG: Record<string, { icon: string; color: string; desc: string }> = {
+  'First Reporter':         { icon: '🚨', color: 'border-green-500/50 bg-green-500/10',  desc: 'Reported your first threat'       },
+  'Quiz Master':            { icon: '🎓', color: 'border-purple-500/50 bg-purple-500/10', desc: 'Scored 90%+ on 10 quizzes'        },
+  'Zero Clicks — 6 Months': { icon: '🛡️', color: 'border-cyan-500/50 bg-cyan-500/10',    desc: 'Zero clicks in past 6 months'    },
+};
 
 export default function EmployeeDashboard() {
   const { state } = useAuth();
@@ -70,7 +83,14 @@ export default function EmployeeDashboard() {
 
   // Risk gauge data
   const riskScore = user?.riskScore ?? 0;
-  const riskColor = riskScore >= 60 ? '#ef4444' : riskScore >= 40 ? '#f59e0b' : '#10b981';
+  const getRiskColor = (score: number) => {
+    if (score <= 25) return '#10b981'; // very_low
+    if (score <= 50) return '#3b82f6'; // low
+    if (score <= 70) return '#facc15'; // medium
+    if (score <= 85) return '#f97316'; // high
+    return '#ef4444'; // critical
+  };
+  const riskColor = getRiskColor(riskScore);
   const gaugeData = [{ value: riskScore, fill: riskColor }];
 
   // Behaviour pie
@@ -143,8 +163,23 @@ export default function EmployeeDashboard() {
                 <div>
                   <p className="text-4xl font-bold" style={{ color: riskColor }}>{riskScore}</p>
                   <p className="text-sm font-medium capitalize" style={{ color: riskColor }}>
-                    {user?.riskLevel ?? 'low'} Risk
+                    {user?.riskLevel?.replace('_', ' ') ?? 'low'} Risk
                   </p>
+                  <div className="flex gap-2 items-center mt-2">
+                    {user?.riskConfidence && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 border border-slate-600 uppercase tracking-wider">
+                        {user.riskConfidence.replace('_', ' ')} Confidence
+                      </span>
+                    )}
+                    {user?.riskTrend && user.riskTrend !== 'insufficient_data' && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 flex items-center gap-1 border border-slate-700 uppercase tracking-wider">
+                        {user.riskTrend === 'improving' ? <TrendingUp className="w-3 h-3 text-green-400" /> :
+                         user.riskTrend === 'declining' ? <TrendingUp className="w-3 h-3 text-red-400 rotate-180" /> :
+                         <Minus className="w-3 h-3 text-slate-400" />}
+                        {user.riskTrend}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-1.5 text-xs">
                   {[
@@ -159,6 +194,33 @@ export default function EmployeeDashboard() {
                     </div>
                   ))}
                 </div>
+                {user?.riskBreakdown && (
+                  <div className="mt-4 pt-4 border-t border-slate-700 space-y-1.5 text-xs">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase mb-2">Score Breakdown</p>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Behavior Base</span>
+                      <span className="font-medium text-foreground">{user.riskBreakdown.behaviorBase}</span>
+                    </div>
+                    {user.riskBreakdown.trainingAdjustment !== 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Training Bonus</span>
+                        <span className="font-medium text-green-400">{user.riskBreakdown.trainingAdjustment}</span>
+                      </div>
+                    )}
+                    {user.riskBreakdown.responseAdjustment !== 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Response Adj.</span>
+                        <span className={`font-medium ${user.riskBreakdown.responseAdjustment > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                          {user.riskBreakdown.responseAdjustment > 0 ? '+' : ''}{user.riskBreakdown.responseAdjustment}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between pt-1 border-t border-slate-700/50">
+                      <span className="text-slate-300 font-bold">Final Score</span>
+                      <span className="font-bold text-foreground">{user.riskBreakdown.finalScore}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -214,6 +276,31 @@ export default function EmployeeDashboard() {
         </Card>
       </div>
 
+      {/* ── Achievements ── */}
+      {(user?.achievements ?? []).length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <Card className="p-6 surface-1 rounded-xl border border-purple-500/20">
+            <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+              <Star className="w-5 h-5 text-yellow-400" /> Achievement Badges
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {(user!.achievements!).map((ach) => {
+                const cfg = ACHIEVEMENT_CFG[ach] ?? { icon: '🏅', color: 'border-slate-500/50 bg-slate-700/50', desc: '' };
+                return (
+                  <div key={ach} className={`flex items-center gap-3 p-3 rounded-xl border ${cfg.color}`}>
+                    <span className="text-2xl">{cfg.icon}</span>
+                    <div>
+                      <p className="text-sm font-bold text-foreground">{ach}</p>
+                      {cfg.desc && <p className="text-xs text-slate-400">{cfg.desc}</p>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        </motion.div>
+      )}
+
       {/* ── History + Leaderboard ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Simulation History */}
@@ -235,11 +322,17 @@ export default function EmployeeDashboard() {
                       <p className="text-sm font-medium text-foreground truncate">{item.campaignName}</p>
                       <p className="text-xs text-slate-400 capitalize">{item.type} · {new Date(item.date).toLocaleDateString()}</p>
                     </div>
-                    <div className="text-right flex-shrink-0">
+                    <div className="text-right flex-shrink-0 space-y-0.5">
                       <span className={`text-xs font-medium ${cfg.cls}`}>{cfg.label}</span>
                       {item.pointsEarned !== 0 && (
                         <p className={`text-xs ${item.pointsEarned > 0 ? 'text-green-400' : 'text-red-400'}`}>
                           {item.pointsEarned > 0 ? '+' : ''}{item.pointsEarned} pts
+                        </p>
+                      )}
+                      {item.responseTimeBucket && (
+                        <p className={`text-xs flex items-center gap-1 justify-end ${RESP_BUCKET_CFG[item.responseTimeBucket]?.cls ?? 'text-slate-500'}`}>
+                          <Clock className="w-3 h-3" />
+                          {RESP_BUCKET_CFG[item.responseTimeBucket]?.label ?? item.responseTimeBucket}
                         </p>
                       )}
                     </div>

@@ -36,13 +36,13 @@ export default function SuperAdminDashboard() {
   const { data: globalStats, isLoading } = useSWR<any>(
     '/super-admin/analytics/global',
     fetcher,
-    { onError: () => showError('Failed to load analytics') }
+    { onError: () => showError('Failed to load analytics'), refreshInterval: 5000 }
   );
 
   const { data: companiesData, isLoading: companiesLoading } = useSWR<any>(
     '/super-admin/companies',
     fetcher,
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false, refreshInterval: 5000 }
   );
 
   const companies = companiesData?.companies || companiesData || [];
