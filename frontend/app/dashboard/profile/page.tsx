@@ -128,9 +128,10 @@ export default function ProfilePage() {
     setSaving(true);
     setMsg(null);
     try {
-      const res = await apiService.patch<{ user: typeof user }>('/auth/profile', form);
+      const res = await apiService.put<any>('/users/profile', form);
       // Update auth context with new user data
-      await refreshUser();
+      if (res?.data?.user) await refreshUser();
+else await refreshUser();
       setMsg({ type: 'success', text: 'Profile updated successfully.' });
       setEditing(false);
     } catch (err: any) {
@@ -156,10 +157,10 @@ export default function ProfilePage() {
     setPwdSaving(true);
     setPwdMsg(null);
     try {
-      await apiService.patch('/auth/change-password', {
-        currentPassword: pwdForm.current,
-        newPassword:     pwdForm.next,
-      });
+      await apiService.put('/users/change-password', {
+  currentPassword: pwdForm.current,
+  newPassword:     pwdForm.next,
+});
       setPwdMsg({ type: 'success', text: 'Password changed successfully.' });
       setPwdForm({ current: '', next: '', confirm: '' });
       setShowPwd(false);

@@ -26,6 +26,7 @@ export interface ForumComment {
 }
 
 export interface CreatePostPayload {
+  title: string;
   content: string;
   isUrdu: boolean;
 }

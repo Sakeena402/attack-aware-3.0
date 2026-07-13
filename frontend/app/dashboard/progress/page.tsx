@@ -33,9 +33,18 @@ interface VideoLog {
 }
 
 interface ProgressData {
-  games:   GameLog[];
-  quizzes: QuizLog[];
-  videos:  VideoLog[];
+  points: number;
+  badge: string;
+  riskScore: number;
+  riskLevel: string;
+  videosCompleted: number;
+  quizzesTaken: number;
+  gamesPlayed: number;
+  history: {
+    games: GameLog[];
+    quizzes: QuizLog[];
+    videos: VideoLog[];
+  };
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -194,13 +203,13 @@ export default function ProgressPage() {
 
   const { data, isLoading } = useSWR<ProgressData>(
     state.user?.id ? ['progress', state.user.id] : null,
-    () => apiService.get<ProgressData>('/progress/my').then(r => r.data),
+    () => apiService.get<ProgressData>('/progress').then(r => r.data),
     { revalidateOnFocus: false }
   );
 
-  const games   = data?.games   ?? [];
-  const quizzes = data?.quizzes ?? [];
-  const videos  = data?.videos  ?? [];
+ const games   = data?.history?.games   ?? [];
+const quizzes = data?.history?.quizzes ?? [];
+const videos  = data?.history?.videos  ?? [];
 
   // Stats
   const avgGame  = avg(games.map(g => g.score));

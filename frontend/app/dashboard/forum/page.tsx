@@ -351,7 +351,7 @@ export default function ForumPage() {
     if (!newPost.trim()) return;
     setSubmitting(true);
     try {
-      await forumApi.createPost({ content: newPost.trim(), isUrdu });
+      await forumApi.createPost({ title: newPost.trim().slice(0, 60), content: newPost.trim(), isUrdu });
       setNewPost('');
       mutate('forum-posts');
     } finally {
