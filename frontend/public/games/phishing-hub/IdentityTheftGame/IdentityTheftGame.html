@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<style>
+canvas {
+    border:5px solid #d3d3d3;
+    background-color: #f1f1f1;
+}
+h1{
+  color: #fcef00;
+} p {
+    color: #ffffff;
+}
+h3{
+    color: #fcef00;
+
+}
+</style>
+</head>
+<body  bgcolor="#000000" onload="startGame()">
+<h1 style="text-align:center"> Sherlock Holmes : Secure your Identity
+ </h1>
+<DIV style="position: absolute; top:500px; left:320px; width:800px; height:100px">
+<h1 id="question">Question will be displayed here</h1>
+</DIV>
+<div style="position: absolute; top:260px; left:1100px; ">
+  <button onmousedown="moveup()" onmouseup="clearmove()" ontouchstart="moveup()" style="border:none; background: #ffffff; color: #000000; height:50px;width:150px; border-radius: 25px;">UP</button><br><br><br>
+  <button onmousedown="movedown()" onmouseup="clearmove()" ontouchstart="movedown()" style="border:none; background: #ffffff; color: #000000; height:50px;width:150px; border-radius: 25px;">DOWN</button>
+</div>
+<div style="text-align:center">
+<p>If answer is "True", pass through Green door.       If answer is "False", pass through Red door.</p>
+<!-- <p>Choose correct door to pass through for each question.</p> -->
+</div>
+
+<script>
+var myGamePiece;
+var myObstacles = [];
+var myBackgrounds = [];
+var questionNo = -1;
+var questionsList = ["A child can fall victim to identity theft.", "Identity theft damage is limited to financial loss.", "Identity theft is a federal crime and its victim is recognized as a true victim in the eyes of law.", "Dumpster divers can steal your identity from thrown away receipts, credit offers, account statements and expired cards.", "It is safe to use the same password for multiple accounts online.","A secure website has a valid URL, uses the HTTPS protocol and shows a green lock symbol in the browser tab.","Phishing emails and websites are the only methods by which identity theft can be performed."];
+var answersList = ["true","false","true","true","false","true","false"];
+var backgroundList = ["bg1.jpg","bg2.jpg","bg1.jpg","bg2.jpg","bg1.jpg","bg2.jpg","bg1.jpg","bg2.jpg","bg1.jpg"];
+var qstnInterval = 650;
+var mySound;
+var backgroundWidth = 680;
+var backgroundHeight = 370;
+var score = 0;
+var maxScore = 8;
+
+function startGame() {
+    myGamePiece = new component(30, 70, "Picture1.png", 50, 120, "image");
+    mySound = new sound("bounce.mp3");
+    myBackground = new component(backgroundWidth, backgroundHeight, backgroundList[0], 0, 0, "image");
+    myBackgrounds.push(myBackground);
+    myGameArea.start();
+}
+
+var myGameArea = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+        this.canvas.width = backgroundWidth;
+        this.canvas.height = backgroundHeight;
+        this.canvas.style.left = "330px";
+        this.canvas.style.top = "110px";
+        this.canvas.style.position = "absolute";
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        this.frameNo = 0;
+        this.interval = setInterval(updateGameArea, 20);
+    },
+    stop : function() {
+        clearInterval(this.interval);
+        window.setTimeout(function(){
+
+        // Move to a new location or you can do something else
+        window.location.href = "gameOver.php";
+
+    },  1000);
+    },
+    clear : function() {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+}
+
+function component(width, height, color, x, y, type) {
+    this.type = type;
+    if (type == "image") {
+        this.image = new Image();
+        this.image.src = color;
+    }
+    this.width = width;
+    this.height = height;
+    this.speedX = 0;
+    this.speedY = 0;
+    this.x = x;
+    this.y = y;
+    this.update = function() {
+        ctx = myGameArea.context;
+        if (type == "image") {
+            ctx.drawImage(this.image,
+                this.x,
+                this.y,
+                this.width, this.height);
+        } else {
+            ctx.fillStyle = color;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
+    }
+    this.newPos = function() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+    }
+	this.crashWith = function(otherobj) {
+
+        var myleft = this.x;
+        var myright = this.x + (this.width);
+        var mytop = this.y;
+        var mybottom = this.y + (this.height);
+        var otherleft = otherobj.x;
+        var otherright = otherobj.x + (otherobj.width);
+        var othertop = otherobj.y;
+        var otherbottom = otherobj.y + (otherobj.height);
+        var crash = true;
+        if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
+        <!-- document.getElementById("question").innerHTML = "True/False : 3";-->
+            crash = false;
+        }
+        else{
+        <!-- document.getElementById("question").innerHTML = "True/False : " + otherobj.fillStyle;-->
+        }
+        return crash;
+    }
+}
+
+function updateGameArea() {
+    if(score == maxScore)
+    {
+        winBack = new component(backgroundWidth, 400,'win1.jpg', 0, 0, "image");
+        winBack.update();
+        return;
+    }
+	var x, height, gap, minHeight, maxHeight, minGap, maxGap;
+    if( myObstacles.length >1 )
+    {
+        if(answersList[questionNo] == "false")
+        {
+            if (myGamePiece.crashWith(myObstacles[0])) {
+                mySound.play();
+                myGameArea.stop();
+                return;
+            }
+        }
+        else
+        {
+            if (myGamePiece.crashWith(myObstacles[1])) {
+                mySound.play();
+                myGameArea.stop();
+                return;
+            }
+        }
+    }
+    myGameArea.clear();
+	myGameArea.frameNo += 1;
+
+    if (myGameArea.frameNo == 1 || everyinterval(qstnInterval)) {
+        x = myGameArea.canvas.width;
+        minHeight = 100;
+        maxHeight = 200;
+        height = Math.floor(Math.random()*(maxHeight-minHeight+1)+minHeight);
+        minGap = 50;
+        maxGap = 200;
+        gap = Math.floor(Math.random()*(maxGap-minGap+1)+minGap);
+        myObstacles.pop();
+        myObstacles.pop();
+        myObstacles.push(new component(10, height, "green", x, 0));
+        myObstacles.push(new component(10, myGameArea.canvas.height - height, "red", x, height));
+        questionNo += 1;
+        document.getElementById("question").innerHTML = "True/False : " + questionsList[questionNo];
+        myBackground = new component(backgroundWidth, backgroundHeight, backgroundList[questionNo+1], x, 0, "image");
+        <!--myBackgrounds.pop();-->
+        myBackgrounds.push(myBackground);
+        score += 1;
+        if( score == maxScore)
+        {
+            document.getElementById("question").innerHTML = "Congratulations! You have finished this level." ;
+            var button = document.createElement("input");
+            button.type = "button";
+            button.value = "Next Level";
+            button.style.position = "absolute";
+            button.style.top="560px";
+            button.style.left="600px";
+            button.style.width = "150px";
+            button.style.height = "50px";
+            //button.style.border-radius = "25px";
+            button.onclick = function() {
+                window.location.href = "IdentityTheftGame_page2.php";
+            };
+            document.body.appendChild(button)
+
+            for (i = 0; i < myBackgrounds.length; i += 1) {
+                myBackgrounds.pop();
+            }
+            for (i = 0; i < myObstacles.length; i += 1) {
+                myObstacles.pop();
+            }
+            return;
+        }
+    }
+
+    for (i = 0; i < myBackgrounds.length; i += 1) {
+        myBackgrounds[i].speedX = -1;
+        myBackgrounds[i].newPos();
+        myBackgrounds[i].update();
+    }
+    for (i = 0; i < myObstacles.length; i += 1) {
+        myObstacles[i].x += -1;
+        myObstacles[i].update();
+    }
+    myGamePiece.newPos();
+    myGamePiece.update();
+}
+
+function sound(src) {
+    this.sound = document.createElement("audio");
+    this.sound.src = src;
+    this.sound.setAttribute("preload", "auto");
+    this.sound.setAttribute("controls", "none");
+    this.sound.style.display = "none";
+    document.body.appendChild(this.sound);
+    this.play = function(){
+        this.sound.play();
+    }
+    this.stop = function(){
+        this.sound.pause();
+    }
+}
+
+function everyinterval(n) {
+    if ((myGameArea.frameNo / n) % 1 == 0) {return true;}
+    return false;
+}
+
+function moveup() {
+    myGamePiece.image.src = "Picture2.png";
+    myGamePiece.speedY = -1;
+}
+
+function movedown() {
+    myGamePiece.image.src = "Picture2.png";
+    myGamePiece.speedY = 1;
+}
+
+function clearmove() {
+    myGamePiece.image.src = "Picture1.png";
+    myGamePiece.speedX = 0;
+    myGamePiece.speedY = 0;
+}
+</script>
+
+</body>
+</html>

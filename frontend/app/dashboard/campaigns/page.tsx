@@ -81,8 +81,9 @@ interface CampaignFormData {
   type: 'phishing' | 'smishing' | 'vishing';
   startDate: string;
   endDate: string;
-  //line below is updated by hifza, was: { _id: string; phone: string }[]
-  targetEmployees: { _id: string; phone?: string; email?: string }[];
+  //line below is added by hifza, the original line is commented out
+  targetEmployees: { _id: string; phone: string }[];  // string[] ki jagah
+ //(sakeenaa line is commented) targetEmployees: string[];
   targetDepartments: string[];
   emailTemplate: string;
   smsTemplate: string;
@@ -97,6 +98,12 @@ const smsTemplates = [
   { key: 'password_reset', name: 'Password Reset', description: 'Fake password reset request warning' },
   { key: 'prize_winner', name: 'Prize Winner', description: 'Fake prize/gift card claim' },
   { key: 'tax_refund', name: 'Tax Refund', description: 'Fake IRS tax refund notification' },
+];
+
+const emailTemplates = [
+  { key: 'bank_phishing', name: 'Bank Login Verification', description: 'Fake bank security alert requiring account verification' },
+  { key: 'office365_phishing', name: 'Office 365 Verification', description: 'Fake Microsoft 365 account verification request' },
+  { key: 'hr_phishing', name: 'HR Benefits Update', description: 'Fake HR benefits enrollment deadline notice' },
 ];
 
 const voiceScripts = [
@@ -124,7 +131,7 @@ export default function CampaignsPage() {
     endDate: '',
     targetEmployees: [],
     targetDepartments: [],
-    emailTemplate: '',
+    emailTemplate: 'bank_phishing',
     smsTemplate: 'bank_alert',
     voiceScript: 'bank_verification',
     description: '',
@@ -181,7 +188,7 @@ const employees = Array.isArray(data) ? data : [];
         endDate: campaign.endDate?.split('T')[0] || '',
         targetEmployees: campaign.targetEmployees || [],
         targetDepartments: campaign.targetDepartments || [],
-        emailTemplate: campaign.emailTemplate || '',
+        emailTemplate: campaign.emailTemplate || 'bank_phishing',
         smsTemplate: campaign.smsTemplate || 'bank_alert',
         voiceScript: campaign.voiceScript || 'bank_verification',
         description: campaign.description || '',
@@ -195,7 +202,7 @@ const employees = Array.isArray(data) ? data : [];
         endDate: '',
         targetEmployees: [],
         targetDepartments: [],
-        emailTemplate: '',
+        emailTemplate: 'bank_phishing',
         smsTemplate: 'bank_alert',
         voiceScript: 'bank_verification',
         description: '',
@@ -824,13 +831,24 @@ onChange={() => toggleEmployee(employee)}  // poora employee object pass karo
 
     {/* EMAIL TEMPLATE */}
     {formData.type === 'phishing' && (
-      <textarea
-        value={formData.emailTemplate}
-        onChange={(e) => setFormData({ ...formData, emailTemplate: e.target.value })}
-        rows={4}
-        placeholder="Email template..."
-        className="w-full px-4 py-2 border rounded-lg"
-      />
+      <div>
+        <label className="text-sm font-medium mb-2 block">Email Template</label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          {emailTemplates.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setFormData({ ...formData, emailTemplate: t.key })}
+              className={`p-3 border rounded-lg text-left ${
+                formData.emailTemplate === t.key ? 'bg-red-500/20 border-red-500/30' : ''
+              }`}
+            >
+              <p className="font-medium text-sm">{t.name}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
+            </button>
+          ))}
+        </div>
+      </div>
     )}
 
     {/* DESCRIPTION */}

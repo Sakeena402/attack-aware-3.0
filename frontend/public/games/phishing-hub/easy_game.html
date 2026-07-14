@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Game</title>
+    <!-- FontAwesome CDN Link for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+<style>
+/* Google font import */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, #0f172a, #1e293b, #334155);
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Add padding-top equal to header height so content is not hidden */
+.content {
+  padding-top: 130px; /* Adjust based on your header height */
+  flex: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.heading {
+  color: #38bdf8;
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 40px;
+  text-shadow: 0 0 10px rgba(56,189,248,0.7);
+}
+
+.heading span {
+  color: #fff;
+}
+
+.topic_container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+  margin-top: 20px;
+}
+
+.topic_card {
+  background: rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 25px;
+  text-align: center;
+  transition: .3s;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.topic_card:hover {
+  transform: translateY(-8px) scale(1.02);
+  border: 1px solid #38bdf8;
+  box-shadow: 0 0 20px rgba(56,189,248,0.5);
+}
+
+.card_graphics {
+  height: 160px;
+  margin-bottom: 15px;
+}
+
+.card_graphics img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.card_title {
+  font-size: 20px;
+  margin-bottom: 10px;
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.card_desc {
+  font-size: 14px;
+  color: #cbd5e1;
+  margin-bottom: 20px;
+  flex: 1;
+}
+
+.btn-start {
+  width: 100%;
+  padding: 12px 0;
+  background: linear-gradient(135deg,#38bdf8,#06b6d4);
+  color: #0f172a;
+  border-radius: 30px;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .3s;
+}
+
+.btn-start:hover {
+  background: linear-gradient(135deg,#06b6d4,#0891b2);
+  color: #fff;
+}
+
+.back-link {
+  position: absolute;
+  top: 90px; /* distance from top of header */
+  right: 20px;
+  z-index: 1000; /* ensures it stays on top */
+}
+
+#backBtn {
+  padding: 10px 25px;
+  background: #10b981;;
+  color: #ffffff;
+  border: none;
+  border-radius: 30px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .3s;
+}
+
+#backBtn:hover {
+  background: #0a9466;
+  color: #fff;
+}
+
+</style>
+</head>
+<body>
+
+
+<div class="content">
+    <h1 class="heading">Choose Game for Playing AttackAware<span> Easy</span> Level Game</h1>
+    <div class="topic_container">
+
+        <div class="topic_card" id="password_security_card">
+            <div class="card_graphics">
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 120'><rect width='200' height='120' fill='%23241b3d'/><text x='100' y='65' font-size='40' text-anchor='middle' fill='%23a78bfa'>%F0%9F%9B%A1</text></svg>" alt="Password Security Image">
+            </div>
+            <div class="card_title">Strong Password</div>
+            <div class="card_desc">Master the art of creating strong and secure passwords with the easy level of the Strong Password game</div>
+            <a href="password.html"><button class="btn-start">Play Game  </button></a>
+        </div>
+
+        <div class="topic_card" id="phishing_awareness_card">
+            <div class="card_graphics">
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 120'><rect width='200' height='120' fill='%23241b3d'/><text x='100' y='65' font-size='40' text-anchor='middle' fill='%23a78bfa'>%F0%9F%9B%A1</text></svg>" alt="Phishing Awareness Image">
+            </div>
+            <div class="card_title">Phish Guard</div>
+            <div class="card_desc">Protect your digital identity and outsmart cyber threats in Phish Guard, the ultimate defense against phishing attacks! </div>
+            <a href="hint.html"><button class="btn-start">Play Game </button></a>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
+

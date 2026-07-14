@@ -1,10 +1,14 @@
 import { Response } from 'express';
 import { Campaign } from '../models/Campaign.js';
 import SimulationResult from '../models/SimulationResult.js';
-import { AppError } from '../utils/errorHandler.js';
+import { Company }      from '../models/Company.js';
+import { AppError }     from '../utils/errorHandler.js';
 import { AuthRequest, ApiResponse, CampaignStatus } from '../types/index.js';
 import { sendSms, generateTrackingToken as generateSmsToken, hashToken, smsTemplates } from '../services/twilioService.js';
+import { recordSmsSent } from '../services/trackingService.js';
+import { companyHasFeature } from '../services/planService.js';
 import { sendPhishingEmail, generateTrackingToken as generateEmailToken, emailTemplates } from '../services/emailService.js';
+import mongoose from 'mongoose';
 
 interface TargetEmployee {
   _id: string;
@@ -38,6 +42,25 @@ export const createCampaign = async (
 
     const companyId = req.user.companyId;
     if (!companyId) throw new AppError('Company ID not found on user', 400);
+
+    // ── Plan enforcement: campaign count cap ────────────────────────────────
+    // super_admin is never capped. For other roles, if the plan lacks
+    // 'Unlimited campaigns', enforce a hard cap of 10.
+    // (Flag: placeholder cap of 10 — confirm final number with product team)
+    if (req.user.role !== 'super_admin') {
+      const hasUnlimited = await companyHasFeature(companyId, 'Unlimited campaigns');
+      if (!hasUnlimited) {
+        const CAMPAIGN_CAP = 10;
+        const existingCount = await Campaign.countDocuments({ companyId });
+        if (existingCount >= CAMPAIGN_CAP) {
+          throw new AppError(
+            `Campaign limit reached for your current plan (max ${CAMPAIGN_CAP}). Upgrade to a plan with 'Unlimited campaigns' to create more.`,
+            403
+          );
+        }
+      }
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     const newCampaign = new Campaign({
       campaignName,

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link
+      rel="canonical"
+      href="https://fuhadkalathingal.github.io/phishguard/level_1.html/hint.html"
+    />
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Hacker Is Planning Something</title>
+
+    <!-- Meta SEO -->
+    <meta name="title" content="PhishGuard Level - 1" />
+    <meta
+      name="description"
+      content="This level makes you aware about the phishing links."
+    />
+    <meta name="robots" content="index, follow" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="language" content="English" />
+    <meta name="author" content="PhishGuard" />
+
+    <!-- Social media share -->
+    <meta property="og:title" content="PhishGuard Level - 1" />
+    <meta property="og:site_name" content="PhishGuard" />
+    <meta
+      property="og:url"
+      content="https://fuhadkalathingal.github.io/phishguard/"
+    />
+    <meta
+      property="og:description"
+      content="This level makes you aware about the phishing links"
+    />
+    <meta property="og:type" content="Education" />
+    <meta property="og:image" content="assets/favicon.png" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="assets/favicon.png" />
+    <meta name="msapplication-TileColor" content="#da532c" />
+    <meta name="theme-color" content="#ffffff" />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Changa:wght@300&family=Gluten&display=swap");
+
+      body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        font-size: 16px;
+        background-color: #000;
+        overflow: hidden;
+        background-image: url(https://img.pikbest.com/backgrounds/20200530/blue-black-abstract-background-gradient-v_1773608jpg!sw800);
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-attachment: fixed;
+      }
+
+      .hint-container {
+        width: 90%;
+        max-width: 600px;
+        padding: 20px;
+      }
+
+      img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+        border: 2px solid #f5f5f5;
+        border-radius: 20px;
+      }
+
+      h1 {
+        font-family: "Gluten", cursive;
+        color: firebrick;
+        font-size: 24px;
+        margin-top: 10px;
+      }
+
+      p {
+        font-family: "Changa", sans-serif;
+        color: #f5f5f5;
+        font-size: 18px;
+        margin-top: 10px;
+      }
+
+      @import url("https://fonts.googleapis.com/css2?family=VT323&display=swap");
+
+      #intro {
+        color: white;
+        font-family: "VT323", monospace;
+      }
+
+      .center-center {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%);
+      }
+
+      [class*="btn-glitch-"] {
+        display: inline-block;
+        font-family: "VT323", monospace;
+        border: 1px solid white;
+        border-radius: 10px;
+        color: white;
+        padding: 10px 13px;
+        min-width: 175px;
+        line-height: 1.5em;
+        white-space: no-wrap;
+        text-transform: uppercase;
+        cursor: pointer;
+        .text,
+        .decoration {
+          display: inline-block;
+        }
+        .decoration {
+          display: inline-block;
+          float: right;
+        }
+        &:hover,
+        &:focus {
+        
+          animation-duration: 0.2s;
+          background-color: yellow;
+          color: black;
+          border: 1px solid yellow;
+         
+          }
+          .decoration {
+            animation-name: blink;
+            animation-duration: 0.1s;
+            animation-iteration-count: infinite;
+          }
+          :before {
+            content: " ";
+            width: 15px;
+            border: 1px solid black;
+            position: absolute;
+            right: 25%;
+            bottom: 3px;
+            transform: rotate(35deg);
+          }
+          :after {
+            animation-name: shrink;
+            animation-duration: 0.5s;
+            animation-iteration-count: 1;
+            animation-fill-mode: forwards;
+            content: " ";
+            width: 75%;
+            border: 1px solid black;
+            position: absolute;
+            left: 0;
+            bottom: 5px;
+          }
+        }
+        &:active {
+          background: none;
+          color: yellow;
+          .text-decoration {
+            animation-name: none;
+          }
+          .decoration {
+            animation-name: none;
+          }
+          :before,
+          :after {
+            display: none;
+          }
+        }
+      
+
+      @keyframes glitch {
+        25% {
+          background-color: red;
+          transform: translateX(-10px);
+          letter-spacing: 10px;
+        }
+        35% {
+          background-color: green;
+          transform: translate(10px);
+        }
+        59% {
+          opacity: 0;
+        }
+        60% {
+          background-color: blue;
+          transform: translate(-10px);
+          filter: blur(5px);
+        }
+        100% {
+          background-color: yellow;
+          blur: (5px);
+        }
+      }
+
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+
+      @keyframes shrink {
+        100% {
+          width: 10%;
+        }
+      }
+
+      /* small style for disabled state when saving log */
+      .btn-saving {
+        opacity: 0.6;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="hint-container">
+      <img
+        width="1280px"
+        height="720px"
+        rel="preload"
+        loading="eager"
+        decoding="async"
+        fetchpriority="high"
+        src="assets/hint.webp"
+        alt="hint"
+      />
+      <h1>Devil Hacker :</h1>
+      <p>Iam ready for the first phase of attack using phishing tools...</p>
+      <a
+        id="playButton"
+        href="phishing_animated_video.html"
+        class="btn-glitch-fill"
+      >
+        <span class="text">// Initialize</span
+        ><span class="text-decoration">_</span
+        ><span class="decoration">&rArr;</span>
+      </a>
+    </div>
+
+    <script>
+      (function () {
+        const playButton = document.getElementById("playButton");
+
+        // If save_game_log.php is in same folder, we'll POST to it before navigating.
+        // This will send game_title and a default score (0). Adjust as needed.
+        playButton.addEventListener("click", function (e) {
+          e.preventDefault(); // prevent immediate navigation
+
+          // disable button to prevent multiple clicks
+          playButton.classList.add("btn-saving");
+          playButton.setAttribute("aria-disabled", "true");
+
+          // prepare data
+          const params = new URLSearchParams();
+          params.append("game_title", "PhishGuard_Level_1");
+          params.append("score", "0");
+
+          // send log, then navigate (whether success or fail, we still redirect)
+          fetch("save_game_log.php", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: params.toString(),
+          })
+            .then((res) => res.text())
+            .then((text) => {
+              // optional: inspect response
+              console.log("save_game_log response:", text);
+              // redirect to href
+              window.location.href = playButton.getAttribute("href");
+            })
+            .catch((err) => {
+              console.error("Error sending game log:", err);
+              // still redirect even if logging fails
+              window.location.href = playButton.getAttribute("href");
+            });
+        });
+      })();
+    </script>
+  </body>
+</html>

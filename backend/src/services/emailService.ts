@@ -25,6 +25,14 @@ const getTransporter = (): nodemailer.Transporter => {
   return transporter;
 };
 
+// Maps an email template key to the fake-login-page "brand" it should render as.
+// These MUST match the keys in frontend/app/verify/[pageType]/page.tsx's pageConfigs.
+const templatePageType: Record<string, string> = {
+  bank_phishing: 'bank',
+  office365_phishing: 'office365',
+  hr_phishing: 'hr_benefits',
+};
+
 export const emailTemplates = {
   bank_phishing: {
     name: 'Bank Login Verification',
@@ -66,7 +74,7 @@ export const emailTemplates = {
           
           <p style="color: #999; font-size: 11px;">
             This is a security notification. Please do not reply to this email.
-            <img src="${trackingUrl}/pixel" alt="" style="width: 1px; height: 1px; display: none;">
+            <img src="${trackingUrl}" alt="" style="width: 1px; height: 1px; display: none;">
           </p>
         </div>
       </div>
@@ -112,7 +120,7 @@ export const emailTemplates = {
           
           <p style="color: #999; font-size: 11px;">
             © 2026 Microsoft Corporation. All rights reserved.
-            <img src="${trackingUrl}/pixel" alt="" style="width: 1px; height: 1px; display: none;">
+            <img src="${trackingUrl}" alt="" style="width: 1px; height: 1px; display: none;">
           </p>
         </div>
       </div>
@@ -148,7 +156,7 @@ export const emailTemplates = {
           
           <p style="color: #666; font-size: 12px;">
             Human Resources Department<br>
-            <img src="${trackingUrl}/pixel" alt="" style="width: 1px; height: 1px; display: none;">
+            <img src="${trackingUrl}" alt="" style="width: 1px; height: 1px; display: none;">
           </p>
         </div>
       </div>
@@ -170,21 +178,38 @@ export const sendPhishingEmail = async (options: SendEmailOptions): Promise<{
   error?: string;
   mocked?: boolean;
 }> => {
+  const template = emailTemplates[options.templateKey];
+  const trackingUrl = generateEmailTrackingUrl(
+    options.trackingToken,
+    options.campaignId,
+    options.userId
+  );
+  const phishingPageUrl = generatePhishingPageUrl(
+    options.trackingToken,
+    options.templateKey,
+    options.campaignId,
+    options.userId
+  );
+
+  // ── MOCK MODE ──────────────────────────────────────────────────────────────
   if (process.env.MOCK_EMAIL === 'true' || process.env.NODE_ENV === 'test') {
     const mockId = `MOCK_EM_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    console.log(`[MOCK EMAIL] To: ${options.to} | Template: ${options.templateKey} | ID: ${mockId}`);
+
+    console.log(`\n[MOCK EMAIL] ══════════════════════════════════`);
+    console.log(`  To          : ${options.to}`);
+    console.log(`  Template    : ${options.templateKey}`);
+    console.log(`  Subject     : ${template.subject}`);
+    console.log(`  Mock ID     : ${mockId}`);
+    console.log(`  ─────────────────────────────────────────────`);
+    console.log(`  Click this to simulate employee clicking link:`);
+    console.log(`  ${phishingPageUrl}`);
+    console.log(`════════════════════════════════════════════════\n`);
+
     return { success: true, messageId: mockId, mocked: true };
   }
 
+  // ── REAL EMAIL ─────────────────────────────────────────────────────────────
   try {
-    const template = emailTemplates[options.templateKey];
-    const trackingUrl = generateEmailTrackingUrl(
-      options.trackingToken,
-      options.campaignId,
-      options.userId
-    );
-    const phishingPageUrl = generatePhishingPageUrl(options.trackingToken);
-
     const htmlContent = template.htmlTemplate(trackingUrl, phishingPageUrl);
 
     const transporter = getTransporter();
@@ -224,9 +249,19 @@ export const generateEmailTrackingUrl = (
   return `${baseUrl}/pixel?${params.toString()}`;
 };
 
-export const generatePhishingPageUrl = (token: string): string => {
+// Landing page the employee sees after clicking "Verify Your Account" in the email.
+// Includes campaignId + userId (not just the token) so the fake login page can
+// report back which click/submission belongs to which simulation record.
+export const generatePhishingPageUrl = (
+  token: string,
+  templateKey: keyof typeof emailTemplates,
+  campaignId: string,
+  userId: string
+): string => {
   const baseUrl = process.env.PHISHING_PAGE_BASE_URL || 'http://localhost:3000/verify';
-  return `${baseUrl}?token=${token}`;
+  const pageType = templatePageType[templateKey] || 'bank';
+  const params = new URLSearchParams({ token, c: campaignId, u: userId });
+  return `${baseUrl}/${pageType}?${params.toString()}`;
 };
 
 export const generateTrackingToken = (): string => {

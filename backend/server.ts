@@ -53,6 +53,16 @@ import teamRoute from './src/routes/teamRoute.js';
 import systemControlsRoute from './src/routes/systemControlsRoute.js';
 import reportsRouter from './src/routes/reports.js';
 
+import videosRoute from './src/routes/videosRoute.js';
+import quizzesRoute from './src/routes/quizzesRoute.js';
+import gamesRoute from './src/routes/gamesRoute.js';
+import forumRoute from './src/routes/forumRoute.js';
+import attacksRoute from './src/routes/attacksRoute.js';
+import plansRoute from './src/routes/plansRoute.js';
+import tasksRoute from './src/routes/tasksRoute.js';
+import messagesRoute from './src/routes/messagesRoute.js';
+import progressRoute from './src/routes/progressRoute.js';
+
 import './src/queues/workers.js';
 // Handle uncaught exceptions
 process.on('uncaughtException', handleUncaughtException);
@@ -199,9 +209,9 @@ app.get('/health/detailed', async (req: Request, res: Response) => {
 // ============================================
 app.use('/api/auth', authRouter);
 app.use('/api/super-admin', apiRateLimiter, superAdminRouter);
+app.use('/api/companies', apiRateLimiter, companyRouter); // Self-service company creation for individual role
 app.use('/api/campaigns', apiRateLimiter, campaignRouter);
 app.use('/api/analytics', apiRateLimiter, analyticsRouter);
-app.use('/api/companies', apiRateLimiter, companyRouter);
 app.use('/api/leaderboard', apiRateLimiter, leaderboardRouter);
 app.use('/api/contact', apiRateLimiter, contactRouter);
 app.use('/api/employees', apiRateLimiter, employeesRouter);
@@ -217,6 +227,15 @@ app.use('/api/system-controls', systemControlsRoute);
 // ADD this line where you register other routes
 app.use('/api/reports', reportsRouter);
 
+app.use('/api/videos', apiRateLimiter, videosRoute);
+app.use('/api/quizzes', apiRateLimiter, quizzesRoute);
+app.use('/api/games', apiRateLimiter, gamesRoute);
+app.use('/api/forum', apiRateLimiter, forumRoute);
+app.use('/api/attacks', apiRateLimiter, attacksRoute);
+app.use('/api/plans', apiRateLimiter, plansRoute);
+app.use('/api/tasks', apiRateLimiter, tasksRoute);
+app.use('/api/messages', apiRateLimiter, messagesRoute);
+app.use('/api/progress', apiRateLimiter, progressRoute);
 
 // ============================================
 // 404 Handler

@@ -41,6 +41,7 @@ import {
 } from '../controllers/analyticsController.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireAdmin, requireSuperAdmin, isolateByCompany } from '../middleware/rbac.js';
+import { requireFeature } from '../middleware/featureGating.js';
 
 const analyticsRouter = Router();
 analyticsRouter.use(authenticate);

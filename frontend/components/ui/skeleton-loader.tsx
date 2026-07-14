@@ -85,7 +85,7 @@ export function ChartSkeleton({ height = 300 }: { height?: number }) {
   return (
     <div className="p-6 rounded-xl glassmorphism border border-purple-500/20">
       <Skeleton className="h-6 w-40 mb-4" />
-      <Skeleton className="w-full" style={{ height }} />
+      <Skeleton className="w-full" height={height} />
     </div>
   );
 }

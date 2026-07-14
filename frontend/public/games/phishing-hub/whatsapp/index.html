@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WhatsApp-A-Mole!</title>
+    <link href='https://fonts.googleapis.com/css?family=Amatic+SC:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<audio id="bg" src="assets/img/bg.mp3" ></audio>
+<audio id="button" src="assets/img/button.mp3"></audio>
+<audio id="correct" src="assets/img/correct.mp3"></audio>
+<audio id="incorrect" src="assets/img/incorrect.mp3"></audio>
+<audio id="end" src="assets/img/end.wav"></audio>
+
+
+<h1 id="heading3">Instructions</h1>;
+<div class="instr" id="instr">
+    <p>
+        1.&ensp; The duration of the game will be 3 minutes. <br><br>
+        2.&ensp;  Each player will receive 3 lives, at the end of these 3 lives, the game will be over. <br><br>
+        3.&ensp;  Each question will have one mole with the correct answer. The objective is to strike the mole corresponding to the correct option to score. <br><br>
+        4.&ensp;  The scores will be as follows: <br><br>
+        &emsp;&emsp;&emsp;&emsp;- [Easy] Correct Answer: 1 point<br>
+        &emsp;&emsp;&emsp;&emsp;- [Medium] Correct Answer: 2 points<br>
+        &emsp;&emsp;&emsp;&emsp;- [Hard] Correct Answer: 3 points<br>
+        &emsp;&emsp;&emsp;&emsp;- Incorrect Answer: -1 life<br><br>
+        5.&ensp; The higher the score, the higher the ranking on the leaderboard.
+    </p>
+</div>
+
+
+<div class="instr_home" id="instr_home">
+    <button onClick="homePage()" id="instr_homePage"></button>
+</div>
+
+
+<h1 id="heading4">Privacy Policy</h1>;
+<div class="privacy" id="privacy">
+    <p>
+        1.&ensp; The game collects Username and Score of the user to create a leaderboard among global players of the game. No other information is collected from the user.<br><br><br>
+        2.&ensp; If a user wishes to play anonymously, they can start the game without entering their name, and their score will be saved under the "Anonymous" tag.<br><br><br>
+        3.&ensp; The game updates the High Score of the user in the Leaderboard accordingly as it changes, and stores only the maximum value.<br><br><br>
+        4.&ensp; The data collected from the user is only used to generate the Leaderboard.<br><br><br>
+        5.&ensp; The game is not associated with any Third Party applications. User data is neither shared nor sold.
+
+    </p>
+</div>
+
+
+<div class="priv_home" id="priv_home">
+    <button onClick="homePage()" id="privacy_home"></button>
+</div>
+
+
+
+<div class="leader_heading" id="leader_heading">
+
+</div>
+
+
+<div class="redirect_leader" id="redirect_leader">
+    <button onClick="homePage()" id="homePage_leader"></button>
+</div>
+
+
+
+
+<div class="leader_grid" id="leader_grid">
+    <table id="leader_table" >
+        <tr>
+            <th>S No.</th>
+            <th>Username</th>
+            <th>Score</th>
+        </tr>
+    </table>
+</div>
+
+
+
+
+
+<div class="normal_mole" id="normal_mole">
+    <div class="normal_m" id="normal_m3">
+
+    </div>
+
+    <div class="normal_m" id="normal_m1">
+
+    </div>
+
+    <div class="normal_m" id="normal_m2">
+
+    </div>
+
+    <div class="normal_m" id="normal_m4">
+
+    </div>
+</div>
+
+<h1 id="heading2">WhatsApp-A-Mole!</h1>
+
+
+<div class="name" id="name">
+    <div class="enter_name" id="enter_name" size="20">
+        <input type="text" id="fname" placeholder=" Enter Username" name="fname">
+    </div>
+
+    <div class="to_game" id="to_game">
+        <button onClick="getName()" id="getname"></button>
+    </div>
+
+    <div class="leaderboard" id="leaderboard">
+        <button onClick="callLeaderboard()" id="callLeaderboard"></button>
+    </div>
+
+    <div class="instructions" id="instructions">
+        <button onClick="callInstructions()" id="callInstructions"></button>
+    </div>
+
+    <div class="priv" id="priv">
+        <button onClick="showPriv()" id="showPriv"></button>
+    </div>
+
+
+
+
+</div>
+
+
+
+
+
+
+<div class="moles_crying" id="moles_crying">
+    <div class="mole_c" id="mole_c3">
+
+    </div>
+
+    <div class="mole_c" id="mole_c1">
+
+    </div>
+
+    <div class="mole_c" id="mole_c2">
+
+    </div>
+
+    <div class="mole_c" id="mole_c4">
+
+    </div>
+</div>
+
+
+
+
+<h1 id="heading">WhatsApp-A-Mole! <span class="score" id="score">0</span></h1>
+
+
+
+
+
+<div class="wrong" id="wrong">
+    <table id="table" >
+        <tr>
+            <th>Question</th>
+            <th>Your Answer</th>
+            <th>Correct Answer</th>
+        </tr>
+
+        <tr>
+            <td>&emsp;&emsp;</td>
+            <td>&emsp;&emsp;</td>
+            <td>&emsp;&emsp;</td>
+        </tr>
+
+        <tr>
+            <td>&emsp;&emsp;</td>
+            <td>&emsp;&emsp;</td>
+            <td>&emsp;&emsp;</td>
+        </tr>
+
+        <tr>
+            <td>&emsp;&emsp;</td>
+            <td>&emsp;&emsp;</td>
+            <td>&emsp;&emsp;</td>
+        </tr>
+
+    </table>
+</div>
+
+<div class="redirect" id="redirect">
+    <button onClick="homePage()" id="homePage"></button>
+</div>
+
+
+
+
+<button onClick="startGame()" id="start">Start!</button>
+<div class="progress-bar" id="progress-bar">
+    <div class="progress-done" id = "progress"></div>
+</div>
+
+
+
+<section class="container" id="container">
+
+    <div class="options" id = "options">
+        <div class="ques">
+            <p id = "q"></p>
+        </div>
+        <div class="op" id = "op1">
+            <p style = 'background: url("assets/img/TextBox_Blue.png") no-repeat; background-size: 380px 60px; margin-top: 10px;', class="op-img"></p>
+        </div>
+        <div class="op" id = "op2">
+            <p style = 'background: url("assets/img/TextBox_Green.png") no-repeat; background-size: 380px 60px; margin-top: 0px;', class="op-img"></p>
+        </div>
+        <div class="op" id = "op3">
+            <p style = 'background: url("assets/img/TextBox_Pink.png") no-repeat; background-size: 380px 60px; margin-top: 0px;', class="op-img"></p>
+        </div>
+        <div class="op" id = "op4">
+            <p style = 'background: url("assets/img/TextBox_Yellow.png") no-repeat; background-size: 380px 60px; margin-top: 0px;', class="op-img"></p>
+        </div>
+        <div class="lives-level" id="lives-level">
+            <p id="level"></p>
+            <div class="lives" id = "live1"></div>
+            <div class="lives" id = "live2"></div>
+            <div class="lives" id = "live3"></div>
+            <div class="lives" id = "live4"></div>
+        </div>
+    </div>
+
+    <div class="game" id="game">
+        <div class="hole hole1">
+            <div class="mole mole1" id = "hole1"></div>
+        </div>
+        <div class="hole hole2">
+            <div class="mole mole2" id = "hole2"></div>
+        </div>
+        <div class="hole hole3">
+            <div class="mole mole3" id = "hole3"></div>
+        </div>
+        <div class="hole hole4">
+            <div class="mole mole4" id = "hole4"></div>
+        </div>
+        <div class="hole hole5">
+            <div class="mole mole1" id = "hole5"></div>
+        </div>
+        <div class="hole hole6">
+            <div class="mole mole2" id = "hole6"></div>
+        </div>
+        <div class="hole hole7">
+            <div class="mole mole3" id = "hole7"></div>
+        </div>
+        <div class="hole hole8">
+            <div class="mole mole4" id = "hole8"></div>
+        </div>
+        <div class="hole hole9">
+            <div class="mole mole1" id = "hole9"></div>
+        </div>
+    </div>
+</section>
+
+<script src="https://www.gstatic.com/firebasejs/8.4.1/firebase-app.js"></script>
+
+<!-- If you enabled Analytics in your project, add the Firebase SDK for Analytics -->
+<script src="https://www.gstatic.com/firebasejs/8.4.1/firebase-analytics.js"></script>
+
+<!-- Add Firebase products that you want to use -->
+<script src="https://www.gstatic.com/firebasejs/8.4.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.4.1/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.4.1/firebase-database.js"></script>
+
+<script>
+    // document.getElementById('bg').play();
+
+
+
+
+
+    var dict1 = {};
+
+
+    var firebaseConfig = {
+        apiKey: "AIzaSyDNdOpGpb24rUpIieGv3XfskXAP5-4V7u8",
+        authDomain: "whatsapp-a-mole-70275.firebaseapp.com",
+        projectId: "whatsapp-a-mole-70275",
+        storageBucket: "whatsapp-a-mole-70275.appspot.com",
+        messagingSenderId: "401055315520",
+        appId: "1:401055315520:web:f3d27c9e974e288ac991a5"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    retrieve_data();
+
+
+
+
+
+    const holes = document.querySelectorAll(".hole");
+    const scoreBoard = document.querySelector(".score");
+    const questionbox = document.querySelector("#q");
+    const moles = document.querySelectorAll(".mole");
+    const choicebox = document.querySelectorAll(".op-img");
+    const live1 = document.querySelector("#live1");
+    const live2 = document.querySelector("#live2");
+    const live3 = document.querySelector("#live3");
+    const level = document.querySelector("#level");
+    var choice=[];
+    let lastHole;
+    let timeUp = false;
+    let score = 0;
+    var prev = [];
+    var iter = 0;
+    var mole_color_iter = 0;
+    var correct_answer_color = "";
+    var flag = false;
+    let tempp1;
+    let tempp2;
+    let timeleft = 59;
+    let margin_left = -2;
+    let lives = 0;
+    let totaltime = 180000;
+    let feedback_questions=[];
+    let feedback_wrong=[];
+    let feedback_correct=[];
+    var username="";
+    var cl ;
+
+
+
+
+    let easy = 8;
+    let medium = 9;
+    let hard = 6;
+
+    let isclicked = false;
+
+    const color = ["blue", "green", "pink", "yellow"];
+    let idx1= [];
+    for(let i=0;i<easy;i++){
+        idx1.push(i)
+    }
+    let idx2= [];
+    for(let i=easy;i<easy+medium;i++){
+        idx2.push(i)
+    }
+
+    let idx3= [];
+    for(let i=easy+medium;i<easy+medium+hard;i++){
+        idx3.push(i)
+    }
+
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+    shuffleArray(idx1);
+    shuffleArray(idx2);
+    shuffleArray(idx3);
+
+    let idx=idx1.concat(idx2);
+    idx=idx.concat(idx3);
+
+    console.log(idx);
+
+
+    const temp1 = ["Which of the following can you not change on WhatsApp?",
+        "WhatsApp is a part of which company?",
+        "What information is not collected by WhatsApp?",
+        "I don’t want strangers to see my display picture. What should my display picture settings be?",
+        "If I turn my read receipts off, who will be able to see my blue ticks?",
+        "Does WhatsApp receive information about me from 3rd parties?",
+        "Can you block business accounts?",
+        "After what duration of account activation can you delete your WhatsApp account?",
+
+        "Can Facebook read your chats and calls?",
+        "If I reply to a disappearing message, the quoted text remains in the chat after 7 days",
+        "Can disappearing messages be stored in backup?",
+        "If I have only allowed my contacts to add me to groups, how can others add me?",
+        "Does WhatsApp store the call or message logs like any other Mobile Carrier",
+        "What happens to inactive accounts?",
+        "For how long does WhatsApp keep undelivered messages?",
+        "What content can WhatsApp see in your personal chats?",
+        "What is the minimum age to have a WhatsApp account?",
+
+        "What can’t disappearing messages do?",
+        "The mandatory information required to create a WhatsApp account includes",
+        "What are the requirements of Number Verification?",
+        "What happens if you don't agree to the whatsapp privacy policy?",
+        "What information do I not need to provide WhatsApp?",
+        "How does WhatsApp use information collected?"
+
+
+    ];
+    const temp2 = [["Age","Phone number","Name","Profile Picture"],
+        ["Facebook","Google", "Microsoft","Oracle"],
+        ["Browser search history","Usage And Log Information","Device And Connection Information","Location Information"],
+        ["My contacts only","Everyone","Nobody","Friends of friends"],
+        ["Nobody","Everyone","My contacts only","People who have my number"],
+        ["Yes, receives data","No, neither gives or receives data ","No, provides data to 3rd parties","Yes, sends & receives data both"],
+        ["Yes, whenever I want","Yes, after receiving spam messages","No","Yes, if not affiliated to WhatsApp"],
+        ["Whenever","7 days","12 hours","30 minutes"],
+
+        ["No","Yes","No, WhatsApp can","No, it only has access to calls"],
+        ["True","False","Only if I star the message","I can choose the ones I want to see"],
+        ["Yes","No","Only the ones starred","I can choose which ones I want to upload"],
+        ["Send me invite that expires in 3 days","Cannot add me in any group","Will get popup: can’t add","Send me an invite that never expires"],
+        ["Yes","No","Only frequent ones","Randomly"],
+        ["Generally deleted after 120 days","They are sent money","Flagged suspicious","Nothing"],
+        ["30 days","1 day","7 days","365 days"],
+        ["None","Call","Location","Messages"],
+        ["13","18","11","8"],
+
+        ["Media can be hidden","Forward, copy messages & media","Download media into gallery","Take screenshots"],
+        ["Mobile Number","Profile photo","About Status","Story"],
+        ["Able to receive phone calls, SMSs","Call blocking is disabled","Active internet connections","No need to verify number"],
+        ["No account","Account with restricted usage","Account with no usage","Account with unrestricted usage"],
+        ["Messages","Names","Connections","Mobile Number"],
+        ["Business Interactions","Data sold to 3rd parties","Personalization","Stored for future use"]
+
+    ];
+
+
+
+    let questions=[];
+    let choices=[];
+
+    for(let i=0;i<easy+medium+hard;i++){
+        questions.push(temp1[idx[i]]);
+        choices.push(temp2[idx[i]]);
+
+    }
+
+    let correct=[];
+    for(let i=0;i<questions.length;i++){
+        correct.push(choices[i][0]);
+    }
+
+    function randomTime(min, max) {
+        // Let's create the random amount of time the mole shows up
+        // return Math.round(Math.random() * (max - min) + min);
+        return 1000;
+    }
+
+    function randomHole(holes) {
+        var done = [];
+        var idx = Math.floor(Math.random() * holes.length);
+        while (prev.includes(idx)){
+            idx = Math.floor(Math.random() * holes.length);
+        }
+        const hole1 = holes[idx];
+        done.push(idx);
+        var hole_id = "hole".concat((idx+1).toString());
+        document.getElementById(hole_id).className = "mole mole4";
+        // var hole_id = "hole".concat((idx+1).toString());
+        // console.log(mole_color_iter);
+        // if (mole_color_iter%4==0){
+        //     document.getElementById(hole_id).className = "mole mole4";
+        // }
+        // if (mole_color_iter%4==1){
+        //     document.getElementById(hole_id).className = "mole mole3";
+        // }
+        // if (mole_color_iter%4==2){
+        //     document.getElementById(hole_id).className = "mole mole2";
+        // }
+        // if (mole_color_iter%4==3){
+        //     document.getElementById(hole_id).className = "mole mole1";
+        // }
+        // mole_color_iter ++;
+        // console.log(idx);
+        // return [hole1];
+        idx = Math.floor(Math.random() * holes.length);
+        while (done.includes((idx)) || prev.includes(idx)){
+            idx = Math.floor(Math.random() * holes.length);
+        }
+        const hole2 = holes[idx];
+        done.push(idx);
+        var hole_id = "hole".concat((idx+1).toString());
+        document.getElementById(hole_id).className = "mole mole3";
+
+        idx = Math.floor(Math.random() * holes.length);
+        while (done.includes((idx)) || prev.includes(idx)){
+            idx = Math.floor(Math.random() * holes.length);
+        }
+        const hole3 = holes[idx];
+        done.push(idx);
+        var hole_id = "hole".concat((idx+1).toString());
+        document.getElementById(hole_id).className = "mole mole2";
+
+        idx = Math.floor(Math.random() * holes.length);
+        while (done.includes((idx)) || prev.includes(idx)){
+            idx = Math.floor(Math.random() * holes.length);
+        }
+        const hole4 = holes[idx];
+        done.push(idx);
+        var hole_id = "hole".concat((idx+1).toString());
+        document.getElementById(hole_id).className = "mole mole1";
+        prev = done;
+        return [hole1, hole2, hole3, hole4];
+    }
+
+    function up(h){
+        h.classList.add("up");
+        flag = true;
+    }
+
+    function down(h){
+        h.classList.remove("up");
+        flag = false;
+    }
+
+    function peep() {
+        const time = randomTime(200, 1000);
+        const hole = randomHole(holes);
+
+        isclicked = false;
+
+        hole.forEach(up);
+
+        setTimeout(() => {
+            if (!timeUp && lives>0) peep();endgame();
+            hole.forEach(down);
+        }, time); //after the time is up we want the moles to disappear and remove the class
+
+        setTimeout(() => {
+            if (!timeUp){
+                timeleft--;
+                // console.log(document.getElementById("progress").style);
+                margin_left += (450000/totaltime);
+                document.getElementById("progress").style.marginLeft = margin_left.toString() + "px";
+                // document.getElementById("progress").style.width = Math.round(((60-timeleft)/60)*100) + '%';
+                // console.log(Math.round(((60-timeleft)/60)*100) + '%');
+            }
+        }, 1000);
+    }
+
+    function endgame(){
+        if(lives == 0) {
+
+            var temp=document.getElementById('bg');
+            temp.src="";
+
+
+            document.getElementById('end').play();
+
+
+            live1.style.visibility = "hidden";
+            live2.style.visibility = "hidden";
+            live3.style.visibility = "hidden";
+            level.textContent = "";
+            questionbox.textContent = "";
+            for (let i = 0; i < 4; i++) {
+                choicebox[i].textContent = "";
+            }
+            var div = document.getElementById('container');
+            div.remove();
+
+
+            var div = document.getElementById('progress-bar');
+            div.remove();
+
+            var div = document.getElementById('start');
+            div.remove();
+
+            var div = document.getElementById('heading');
+            div.textContent="Game Over : "+ score;
+
+
+
+
+
+
+            var div = document.getElementById('moles_crying');
+            div.style.display="block";
+
+            var div = document.getElementById('wrong');
+            div.style.display="block";
+
+            var div = document.getElementById('homePage');
+            div.style.display="block";
+
+
+            let LEN=feedback_questions.length;
+
+            for(let i=0;i<LEN;i++){
+                // var row = table.insertRow(-1);
+                // var cell1 = row.insertCell(0);
+                // var cell2 = row.insertCell(1);
+                // var cell3 = row.insertCell(2);
+                // cell1.innerHTML = feedback_questions[i];
+                // cell2.innerHTML = feedback_wrong[i];
+                // cell3.innerHTML = feedback_correct[i];
+
+                var x = document.getElementById("table").rows[i+1].cells;
+                x[0].innerHTML = feedback_questions[i];
+
+                var x = document.getElementById("table").rows[i+1].cells;
+                x[1].innerHTML = feedback_wrong[i];
+
+                var x = document.getElementById("table").rows[i+1].cells;
+                x[2].innerHTML = feedback_correct[i];
+
+
+            }
+
+            update_score();
+
+            // create_leaderboard();
+        }
+        if(lives == 1){
+            live1.style.visibility = "hidden";
+            live2.style.visibility = "hidden";
+            live3.style.visibility = "visible";
+        }
+        if(lives == 2){
+            live1.style.visibility = "hidden";
+            live2.style.visibility = "visible";
+            live3.style.visibility = "visible";
+        }
+        if(lives == 3){
+            live1.style.visibility = "visible";
+            live2.style.visibility = "visible";
+            live3.style.visibility = "visible";
+        }
+    }
+
+    function retrieve_data(){
+
+        var leadsRef = firebase.database().ref('/');
+        leadsRef.on('value', function(snapshot) {
+            snapshot.forEach(function(childSnapshot) {
+                var childData = childSnapshot.val();
+                let key = childSnapshot.key;
+                // console.log(childData.scores[0]);
+                let arr = childData.scores;
+                dict1[key] = arr;
+
+            });
+        })
+    }
+
+    function update_score(){
+
+        console.log(2);
+        if( dict1[username] === undefined ) {
+            dict1[username] = []
+        }
+        dict1[username].push(score);
+        console.log(3);
+
+        for (let key in dict1) {
+            console.log(4);
+            firebase.database().ref(key).set({
+                scores: dict1[key],
+            });
+        }
+
+    }
+
+    function create_leaderboard(){
+        cl = [];
+
+        console.log(5);
+
+        for (let key in dict1) {
+            max_of_array = Math.max.apply(Math, dict1[key]);
+            // console.log(key, max_of_array, "yo7");
+            cl.push([max_of_array, key]);
+
+            // for(let i = 0; i<dict1[key].length;i++){
+            //     cl.push([dict1[key][i], key]);
+            // }
+        }
+        cl.sort(sortFunction);
+        console.log(cl);
+
+
+        function sortFunction(a, b) {
+            if (a[0] === b[0]) {
+                return 0;
+            }
+            else {
+                return (a[0] > b[0]) ? -1 : 1;
+            }
+        }
+
+
+    }
+
+    function bunk(e) {
+        // console.log(this.classList);
+        if (!e.isTrusted) return; // close out the fake clicks during the game
+        // e.target.style.cursor = "url(\"assets/img/2915.jpg\"), auto";
+
+        // let temp1 = e.target.style.background;
+        // let temp2 = e.target.style.backgroundSize;
+
+        let temp3 = this.classList[1];
+
+        // console.log(temp3);
+
+        let color_selected = "default";
+
+        if (temp3.localeCompare("mole1") == 0){
+            color_selected = 'yellow';
+        }
+
+        if (temp3.localeCompare("mole2") == 0){
+            color_selected = 'pink';
+        }
+
+        if (temp3.localeCompare("mole3") == 0){
+            color_selected = 'green';
+        }
+
+        if (temp3.localeCompare("mole4") == 0){
+            color_selected = 'blue';
+        }
+
+        // e.target.style.background = "url(\"assets/img/mole2.png\") bottom center no-repeat";
+        // e.target.style.backgroundSize = "40%";
+        //
+        // setTimeout(() => {
+        //     e.target.style.background = temp1
+        //     e.target.style.backgroundSize = temp2
+        // }, 1000)
+
+        this.classList.remove("up");
+        console.log(color_selected);
+        // console.log(correct_answer_color);
+        if(isclicked == false) {
+            isclicked = true;
+            if (color_selected.localeCompare(correct_answer_color) == 0) {
+
+                document.getElementById('correct').play();
+
+
+                if(iter<easy) {
+                    score += 1;
+                }
+                else if(iter>=easy && iter<easy+medium){
+                    score+=2
+                }
+                else {
+                    score += 3;
+                }
+                // score++;
+
+                scoreBoard.textContent = score;
+                // background: url("assets/img/Black Background.png") bottom center no-repeat;
+                // background-size: 650px 480px;
+                tempp1 = document.getElementById("options").style.background;
+                tempp2 = document.getElementById("options").style.backgroundSize
+
+                document.getElementById("options").style.background = "url(\"assets/img/CorrechBg.png\")";
+                document.getElementById("options").style.backgroundSize = "650px 550px";
+
+                setTimeout(() => {
+                    document.getElementById("options").style.background = tempp1;
+                    document.getElementById("options").style.backgroundSize = tempp2;
+                }, 500)
+                iter++;
+                endgame();
+                newQuestion();
+            } else {
+                if(lives!=1){
+                    document.getElementById('incorrect').play();
+                }
+
+                tempp1 = document.getElementById("options").style.background;
+                tempp2 = document.getElementById("options").style.backgroundSize
+
+                document.getElementById("options").style.background = "url(\"assets/img/WrongBg.png\")";
+                document.getElementById("options").style.backgroundSize = "650px 550px";
+
+                setTimeout(() => {
+                    document.getElementById("options").style.background = tempp1;
+                    document.getElementById("options").style.backgroundSize = tempp2;
+                }, 500)
+
+                feedback_questions.push(questions[iter]);
+                feedback_correct.push(correct[iter]);
+
+                let INDEX=0;
+                if (color_selected.localeCompare("blue") == 0){
+                    INDEX=0;
+                }
+                if (color_selected.localeCompare("green") == 0){
+                    INDEX=1;
+                }
+                if (color_selected.localeCompare("pink") == 0){
+                    INDEX=2;
+                }
+                if (color_selected.localeCompare("yellow") == 0){
+                    INDEX=3;
+                }
+                feedback_wrong.push(choice[INDEX]);
+
+
+                lives--;
+                endgame();
+                iter++;
+                newQuestion();
+            }
+        }
+    }
+
+    moles.forEach(mole => mole.addEventListener("click", bunk));
+
+    function shuffle(array) {
+        array.sort(() => Math.random() - 0.5);
+    }
+
+    function newQuestion(){
+        let question = questions[iter];
+        choice = choices[iter];
+        let correct_answer = choice[0];
+
+        shuffle(choice);
+        for(let i=0;i<4;i++){
+            if(choice[i] == correct_answer){
+                correct_answer_color = color[i];
+                break;
+            }
+        }
+        questionbox.textContent = question;
+        for(let i=0;i<4;i++){
+            choicebox[i].textContent = choice[i];
+        }
+        if(iter<easy) {
+            level.textContent = "Question Level - Easy";
+        }
+        else if(iter>=easy && iter<easy+medium){
+            level.textContent = "Question Level - Medium";
+        }
+        else {
+            level.textContent = "Question Level - Hard";
+        }
+    }
+
+    function startGame() {
+        // var div = document.getElementById('showPriv');
+        // div.style.display="none";
+
+        document.getElementById('button').play();
+        document.getElementById('bg').play();
+        margin_left = -2;
+        lives = 3;
+        var div = document.getElementById('start');
+        div.style.visibility="hidden";
+
+        var div = document.getElementById('lives-level');
+        div.style.visibility="visible";
+
+        newQuestion();
+        scoreBoard.textContent = 0;
+        score = 0;
+        timeUp = false;
+        peep();
+        setTimeout(() => {
+            timeUp = true;
+            lives = 0;
+            endgame();
+        }, totaltime);
+    }
+
+    function getName(){
+
+
+        username = document.getElementById('fname').value;
+
+        if (username.localeCompare("") == 0){
+            username="Anonymous";
+        }
+
+        console.log(username);
+
+
+        var div = document.getElementById('normal_mole');
+        div.remove();
+
+        var div = document.getElementById('heading2');
+        div.remove();
+
+        var div = document.getElementById('name');
+        div.remove();
+
+        var div = document.getElementById('container');
+        div.style.display="block";
+
+
+        var div = document.getElementById('progress-bar');
+        div.style.display="block";
+
+
+        var div = document.getElementById('heading');
+        div.style.display="block";
+
+        var div = document.getElementById('start');
+        div.style.display="block";
+
+        div.style.visibility="hidden";
+
+
+        startGame();
+
+    }
+
+    function homePage(){
+        document.getElementById('button').play();
+        window.location.href = window.location.href;
+    }
+
+    function showPriv(){
+        document.getElementById('button').play();
+
+        var div = document.getElementById('showPriv');
+        div.style.display="none";
+
+
+        var div = document.getElementById('normal_mole');
+        div.style.display="none";
+
+        var div = document.getElementById('heading2');
+        div.style.display="none";
+
+        var div = document.getElementById('name');
+        div.style.display="none";
+
+        var div = document.getElementById('privacy');
+        div.style.display="block";
+
+        var div = document.getElementById('heading4');
+        div.style.display="block";
+
+        var div = document.getElementById('priv_home');
+        div.style.display="block";
+
+
+    }
+
+    function callInstructions(){
+        document.getElementById('button').play();
+
+        var div = document.getElementById('showPriv');
+        div.style.display="none";
+
+
+        var div = document.getElementById('normal_mole');
+        div.style.display="none";
+
+        var div = document.getElementById('heading2');
+        div.style.display="none";
+
+        var div = document.getElementById('name');
+        div.style.display="none";
+
+        var div = document.getElementById('instr');
+        div.style.display="block";
+
+        var div = document.getElementById('heading3');
+        div.style.display="block";
+
+        var div = document.getElementById('instr_home');
+        div.style.display="block";
+
+
+    }
+
+    function callLeaderboard(){
+        document.getElementById('button').play();
+
+
+        create_leaderboard();
+
+        var div = document.getElementById('showPriv');
+        div.style.display="none";
+
+
+        var div = document.getElementById('normal_mole');
+        div.style.display="none";
+
+        var div = document.getElementById('heading2');
+        div.style.display="none";
+
+        var div = document.getElementById('name');
+        div.style.display="none";
+
+        var div = document.getElementById('leader_heading');
+        div.style.display="block";
+
+        var div = document.getElementById('leader_grid');
+        div.style.display="block";
+
+        var div = document.getElementById('redirect_leader');
+        div.style.display="block";
+
+
+
+        var table=document.getElementById("leader_table");
+
+        for(let i=0;i<cl.length;i++) {
+            var row = table.insertRow(-1);
+            var cell1 = row.insertCell(0);
+            var cell2 = row.insertCell(1);
+            var cell3 = row.insertCell(2);
+
+            cell1.innerHTML = (i+1);
+            cell2.innerHTML = cl[i][1];
+            cell3.innerHTML = cl[i][0];
+
+
+        }
+    }
+
+
+</script>
+</body>
+</html>

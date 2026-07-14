@@ -194,6 +194,105 @@ export const recordEmailClick = async (
   }
 };
 
+// Records that the employee filled in and submitted the fake login form.
+// IMPORTANT: formFieldsSubmitted stores only FIELD NAMES (e.g. ['email', 'password']),
+// never the actual values the employee typed — we never want real credentials
+// touching our database, even in a simulation.
+export const recordCredentialsSubmitted = async (
+  token: string,
+  campaignId: string,
+  userId: string,
+  formFieldsSubmitted: string[] = [],
+  ipAddress?: string,
+  userAgent?: string
+): Promise<{ success: boolean; alreadySubmitted?: boolean }> => {
+  try {
+    const hashedToken = hashToken(token);
+
+    const result = await SimulationResult.findOne({
+      trackingToken: hashedToken,
+      campaignId,
+      userId,
+    });
+
+    if (!result) {
+      return { success: false };
+    }
+
+    // Landing on the fake page implies a click — record it if not already done.
+    if (!result.emailClicked) {
+      result.emailClicked = true;
+      result.emailClickedAt = new Date();
+      result.clickIpAddress = ipAddress;
+      result.clickUserAgent = userAgent;
+
+      await Campaign.findByIdAndUpdate(
+        campaignId,
+        { $inc: { clickedCount: 1 } }
+      );
+    }
+
+    if (result.credentialsSubmitted) {
+      await result.save();
+      return { success: true, alreadySubmitted: true };
+    }
+
+    result.credentialsSubmitted = true;
+    result.credentialsSubmittedAt = new Date();
+    result.formFieldsSubmitted = formFieldsSubmitted;
+
+    await result.save();
+
+    return { success: true };
+  } catch (error) {
+    console.error('recordCredentialsSubmitted error:', error);
+    return { success: false };
+  }
+};
+
+// Records that the employee correctly flagged the fake email/page as suspicious
+// instead of falling for it — used for the "+points" reward flow.
+export const recordPhishingReported = async (
+  token: string,
+  campaignId: string,
+  userId: string,
+  reportMethod: string = 'report_button'
+): Promise<{ success: boolean; alreadyReported?: boolean }> => {
+  try {
+    const hashedToken = hashToken(token);
+
+    const result = await SimulationResult.findOne({
+      trackingToken: hashedToken,
+      campaignId,
+      userId,
+    });
+
+    if (!result) {
+      return { success: false };
+    }
+
+    if (result.reportedPhishing) {
+      return { success: true, alreadyReported: true };
+    }
+
+    result.reportedPhishing = true;
+    result.reportedAt = new Date();
+    result.reportMethod = reportMethod;
+
+    await result.save();
+
+    await Campaign.findByIdAndUpdate(
+      campaignId,
+      { $inc: { reportedCount: 1 } }
+    );
+
+    return { success: true };
+  } catch (error) {
+    console.error('recordPhishingReported error:', error);
+    return { success: false };
+  }
+};
+
 export const recordEmailSent = async (
   campaignId: string,
   userId: string,

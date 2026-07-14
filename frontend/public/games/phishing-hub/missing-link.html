@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Identify Phishing Attacks</title>
+    <style>
+     body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative; /* Position relative for background image */
+    z-index: 1; /* Ensure the container is above the background image */
+}
+
+.background-image {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://tse2.mm.bing.net/th?id=OIP._xg4gf9hkhvk2-eO9KCLGQHaEK&pid=Api&P=0&h=220');
+    background-size: cover;
+    filter: blur(5px); /* Add a blur effect to the background image */
+    z-index: 0; /* Ensure the background image is behind other elements */
+}
+
+        .left-column, .right-column {
+             flex: 0 0 45%;;
+            margin: 10px;
+        }
+        .left-column{
+            margin-right:20px;
+
+        }
+        .email-card, .sms-card, .url-card {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            padding: 20px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .subject {
+            font-size: 24px;
+    font-weight: bold;
+    color: red;
+    margin-bottom: 10px;
+    text-align:left;
+}
+        
+
+        .email-body, .sms-body, .url-body {
+            padding: 20px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .highlight-link {
+    background-color: yellow;
+    /* You can add more styles to enhance the highlighting effect */
+}
+        .right-column {
+    flex: 1;
+    margin: 10px;
+    min-width: 300px; /* Set a minimum width to ensure consistent size */
+}
+
+#answerDiv {
+    background-color: #343a40;
+    color: #fff;
+    border-radius: 5px;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: none;
+    animation: slideInRight 0.5s ease-in-out;
+}
+
+#answerDiv h3 {
+    margin-top: 0;
+}
+
+#suspicious-elements {
+    list-style-type: disc; /* Use bullet points for the list */
+    padding-left: 20px; /* Add left padding to the list */
+}
+
+#suspicious-elements li {
+    margin-bottom: 10px; /* Add some space between the list items */
+}
+
+        #popup-message, #popup-message-correct {
+            background-color: #ffc107;
+            color: #212529;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideInRight 0.5s ease-in-out;
+        
+        }
+
+        .btn {
+            cursor: pointer;
+            border-radius: 5px;
+            padding: 10px 20px;
+            border: none;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+
+        .btn-light {
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+
+        .btn-light:hover {
+            background-color: #e2e6ea;
+        }
+
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background-color: #ffa000;
+        }
+
+        .btn-next {
+            background-color:orange;
+            color: #fff;
+        }
+
+        .btn-next:hover {
+            background-color: #218838;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        #final-score {
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            border-radius: 5px;
+            padding: 20px;
+            text-align: center;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 400px;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                padding: 10px;
+            }
+
+            .email-card, .sms-card, .url-card, .right-sidebar {
+                margin: 0 0 20px 0;
+            }
+        }
+        .left-column .email-card{ 
+    height:571px; /* Set a fixed height for the email, SMS, and URL cards */
+    overflow-y: auto; }/* Add scroll if content exceeds height */
+    .left-column .sms-card{
+        height: 605px; /* Set a fixed height for the email, SMS, and URL cards */
+    overflow-y: auto;
+    }
+    .left-column .url-card {
+        height:550px; /* Set a fixed height for the email, SMS, and URL cards */
+    overflow-y: auto; }/* Add scroll if content exceeds height */
+  
+
+
+.email-card, .sms-card, .url-card {
+    /* Existing styles */
+    /* Add additional styles */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Add shadow for depth effect */
+    transition: transform 0.3s ease; /* Add transition for hover effect */
+}
+
+.email-card:hover, .sms-card:hover, .url-card:hover {
+    transform: translateY(-5px); /* Add lift effect on hover */
+}
+
+/* Additional styling for the buttons */
+.btn {
+    /* Existing styles */
+    /* Add additional styles */
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-light, .btn-warning, .btn-next {
+    /* Existing styles */
+    /* Add additional styles */
+    border: 2px solid transparent; /* Add border for button outline */
+}
+
+.btn-light:hover, .btn-warning:hover, .btn-next:hover {
+    /* Existing styles */
+    /* Add additional styles */
+    background-color: transparent; /* Change background on hover */
+    border-color: #ffc107; /* Change border color on hover */
+    color: #ffc107; /* Change text color on hover */
+}
+
+/* Additional styling for the final score popup message */
+#final-score {
+    /* Existing styles */
+    /* Add additional styles */
+    background-color: rgba(0, 0, 0, 0.9); /* Add semi-transparent white background */
+    border: 2px solid #ffc107; /* Add border for contrast */
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2); /* Add shadow for depth effect */
+}
+
+#final-score h3 {
+    color: #ffc82b; /* Change heading color */
+}
+
+#score {
+    font-size: 24px; /* Increase font size */
+    font-weight: bold;
+    color:red /* Change score color */
+}
+
+#final-message {
+    margin-top: 20px;
+    font-size: 18px; /* Increase font size */
+    color:#ffc82b /* Change text color */
+}  
+@keyframes slideInFromTop {
+    0% {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.rules-container {
+    position: fixed;
+    top: 90%;
+
+    background-color: #fff;
+    padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            width: 80%;
+            max-width: 800px;
+            animation: slideIn 1s ease-in-out;
+            position: relative;
+            margin-top: 97px;
+}
+
+.rules-container h1 {
+    font-size: 28px;
+    margin-bottom: 20px;
+        color: maroon;
+    font-family: serif;
+
+}
+
+
+.rules-container p {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color : maroon;
+            text-align: left;
+  
+  
+}
+ .rules-container ol {
+    text-align: left;
+    margin-left: 20px;
+    margin-bottom: 20px;
+    
+}
+
+.rules-container ol li {
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: black;
+    list-style: disc; /* Using disc type for bullets */
+}
+#start-button {
+    cursor: pointer;
+    border: none;
+    background-color: orange;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 18px;
+    transition: background-color 0.3s ease;
+}
+
+#start-button:hover {
+    background-color:#ffc107;
+}
+
+@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        #close-button {
+    cursor: pointer;
+    border: none;
+    background-color: #dc3545;
+    color: black;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 11px;
+    transition: background-color 0.3s ease;
+    position: absolute;
+    top: -1px;
+    right: 10px;
+}
+
+#close-button:hover {
+    background-color: #c82333;
+}
+
+    </style>
+</head>
+
+
+<body>
+
+    <div class="background-image"></div>
+    <div class="container">
+    
+        <!-- Rules Container -->
+        <div class="rules-container">
+            <h1>Welcome to Phishing Attack Identification Game</h1><br>
+            <p>Before you start, please read the rules:</p><br>
+            <ol>
+                <li>Examine each message carefully for suspicious elements.</li>
+                <li>Click on "Is this message correct?" to reveal suspicious elements.</li>
+                <li>If you think the message is correct, click "Yes", otherwise click "No".</li>
+                <li>If you answer correctly, you'll earn points. If not, you'll lose points.</li>
+                <li>Complete all levels to see your final score.</li>
+            </ol>
+            <button type="button" id="start-button">Start Game</button>
+        </div>
+    
+        <!-- Game Container (will be displayed after starting the game) -->
+        <div id="game-container" style="display: none;">
+<div class="container">
+    <div class="left-column">
+        <!-- Email Level -->
+        <div class="email-card" id="email-card">
+            <p class="subject">Please Verify Your Account</p>
+            <div class="email-body">
+                <p><strong>From:</strong> <span class="highlight">IRS &lt;kreid@...&gt;</span></p>
+                <p><strong>Date:</strong> 10/15/20 2:09 PM</p>
+                
+                <hr>
+                <p><strong><span class="highlight">Dear taxpayer,</strong></span></p>
+                <p>This is an automated email, <span class="highlight">please do not reply.</span></p>
+                <p>We've noticed your account information is missing or incorrect.</p>
+                <p>We need to verify your account information <span class="highlight">before you can file or receive your Tax Refund.</span></p>
+                <p><span class="highlight"><a href="#">Please click here to verify your information</a></span></p>
+                <p>Thanks,<br><br><span class="highlight"><strong>IRRS Team</strong></span></p>
+                <p>© 2020 IRS All Rights Reserved</p>
+                <hr>
+                <p class="small" style="color:red"><em><span class="highlight">IMPORTANT NOTE: If you receive this message in spam or junk, it is a result of your network provider. Please move this message to your inbox and follow the instructions above.</span></em></p>
+            </div>
+        </div>
+
+        <!-- SMS Level -->
+        <div class="sms-card" id="sms-card" style="display: none;">
+            <p class="subject">Your Bank Alert</p>
+            <div class="sms-body">
+                <p><strong>From:</strong> <span class="highlight">+1 (123) 456-7890</span></p>
+                <p><strong>Date:</strong> 11/05/21 3:15 PM</p>
+                <hr>
+                <p><span class="highlight">Dear Customer,</span></p>
+                <p>Your bank account has been temporarily suspended due to suspicious activity. We have detected several unauthorized login attempts and unusual transactions on your account, which may indicate potential fraud.</p>
+                <p>To ensure the security of your funds and personal information, we kindly ask you to verify your account by clicking the link below:</p>
+                <p><span class="highlight"><a href="#">Verify Account</a></span></p>
+                <p>Upon verification, your account suspension will be lifted, and you will reagain access to all banking services.</p>
+                <p><span class="highlight">Thank you for your prompt attention to this matter.</span></p>
+                <p>Sincerely,<br><span class="highlight"><strong>Your Bank</strong></span></p>
+                <p>© 2021 Bank All Rights Reserved</p>
+            </div>
+        </div>
+
+        <!-- Website URL Level -->
+        <div class="url-card" id="url-card" style="display: none;">
+            <p class="subject"> Unusual Activity Detected on Your Account</p>
+            <div class="url-body">
+                        <p><strong>From:</strong> <span class="highlight">PayPal Security &lt;support@paypal-secure.com&gt;</span></p>
+                        <p><strong>Date:</strong> 08/20/24 9:30 AM</p>
+                        <hr>
+                        <p><span class="highlight">Dear Valued Customer,</span></p>
+                        <p>We have detected unusual activity on your PayPal account. For your protection, we have temporarily limited your account access.</p>
+                        <p><span class="highlight">To restore your account, please confirm your identity by clicking the link below:</span></p>
+                        <p><span class="highlight"><a href="#">Verify Your Account</a></span></p>
+                        <p>Failure to verify your identity within 24 hours may result in permanent account suspension.</p>
+                        <p>Thank you for your immediate attention to this matter.</p>
+                        <p>Sincerely,<br><span class="highlight"><strong>PayPal Security Team</strong></span></p>
+                        <p>© 2024 PayPal Inc. All rights reserved.</p>
+                    </div>
+                </div>
+
+        <div class="email-card" id="level-four" style="display: none;">
+            <p class="subject">Update Your Password</p>
+            <div class="email-body">
+                <p><strong>From:</strong> <span class="highlight">Your Email Provider &lt;noreply@example.com&gt;</span></p>
+                <p><strong>Date:</strong> 05/20/24 10:30 AM</p>
+                <hr>
+                <p><span class="highlight">Dear User,</span></p>
+                <p>We have detected recent security breaches affecting our users. To ensure your account remains secure, we require you to update your password immediately.</p>
+                <p><span class="highlight"><a href="#">Click here to update your password</a></span></p>
+                <p>Failure to update your password within 24 hours may result in restricted access to your account.</p>
+                <p>Thank you for your prompt action.</p>
+                <p><span class="highlight"><strong>Your Email Provider</strong></span></p>
+                <p>© 2024 Your Email Provider. All Rights Reserved.</p>
+            </div>
+        </div>
+
+        <!-- New Level 5 -->
+        <div class="sms-card" id="level-five" style="display: none;">
+            <p class="subject">Exclusive Free Offer Just for You!</p>
+            <div class="sms-body">
+                <p><strong>From:</strong> <span class="highlight">No Caller ID</span></p>
+                <p><strong>Date:</strong> 05/21/24 2:00 PM</p>
+                <hr>
+                <p><span class="highlight">Congratulations!</span> You have been exclusively selected to receive a special offer worth hundreds of dollars. This is a limited-time opportunity to claim your prize and enjoy amazing benefits. Click the link below to access your prize and find out more details:</p>
+                <p><span class="highlight"><a href="#">Claim Your Prize Now!</a></span></p>
+                <p><span class="highlight">Don’t miss out! This exclusive offer is only available for a short period. Act now to avoid disappointment and secure your prize before it's too late!</span></p>
+                <p><span class="highlight">If you do not act within the next 24 hours, this offer will expire, and you will forfeit your chance to claim this amazing prize. Don't let this opportunity slip away!</span></p>
+                <p>Thank you for your prompt response. We look forward to hearing from you soon!</p>
+            </div>
+        </div>
+        <!-- New Level 6 -->
+        <div class="url-card" id="level-six" style="display: none;">
+            <p class="subject">Limited Time Discount</p>
+            <div class="url-body">
+                <p><strong>URL:</strong> <span class="highlight">http://discounts4you.biz</span></p>
+                <p><strong>Date:</strong> 05/22/24 9:00 AM</p>
+                <hr>
+                <p><span class="highlight">Exclusive offer for loyal customers!</span> Get up to 50% off on selected items. Visit our website now:</p>
+                <p><span class="highlight"><a href="#">Check Out Our Discounts!</a></span></p>
+                <p><span class="highlight">Limited-time offer, act fast!</span></p>
+                <p><span class="highlight">For any issues, contact us at <a href="mailto:support@discounts4you.biz">support@discounts4you.biz</a></span></p>
+                <p><span class="highlight">This is an automated message. Please do not reply.</span></p>
+            </div>
+        </div>
+        <div class="text-center">
+            <button type="button" class="btn btn-warning btn-block" id="check-answer">Does this text look legit to you?</button>
+            <div class="text-center">
+                <button type="button" class="btn btn-warning" id="yes-button" style="display: none;">Yes, it's legit</button>
+                <button type="button" class="btn btn-warning" id="no-button" style="display: none;">No, it's fake</button>
+                <button type="button" class="btn btn-next" id="next-level" style="display: none;">Next Level</button>
+               
+            </div>
+        </div>
+    </div>
+
+    <div class="right-column">
+        <div id="answerDiv">
+            <h3>Suspicious Elements</h3>
+            <p class="underline small">The highlighted areas are suspicious.</p>
+            <ol id="suspicious-elements">
+                <!-- Suspicious elements will be added here dynamically -->
+            </ol>
+        </div>
+        <div id="popup-message" class="text-white">
+            <p>Good job! You correctly identified that this message is not legitimate</p>
+        </div>
+        <div id="popup-message-correct" class="text-white">
+            <p>No, this message is incorrect. Please review the highlighted suspicious elements.</p>
+        </div>
+        <div id="final-score" class="text-white">
+            <button id="close-button" class="btn btn-light">Close</button>
+            <h3>Final Score</h3>
+            <p>Your final score is: <span id="score"></span></p>
+            <p id="final-message"></p>
+            <button type="button" class="btn btn-light btn-block" onclick="location.reload();">Play Again</button>
+        </div>
+    </div>
+</div>
+<div class="background-image"></div>
+<script>
+     document.getElementById('start-button').addEventListener('click', function() {
+            document.querySelector('.rules-container').classList.add('show');
+        });
+      document.getElementById('start-button').addEventListener('click', function() {
+        document.querySelector('.rules-container').style.display = 'none';
+        document.getElementById('game-container').style.display = 'block';
+        document.getElementById('close-button').addEventListener('click', () => {
+    document.getElementById('final-score').style.display = 'none';
+    // Optionally, you can also reset the game state here
+    // e.g., reset currentLevel and score if needed
+    // currentLevel = 0;
+    // score = 0;
+});
+
+    });
+    let score = 0;
+    let currentLevel = 0;
+    const levels = [
+        {
+            id: 'email-card',
+            elements: [
+              "From:The IRS would not use a vague or unofficial email address. If the email address looks strange, it’s like a scam.",
+              "Greeting:The IRS usually addresses you by your name. A generic greeting like Dear taxpayer is a sign that this could be a scam.",
+              "Phrase: Scammers often use this phrase to avoid direct communication. Legitimate organizations typically allow you to reply to their emails.",
+              "Phrase: The IRS wouldn’t capitalize Tax Refund like this . Scammers often make mistakes with capitalization and grammar.",
+              "Link:The link is extremely suspicious and doesn’t lead to an official IRS website. Always hover over links to check their legitimacy before clicking.",
+              "Signature:The misspelling of IRS as IRRS is an obvious mistake. Scams often contain spelling errors like this.",
+              "Note:Scammers often try to explain why their email went to spam to make you trust them. Legitimate organizations wouldn’t do this.",
+            ]
+        },
+        {
+            id: 'sms-card',
+            elements: [
+                "From:The phone number is generic and doesn’t specify the bank. Scammers often use fake numbers to conceal their identity.",
+                "Generic Greeting: Legitimate bank messages usually address you by name. A generic greeting like this often signals a scam.",
+                "Suspicious Link: The link is not from an official bank website. Scammers use fake sites to steal personal information.",
+                "Urgent Language: Scammers often use urgent language to prompt immediate action.",
+                "Signature:The signature is vague and does not mention the bank's name. A real bank would clearly state its name in the signature.",
+            ]
+        },
+        {
+            id: 'url-card',
+            elements: [
+                "Suspicious Email: The email address looks official at first glance, but the domain paypal-secure.com is suspicious. Scammers often create fake domains that resemble legitimate ones to trick users.",
+                "Greeting: Legitimate companies usually address you by your name, not with a generic greeting like this. A generic greeting is a strong indicator of a scam.",
+                "Phrase: This phrase pressures you to click a link, which is a common phishing technique. Real companies rarely ask you to confirm sensitive information through links in unsolicited emails.",
+                "Suspicious Link:The link appears to lead to a PayPal site, but it actually directs you to a fake website designed to steal your personal information. Always verify URLs before clicking.",
+                "Urgent Msg: This is a scare strategy meant to pressure you into acting quickly without verifying the legitimacy of the email. Real companies do not usually issue such urgent threats.",
+                "Signature: While the signature looks official, it is vague and does not include specific details like contact information. A legitimate email would provide more thorough contact details and verification options."
+
+
+            ]
+        },
+        {
+            id: 'level-four',
+            elements: [
+                "Generic Email Address: The email address provided may look official but can be easily spoofed. Real emails from your provider usually come from a more recognizable address.",                "Generic Greeting: Legitimate emails from your email provider would typically address you by your name, not with a generic greeting. A generic greeting is a common sign of phishing.",
+                "Generic Greeting: Dear User is non-specific and could indicate that the email is not genuinely from your provider, which usually addresses you by your actual name.",
+                "Suspicious Link: The link provided could be a fake URL designed to steal your information. Always verify the URL before clicking.",
+                "Signature: The signature does not provide enough detail about the sender, which is common in phishing attempts."
+            ]
+        },
+        // New Level 5
+        {
+            id: 'level-five',
+            elements: [
+                "Unknown Sender:The sender's number is not provided or is listed as No Caller ID, which makes it impossible to verify the sender's legitimacy. Real offers usually come from recognizable numbers.",
+                "Message Body:The message creates excitement and suggests that you’ve won or been selected for something valuable. This is a common tactic used to encourage you to click on a link.",
+                "Suspicious Link: The link could lead to a fraud website designed to collect personal or financial information. Always be cautious with links that are part of unsolicited messages.",
+                "Urgency Msg:The message creates a false sense of urgency to push you into acting quickly. Scammers often use this tactic to prevent you from thinking critically about the offer.",
+                "Threat of Expiration: This adds pressure by threatening that the offer will expire if you don’t act quickly. It’s designed to make you act impulsively without verifying the message’s legitimacy.",
+                "Overly Polite Ending: The overly polite and urgent tone can be a sign of a scam. Real organizations typically have more formal and less urgent communication styles."
+            ]
+        },
+        // New Level 6
+        {
+            id: 'level-six',
+            elements: [
+           "Suspicious URL: An unusual or untrusted domain. Real companies usually have familiar and secure URLs.",
+          " Exclusive Offer Claim: Claims of exclusivity and special offers are often used to build trust quickly and encourage you to click on the link.",
+          "Questionable Link: The link might direct you to a fraudulent site aimed at collecting your personal information. Always verify URLs before clicking.",
+          "Sense of Urgency: Phrases pushing you to act quickly can make you rush your decision. Scammers use this to stop you from checking carefully.",
+          "Suspicious Contact Email: An email address that seems generic or untrustworthy. Legitimate businesses provide verified and functional contact information.",
+          "Automated Message Notice: Indicates a lack of personal customer service. Real businesses usually provide means for direct communication.",
+            ]
+        }
+    
+    ];
+
+    const checkAnswerButton = document.getElementById('check-answer');
+    const yesButton = document.getElementById('yes-button');
+    const noButton = document.getElementById('no-button');
+    const nextLevelButton = document.getElementById('next-level');
+    const answerDiv = document.getElementById('answerDiv');
+    const popupMessage = document.getElementById('popup-message');
+    const popupMessageCorrect = document.getElementById('popup-message-correct');
+    const finalScoreDiv = document.getElementById('final-score');
+    const scoreSpan = document.getElementById('score');
+    const finalMessage = document.getElementById('final-message');
+    const suspiciousElementsOl = document.getElementById('suspicious-elements');
+
+    function loadLevel(level) {
+        if (currentLevel < levels.length) {
+            document.getElementById(levels[currentLevel].id).style.display = 'none';
+        }
+        currentLevel = level;
+        if (currentLevel < levels.length) {
+            document.getElementById(levels[currentLevel].id).style.display = 'block';
+            suspiciousElementsOl.innerHTML = '';
+            levels[currentLevel].elements.forEach(element => {
+                const li = document.createElement('li');
+                li.innerHTML = element;
+                suspiciousElementsOl.appendChild(li);
+            });
+        }
+    }
+
+    function showFinalMessage() {
+        let message = '';
+        if (score >= 20) {
+            message = "Excellent job! You have a keen eye for spotting phishing attempts.";
+        } else if (score >= 10) {
+            message = "Good job! You caught most of the suspicious elements.";
+        } else {
+            message = "Keep practicing! You missed some key elements.";
+        }
+        finalMessage.textContent = message;
+    }
+
+    checkAnswerButton.addEventListener('click', function () {
+        answerDiv.style.display = 'none';
+        popupMessage.style.display = 'none';
+        popupMessageCorrect.style.display = 'none';
+        yesButton.style.display = 'inline-block';
+        noButton.style.display = 'inline-block';
+        nextLevelButton.style.display = 'none';
+        checkAnswerButton.style.display = 'none';
+    });
+
+    yesButton.addEventListener('click', function () {
+    popupMessageCorrect.style.display = 'block';
+    answerDiv.style.display = 'block';
+    yesButton.style.display = 'none';
+    noButton.style.display = 'none';
+    score = Math.max(score - 10, 0); // Decrement score for incorrect answer
+    const currentLevelDiv = document.getElementById(levels[currentLevel].id);
+    const highlightSpans = currentLevelDiv.querySelectorAll('.highlight');
+    highlightSpans.forEach(span => {
+        span.classList.add('highlight-link');
+    });
+    if (currentLevel === levels.length - 1) {
+        finalScoreDiv.style.display = 'block';
+        scoreSpan.textContent = score;
+        showFinalMessage();
+        nextLevelButton.style.display = 'none'; // Hide the next level button
+    } else {
+        nextLevelButton.style.display = 'inline-block';
+    }
+});
+
+noButton.addEventListener('click', function () {
+    popupMessage.style.display = 'block';
+    answerDiv.style.display = 'block';
+    yesButton.style.display = 'none';
+    noButton.style.display = 'none';
+    score += 10; // Increment score for correct answer
+    if (currentLevel === levels.length - 1) {
+        finalScoreDiv.style.display = 'block';
+        scoreSpan.textContent = score;
+        showFinalMessage();
+        nextLevelButton.style.display = 'none'; // Hide the next level button
+    } else {
+        nextLevelButton.style.display = 'inline-block';
+    }
+});
+
+nextLevelButton.addEventListener('click', function () {
+    if (currentLevel < levels.length - 1) {
+        loadLevel(currentLevel + 1);
+        checkAnswerButton.style.display = 'block';
+        nextLevelButton.style.display = 'none';
+        answerDiv.style.display = 'none';
+        popupMessage.style.display = 'none';
+        popupMessageCorrect.style.display = 'none';
+     // ✅ Save log in DB
+    fetch("save_game_log.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "score=" + score
+    })
+    .then(res => res.text())
+    .then(data => console.log("Log response:", data))
+    .catch(err => console.error("Log error:", err));
+}
+});
+
+    loadLevel(currentLevel);
+</script>
+</body>
+</html>

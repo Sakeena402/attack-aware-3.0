@@ -1,4 +1,3 @@
-
 // backend/src/models/SimulationResult.ts
 
 
@@ -11,10 +10,15 @@ export interface ISimulationResult extends Document {
   trackingToken?: string;
 
   // Email / Phishing
-  emailOpened?:   boolean;
-  emailOpenedAt?: Date;
-  linkClicked?:   boolean;
-  clickedAt?:     Date;
+  emailOpened?:    boolean;
+  emailOpenedAt?:  Date;
+  emailClicked?:   boolean;
+  emailClickedAt?: Date;
+  emailTemplate?:  string;
+  emailSent?:      boolean;
+  emailSentAt?:    Date;
+  emailAddress?:   string;
+  messageId?:      string;
 
   // SMS / Smishing
   smsSent?:            boolean;
@@ -88,10 +92,15 @@ const simulationResultSchema = new Schema<ISimulationResult>(
     },
 
     // Email / Phishing
-    emailOpened:   { type: Boolean, default: false },
-    emailOpenedAt: Date,
-    linkClicked:   { type: Boolean, default: false },
-    clickedAt:     Date,
+    emailOpened:    { type: Boolean, default: false },
+    emailOpenedAt:  Date,
+    emailClicked:   { type: Boolean, default: false },
+    emailClickedAt: Date,
+    emailTemplate:  String,
+    emailSent:      { type: Boolean, default: false },
+    emailSentAt:    Date,
+    emailAddress:   String,
+    messageId:      String,
 
     // SMS / Smishing
     smsSent:           { type: Boolean, default: false },
@@ -155,8 +164,9 @@ const simulationResultSchema = new Schema<ISimulationResult>(
 // ─────────────────────────────────────────────────────────────────────────────
 simulationResultSchema.index({ userId:     1 });
 simulationResultSchema.index({ campaignId: 1 });
-simulationResultSchema.index({ userId:     1, campaignId: 1 });
+// The { campaignId: 1, userId: 1 } index is redundant because { campaignId: 1, userId: 1, trackingToken: 1 } covers it.
 simulationResultSchema.index({ simulationType: 1 });
+simulationResultSchema.index({ userId: 1, createdAt: -1 });
 
 // Lookup index for token-based queries (NOT unique — see note above)
 simulationResultSchema.index({ campaignId: 1, userId: 1, trackingToken: 1 });

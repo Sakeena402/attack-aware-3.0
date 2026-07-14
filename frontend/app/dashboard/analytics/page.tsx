@@ -17,7 +17,7 @@ import {
   Mail, MessageSquare, Phone, Shield, AlertTriangle,
   TrendingDown, TrendingUp, Users, Target,
   XCircle, Activity, BarChart3, Zap, MousePointer,
-  PhoneCall, Award, ChevronDown, ChevronUp, Info, Building2,
+  PhoneCall, Award, ChevronDown, ChevronUp, Info, Building2, Clock,
 } from 'lucide-react';
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -38,9 +38,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 const RiskBadge = ({ score }: { score: number }) => {
   const cfg =
-    score >= 36 ? { label: 'High',   cls: 'bg-red-500/20 text-red-400 border-red-500/30' } :
-    score >= 16 ? { label: 'Medium', cls: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' } :
-                  { label: 'Low',    cls: 'bg-green-500/20 text-green-400 border-green-500/30' };
+    score > 85 ? { label: 'Critical', cls: 'bg-red-900/40 text-red-400 border-red-900/50' } :
+    score > 70 ? { label: 'High',     cls: 'bg-red-500/20 text-red-400 border-red-500/30' } :
+    score > 50 ? { label: 'Moderate', cls: 'bg-orange-500/20 text-orange-400 border-orange-500/30' } :
+    score > 25 ? { label: 'Low',      cls: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' } :
+                 { label: 'Very Low', cls: 'bg-green-500/20 text-green-400 border-green-500/30' };
   return (
     <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${cfg.cls}`}>
       {cfg.label}
@@ -90,19 +92,19 @@ export default function AnalyticsPage() {
   const { data: simData,  isLoading: simLoading }  = useSWR<SimulationAnalytics>(
     cid !== undefined ? `sim:${cid}:${period}` : `sim:all:${period}`,
     () => analyticsApi.getSimulations(cid, period),
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false, refreshInterval: 5000 }
   );
 
   const { data: deptData, isLoading: deptLoading } = useSWR<DepartmentRisk[]>(
     cid !== undefined ? `dept:${cid}:${period}` : `dept:all:${period}`,
     () => analyticsApi.getDepartmentRisk(cid, period),
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false, refreshInterval: 5000 }
   );
 
   const { data: dashData, isLoading: dashLoading } = useSWR<DashboardStats>(
     cid !== undefined ? `dash:${cid}:${period}` : `dash:all:${period}`,
     () => analyticsApi.getDashboard(cid, period),
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false, refreshInterval: 5000 }
   );
 
   const { data: globalData, isLoading: globalLoading } = useSWR<any>(
@@ -111,7 +113,7 @@ export default function AnalyticsPage() {
       const res = await apiService.get('/super-admin/analytics/global');
       return res.data;
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false, refreshInterval: 5000 }
   );
 
   const isLoading = simLoading || deptLoading || dashLoading;
@@ -531,6 +533,53 @@ export default function AnalyticsPage() {
           </motion.div>
         )}
 
+        {/* ════ RESPONSE TIME — shown inside overview tab ════ */}
+        {activeTab === 'overview' && dashData?.responseTimeBuckets && (
+          <motion.div
+            key="response-time"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            <Card className="p-6 surface-1 rounded-xl border border-purple-500/20">
+              <h2 className="text-lg font-bold text-foreground mb-5 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-blue-400" /> Report Response-Time Distribution
+                <span className="ml-auto text-xs font-normal text-slate-400">How quickly employees report threats</span>
+              </h2>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {(([
+                  { key: 'excellent', label: 'Excellent',   sub: '< 5 min',    color: '#10b981', bg: 'from-green-500/20'  },
+                  { key: 'good',      label: 'Good',        sub: '5-30 min',   color: '#3b82f6', bg: 'from-blue-500/20'   },
+                  { key: 'average',   label: 'Average',     sub: '30 min-3 h', color: '#f59e0b', bg: 'from-yellow-500/20' },
+                  { key: 'poor',      label: 'Poor / None', sub: '> 3 hrs',    color: '#ef4444', bg: 'from-red-500/20'    },
+                ]) as { key: 'excellent'|'good'|'average'|'poor'; label: string; sub: string; color: string; bg: string }[]).map(({ key, label, sub, color, bg }) => {
+                  const val   = dashData.responseTimeBuckets![key] ?? 0;
+                  const total = Object.values(dashData.responseTimeBuckets!).reduce((a, b) => a + b, 0);
+                  const pct   = total > 0 ? Math.round((val / total) * 100) : 0;
+                  return (
+                    <div key={key} className={`p-4 rounded-xl border bg-gradient-to-br ${bg} to-transparent`}
+                      style={{ borderColor: color + '33' }}>
+                      <p className="text-2xl font-bold" style={{ color }}>{val}</p>
+                      <p className="text-sm font-medium text-foreground mt-0.5">{label}</p>
+                      <p className="text-xs text-slate-400">{sub}</p>
+                      <div className="mt-3 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                        <motion.div
+                          className="h-full rounded-full"
+                          style={{ background: color }}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 1 }}
+                        />
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">{pct}% of reporters</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
         {/* ════ PHISHING TAB ════ */}
         {activeTab === 'phishing' && (
           <motion.div
@@ -584,11 +633,11 @@ export default function AnalyticsPage() {
                   <div className="flex items-start gap-2">
                     <Info className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-slate-300">
-                      {(simData?.phishing.clickRate ?? 0) >= 36
-                        ? 'High phish-prone rate (36%+). Immediate targeted training recommended.'
-                        : (simData?.phishing.clickRate ?? 0) >= 16
-                        ? 'Medium phish-prone rate. Continue awareness campaigns.'
-                        : 'Low phish-prone rate — below industry benchmark of 15%. Great work!'
+                      {(simData?.phishing.clickRate ?? 0) > 70
+                        ? 'High phish-prone rate. Immediate targeted training recommended.'
+                        : (simData?.phishing.clickRate ?? 0) > 25
+                        ? 'Moderate phish-prone rate. Continue awareness campaigns.'
+                        : 'Low phish-prone rate — excellent work!'
                       }
                     </p>
                   </div>
@@ -948,7 +997,7 @@ export default function AnalyticsPage() {
                             <StatRow label="Report Rate"     value={`${dept.reportRate}%`}     color="text-green-400"  />
                             <StatRow label="Compromise Rate" value={`${dept.compromiseRate}%`} color="text-red-400"    />
                             <StatRow label="High Risk"       value={dept.highRiskCount}        color="text-red-400"    />
-                            <StatRow label="Medium Risk"     value={dept.mediumRiskCount}      color="text-yellow-400" />
+                            <StatRow label="Medium Risk"     value={dept.moderateRiskCount}    color="text-yellow-400" />
                             <StatRow label="Low Risk"        value={dept.lowRiskCount}         color="text-green-400"  />
                           </div>
                         </motion.div>

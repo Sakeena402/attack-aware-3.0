@@ -14,6 +14,11 @@ const campaignSchema = new Schema<ICampaign>(
       enum:     ['phishing', 'smishing', 'vishing'],
       required: true,
     },
+    difficulty: {
+      type:     String,
+      enum:     ['easy', 'medium', 'hard', 'expert'],
+      default:  'medium',
+    },
     createdBy: {
       type:     Schema.Types.ObjectId,
       ref:      'User',

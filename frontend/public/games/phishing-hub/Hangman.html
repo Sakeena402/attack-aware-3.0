@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangman Game </title>
+<style>
+
+    /* Importing Google font - Open Sans */
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap");
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Open Sans", sans-serif;
+}
+body {
+    display: flex;
+    padding: 0 10px;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-image: url(https://t4.ftcdn.net/jpg/03/42/35/51/360_F_342355187_rpMOGIXuSPn7dUGt2ZszGV6DqjdC6nCn.jpg);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-attachment: fixed;
+}
+.back-button {
+  position: fixed;
+  top: 10px; /* Adjust the distance from the top */
+  left: 10px; /* Adjust the distance from the left */
+  background-color: rgba(0, 0, 0, 0.7); /* Dark background for better visibility */
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: bold;
+  z-index: 10; /* Ensure it stays on top of other elements */
+  transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+  background-color: rgba(0, 0, 0, 0.9); /* Darker background on hover */
+}
+.container {
+    display: flex;
+    width: 850px;
+    gap: 70px;
+    padding: 60px 40px;
+    margin-left: 310px;
+    background: #fff;
+    border-radius: 10px;
+    align-items: flex-end;
+    justify-content: space-between;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+.hangman-box img {
+    user-select: none;
+    max-width: 270px;
+}
+.hangman-box h1 {
+    font-size: 1.45rem;
+    text-align: center;
+    margin-top: 20px;
+    text-transform: uppercase;
+}
+.game-box .word-display {
+    gap: 10px;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+}
+.word-display .letter {
+    width: 28px;
+    font-size: 2rem;
+    text-align: center;
+    font-weight: 600;
+    margin-bottom: 40px;
+    text-transform: uppercase;
+    border-bottom: 3px solid #000;
+}
+.word-display .letter.guessed {
+    margin: -40px 0 35px;
+    border-color: transparent;
+}
+.game-box h4 {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 15px;
+}
+.game-box h4 b {
+    font-weight: 600;
+}
+.game-box .guesses-text b {
+    color: #ff0000;
+}
+.game-box .keyboard {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-top: 40px;
+    justify-content: center;
+}
+:where(.game-modal, .keyboard) button {
+    color: #fff;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 4px;
+    text-transform: uppercase;
+    background: midnightblue;
+}
+.keyboard button {
+    padding: 7px;
+    width: calc(100% / 9 - 5px);
+}
+.keyboard button[disabled] {
+    pointer-events: none;
+    opacity: 0.6;
+}
+:where(.game-modal, .keyboard) button:hover {
+    background: rgb(2, 2, 44);
+}
+.game-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 0 10px;
+    transition: opacity 0.4s ease;
+}
+.game-modal.show {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0.4s 0.4s ease;
+}
+.game-modal .content {
+    padding: 30px;
+    max-width: 420px;
+    margin-left: 400px;
+    width: 100%;
+    border-radius: 10px;
+    background: #fff;
+    text-align: center;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+.game-modal img {
+    max-width: 130px;
+    margin-bottom: 20px;
+}
+.game-modal img[src="images/victory.gif"] {
+    margin-left: -10px;
+}
+.game-modal h4 {
+    font-size: 1.53rem;
+}
+.game-modal p {
+    font-size: 1.15rem;
+    margin: 15px 0 30px;
+    font-weight: 500;
+}
+.game-modal p b {
+    color: #1e204e;
+    font-weight: 600;
+}
+.game-modal button {
+    padding: 12px 23px;
+}
+
+@media (max-width: 782px) {
+    .container {
+        flex-direction: column;
+        padding: 30px 15px;
+        align-items: center;
+    }
+    .hangman-box img {
+        max-width: 200px;
+    }
+    .hangman-box h1 {
+        display: none;
+    }
+    .game-box h4 {
+        font-size: 1rem;
+    }
+    .word-display .letter {
+        margin-bottom: 35px;
+        font-size: 1.7rem;
+    }
+    .word-display .letter.guessed {
+        margin: -35px 0 25px;
+    }
+    .game-modal img {
+        max-width: 120px;
+    }
+    .game-modal h4 {
+        font-size: 1.45rem;
+    }
+    .game-modal p {
+        font-size: 1.1rem;
+    }
+    .game-modal button {
+        padding: 10px 18px;
+    }
+}
+</style>
+
+</head>
+<body>
+<a href="easy_game.html" class="back-button">Back</a>
+    <div class="game-modal">
+        <div class="content">
+            <img src="#" alt="gif">
+            <h4>Game Over!</h4>
+            <p>The correct word was: <b>rainbow</b></p>
+            <button class="play-again">Play Again</button>
+            
+        </div>
+    </div>
+    <div class="container">
+        <div class="hangman-box">
+            <img src="#" draggable="false" alt="hangman-img">
+            <h1>Hangman Game</h1>
+        </div>
+        <div class="game-box">
+            <ul class="word-display"></ul>
+            <h4 class="hint-text">Hint: <b></b></h4>
+            <h4 class="guesses-text">Incorrect guesses: <b></b></h4>
+            <div class="keyboard"></div>
+        </div>
+    </div>
+
+ <script>
+
+const wordList = [
+    {
+    word: "socialengineering",
+    hint: "A tactic used by attackers to manipulate individuals into divulging confidential information or performing actions."
+},
+{
+    word: "zerodayattack",
+    hint: "A cyberattack that exploits a previously unknown vulnerability in software or hardware, before the developer can issue a fix."
+},
+{
+    word: "malware",
+    hint: "Software designed to disrupt, damage, or gain unauthorized access to computer systems or data."
+},
+{
+    word: "ransomware",
+    hint: "A type of malware that encrypts files or systems and demands payment in exchange for decryption."
+},
+{
+    word: "phishing",
+    hint: "A fraudulent attempt to obtain sensitive information by disguising oneself as a trustworthy entity in electronic communications."
+},
+{
+    word: "strongpassword",
+    hint: "A password that is complex and difficult to guess, usually containing a mix of letters, numbers, and symbols."
+},
+{
+    word: "spearphishing",
+    hint: "A targeted phishing attack aimed at a specific individual or organization, often using personalized information."
+},
+{
+    word: "smishing",
+    hint: "A type of phishing attack that uses SMS text messages to trick individuals into revealing personal information."
+},
+{
+    word: "socialengineering",
+    hint: "A tactic used by attackers to manipulate individuals into divulging confidential information or performing actions."
+},
+{
+    word: "zerodayexploit",
+    hint: "An exploit that takes advantage of a zero-day vulnerability in software or hardware."
+},
+{
+    word: "malware",
+    hint: "Software designed to disrupt, damage, or gain unauthorized access to computer systems or data."
+},
+{
+    word: "ransomware",
+    hint: "A type of malware that encrypts files or systems and demands payment in exchange for decryption."
+},
+{
+    word: "phishingemail",
+    hint: "An email that uses deceptive tactics to trick recipients into disclosing sensitive information or clicking on malicious links."
+},
+{
+    word: "passwordmanager",
+    hint: "A tool that helps users generate, store, and manage complex passwords securely."
+},
+{
+    word: "spearphishing",
+    hint: "A targeted phishing attack aimed at a specific individual or organization, often using personalized information."
+},
+{
+    word: "smishing",
+    hint: "A type of phishing attack that uses SMS text messages to trick individuals into revealing personal information."
+},
+{
+    word: "socialengineeringattack",
+    hint: "A scheme where attackers manipulate people into providing confidential information or performing certain actions."
+},
+{
+    word: "zerodayexploit",
+    hint: "An exploit that takes advantage of a zero-day vulnerability in software or hardware."
+},
+{
+    word: "malware",
+    hint: "Software designed to disrupt, damage, or gain unauthorized access to computer systems or data."
+},
+{
+    word: "strongpassword",
+    hint: "A password that is complex and difficult to guess, usually containing a mix of letters, numbers, and symbols."
+},
+{
+    word: "phishingattempt",
+    hint: "An attempt to deceive individuals into divulging sensitive information by masquerading as a trustworthy source."
+}
+
+   
+    ];
+
+
+const wordDisplay = document.querySelector(".word-display");
+const guessesText = document.querySelector(".guesses-text b");
+const keyboardDiv = document.querySelector(".keyboard");
+const hangmanImage = document.querySelector(".hangman-box img");
+const gameModal = document.querySelector(".game-modal");
+const playAgainBtn = gameModal.querySelector(".play-again");
+const exitBtn = gameModal.querySelector(".exit-game");
+
+// Initializing game variables
+let currentWord, correctLetters, wrongGuessCount;
+const maxGuesses = 6;
+
+const resetGame = () => {
+    // Ressetting game variables and UI elements
+    correctLetters = [];
+    wrongGuessCount = 0;
+    hangmanImage.src = "images/hangman-0.svg";
+    guessesText.innerText = `${wrongGuessCount} / ${maxGuesses}`;
+    wordDisplay.innerHTML = currentWord.split("").map(() => `<li class="letter"></li>`).join("");
+    keyboardDiv.querySelectorAll("button").forEach(btn => btn.disabled = false);
+    gameModal.classList.remove("show");
+}
+
+const getRandomWord = () => {
+    // Selecting a random word and hint from the wordList
+    const { word, hint } = wordList[Math.floor(Math.random() * wordList.length)];
+    currentWord = word; // Making currentWord as random word
+    document.querySelector(".hint-text b").innerText = hint;
+    resetGame();
+}
+
+const gameOver = (isVictory) => {
+    const modalText = isVictory ? `You found the word:` : 'The correct word was:';
+    gameModal.querySelector("img").src = `images/${isVictory ? 'victory' : 'lost'}.gif`;
+    gameModal.querySelector("h4").innerText = isVictory ? 'Congratulations!' : 'Game Over!';
+    gameModal.querySelector("p").innerHTML = `${modalText} <b>${currentWord}</b>`;
+    gameModal.classList.add("show");
+
+    // ✅ Score calculate karna (simple example)
+    let score = isVictory ? 100 - (wrongGuessCount * 10) : 0;
+
+    // ✅ Game log ko backend pe bhejna
+    fetch("save_game_log.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `game_title=Hangman&score=${score}`
+    })
+    .then(res => res.text())
+    .then(data => console.log("Log saved:", data))
+    .catch(err => console.error("Error saving log:", err));
+};
+
+const initGame = (button, clickedLetter) => {
+    // Checking if clickedLetter is exist on the currentWord
+    if(currentWord.includes(clickedLetter)) {
+        // Showing all correct letters on the word display
+        [...currentWord].forEach((letter, index) => {
+            if(letter === clickedLetter) {
+                correctLetters.push(letter);
+                wordDisplay.querySelectorAll("li")[index].innerText = letter;
+                wordDisplay.querySelectorAll("li")[index].classList.add("guessed");
+            }
+        });
+    } else {
+        // If clicked letter doesn't exist then update the wrongGuessCount and hangman image
+        wrongGuessCount++;
+        hangmanImage.src = `images/hangman-${wrongGuessCount}.svg`;
+    }
+    button.disabled = true; // Disabling the clicked button so user can't click again
+    guessesText.innerText = `${wrongGuessCount} / ${maxGuesses}`;
+
+    // Calling gameOver function if any of these condition meets
+    if(wrongGuessCount === maxGuesses) return gameOver(false);
+    if(correctLetters.length === currentWord.length) return gameOver(true);
+}
+
+// Creating keyboard buttons and adding event listeners
+for (let i = 97; i <= 122; i++) {
+    const button = document.createElement("button");
+    button.innerText = String.fromCharCode(i);
+    keyboardDiv.appendChild(button);
+    button.addEventListener("click", (e) => initGame(e.target, String.fromCharCode(i)));
+}
+
+getRandomWord();
+playAgainBtn.addEventListener("click", getRandomWord);
+exitBtn.addEventListener("click", () => {
+    // Add your exit logic here, maybe redirecting to another page or closing the window
+    console.log("Exiting the game");
+});
+ </script>   
+</body>
+</html>

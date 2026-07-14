@@ -65,8 +65,13 @@ export const getAggregateReport = async (
 ): Promise<void> => {
   try {
     if (!req.user) throw new AppError('Not authenticated', 401);
-    const { companyId, startDate, endDate, departments } = req.query as {
-      companyId?: string;
+
+    // companyId: super_admin may pass via query; non-super_admin is always locked to their own company
+    const companyId = req.user.role === 'super_admin'
+      ? (req.query.companyId as string | undefined)
+      : req.user.companyId;
+
+    const { startDate, endDate, departments } = req.query as {
       startDate?: string;
       endDate?: string;
       departments?: string;
@@ -121,8 +126,13 @@ export const downloadAggregatePDF = async (
 ): Promise<void> => {
   try {
     if (!req.user) throw new AppError('Not authenticated', 401);
-    const { companyId, startDate, endDate, departments } = req.query as {
-      companyId?: string;
+
+    // companyId: super_admin may pass via query; non-super_admin is always locked to their own company
+    const companyId = req.user.role === 'super_admin'
+      ? (req.query.companyId as string | undefined)
+      : req.user.companyId;
+
+    const { startDate, endDate, departments } = req.query as {
       startDate?: string;
       endDate?: string;
       departments?: string;

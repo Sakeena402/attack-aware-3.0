@@ -2,9 +2,29 @@ import { Document, Types } from 'mongoose';
 import { Request, Response, NextFunction } from 'express';
 
 
-export type UserRole = 'super_admin' | 'admin' | 'employee';
+export type UserRole = 'super_admin' | 'admin' | 'employee' | 'individual';
 export type CampaignType = 'phishing' | 'smishing' | 'vishing';
 export type CampaignStatus = 'draft' | 'active' | 'completed' | 'paused';
+
+export type RiskLevel = 'very_low' | 'low' | 'medium' | 'high' | 'critical';
+export type Trend = 'improving' | 'stable' | 'declining' | 'insufficient_data';
+export type ConfidenceLabel = 'low' | 'medium' | 'high' | 'very_high';
+
+export interface RiskBreakdown {
+  riskScore: number;
+  riskLevel: RiskLevel;
+  confidence: ConfidenceLabel;
+  trend: Trend;
+  breakdown: {
+    behaviorBase: number;
+    trainingAdjustment: number;
+    responseAdjustment: number;
+    finalScore: number;
+  };
+  components: { clicks: number; credentials: number; reports: number; ignored: number };
+  simulationCount: number;
+  riskCalculatedAt: Date;
+}
 
 // User Document
 export interface IUser extends Document {
@@ -15,9 +35,25 @@ export interface IUser extends Document {
   role: UserRole;
   companyId: Types.ObjectId;
   department: string;
+  phoneNumber?: string;
   points: number;
+  badge: string;
   badges: string[];
+  achievements?: string[];
+  riskScore: number;
+  riskLevel: RiskLevel;
+  riskTrend: Trend;
+  riskConfidence: ConfidenceLabel;
+  riskBreakdown?: RiskBreakdown;
+  riskCalculatedAt?: Date;
   lastLogin: Date;
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  subscriptionPlan?: string;
+  subscriptionPackage?: string;
+  isUrduPreferred?: boolean;
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
+  bio?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,6 +65,11 @@ export interface ICompany extends Document {
   industry: string;
   adminId: Types.ObjectId;
   employeeCount: number;
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
+  enterpriseCode?: string;
+  contactPerson?: string;
+  taxId?: string;
+  subscriptionPlan?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -182,6 +223,29 @@ export interface ApiResponse<T = any> {
   message?: string;
   data?: T;
   error?: string;
+}
+
+// Company request bodies
+export interface CreateCompanyBody {
+  companyName: string;
+  industry: string;
+  /** Optional: the userId to assign as company admin. If omitted, company is created with no admin. */
+  adminId?: string;
+}
+
+export interface UpdateCompanyBody {
+  companyName?: string;
+  industry?: string;
+  adminId?: string;
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
+}
+
+// Contact request body
+export interface CreateContactBody {
+  name: string;
+  email: string;
+  subject?: string;
+  message: string;
 }
 
 // Login Request

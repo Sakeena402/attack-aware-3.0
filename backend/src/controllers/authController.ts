@@ -30,7 +30,7 @@ function buildUserPayload(user: InstanceType<typeof User>) {
     companyId: user.companyId,
     department: user.department,
     points: user.points,
-    badge: user.badges?.[0] ?? null,
+    badge: user.badge ?? 'Rookie',
   };
 }
 
@@ -100,7 +100,9 @@ export const register = async (
       name,
       email: sanitizedEmail,
       passwordHash,
-      role: role || 'employee',
+      // Public self-registration always creates an 'individual' account.
+      // Employees are created by a company admin via POST /api/employees.
+      role: 'individual',
       department: 'General',
     });
     await newUser.save();
@@ -185,4 +187,93 @@ export const logout = (req: AuthRequest, res: Response<ApiResponse>) => {
   res.clearCookie('accessToken', COOKIE_OPTS_ACCESS);
   res.clearCookie('refreshToken', COOKIE_OPTS_REFRESH);
   res.json({ success: true });
+};
+
+import crypto from 'crypto';
+
+// ------------------- FORGOT PASSWORD -------------------
+export const forgotPassword = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    const { email } = req.body;
+    if (!email) throw new AppError('Please provide an email address', 400);
+
+    const user = await User.findOne({ email });
+    if (!user) throw new AppError('There is no user with this email address', 404);
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    user.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save({ validateBeforeSave: false });
+
+    // Mock sending email (since no mail setup found)
+    console.log(`[EMAIL MOCK] To: ${user.email}, Subject: Password Reset, Body: Your reset token is ${resetToken}`);
+
+    res.json({ success: true, message: 'Token sent to email!' });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: error.message || 'Error processing forgot password' });
+  }
+};
+
+// ------------------- RESET PASSWORD -------------------
+export const resetPassword = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) throw new AppError('Please provide token and new password', 400);
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: new Date() }
+    });
+
+    if (!user) throw new AppError('Token is invalid or has expired', 400);
+
+    user.passwordHash = await bcryptjs.hash(password, 10);
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    res.json({ success: true, message: 'Password reset successfully!' });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: error.message || 'Error resetting password' });
+  }
+};
+
+// ------------------- SEND CREDENTIALS -------------------
+export const sendCredentials = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    if (!req.user || !['admin', 'super_admin'].includes(req.user.role)) {
+      throw new AppError('Access denied', 403);
+    }
+
+    const { employeeId, newPassword } = req.body;
+    if (!employeeId || !newPassword) throw new AppError('Provide employeeId and newPassword', 400);
+
+    const query: any = { _id: employeeId };
+    if (req.user.role === 'admin') {
+      query.companyId = req.user.companyId;
+    }
+
+    const employee = await User.findOne(query);
+    if (!employee) throw new AppError('Employee not found or access denied', 404);
+
+    employee.passwordHash = await bcryptjs.hash(newPassword, 10);
+    await employee.save();
+
+    // Mock sending email
+    console.log(`[EMAIL MOCK] To: ${employee.email}, Subject: Your new login credentials, Body: Your new password is ${newPassword}`);
+
+    res.json({ success: true, message: 'Credentials sent to employee' });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: error.message || 'Error sending credentials' });
+  }
 };
