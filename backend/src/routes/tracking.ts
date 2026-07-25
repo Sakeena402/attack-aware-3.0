@@ -11,9 +11,10 @@ const trackingRouter = Router();
 
 trackingRouter.get('/click', async (req: Request, res: Response) => {
   const awarenessUrl = process.env.AWARENESS_PAGE_URL || 'http://localhost:3000/awareness';
+  const verifyBaseUrl = process.env.PHISHING_PAGE_BASE_URL || 'http://localhost:3000/verify';
 
   try {
-    const { t: token, c: campaignId, u: userId, type } = req.query as Record<string, string>;
+    const { t: token, c: campaignId, u: userId, type, p: pageType } = req.query as Record<string, string>;
 
     if (!token || !campaignId || !userId) {
       return res.redirect(302, awarenessUrl);
@@ -32,6 +33,8 @@ trackingRouter.get('/click', async (req: Request, res: Response) => {
       } else {
         console.info(`[TRACK] Email click recorded. campaignId=${campaignId} userId=${userId}`);
       }
+
+      return res.redirect(302, awarenessUrl);
     } else {
       const result = await recordSmsClick(token, campaignId, userId, ipAddress, userAgent);
       if (!result.success) {
@@ -41,13 +44,21 @@ trackingRouter.get('/click', async (req: Request, res: Response) => {
       } else {
         console.info(`[TRACK] SMS click recorded. campaignId=${campaignId} userId=${userId}`);
       }
-    }
 
-    return res.redirect(302, awarenessUrl);
+      // SMS links carry a "p" (pageType) param telling us which fake landing
+      // page to show (bank, hr_benefits, password_reset, etc). Credential
+      // capture happens on that page, not here — so send them there instead
+      // of straight to the awareness page.
+      if (pageType) {
+        const landingUrl = `${verifyBaseUrl}/${pageType}?token=${encodeURIComponent(token)}&c=${encodeURIComponent(campaignId)}&u=${encodeURIComponent(userId)}`;
+        return res.redirect(302, landingUrl);
+      }
+
+      return res.redirect(302, awarenessUrl);
+    }
 
   } catch (error) {
     console.error('[TRACK] Error recording click:', error);
-    const awarenessUrl = process.env.AWARENESS_PAGE_URL || 'http://localhost:3000/awareness';
     return res.redirect(302, awarenessUrl);
   }
 });

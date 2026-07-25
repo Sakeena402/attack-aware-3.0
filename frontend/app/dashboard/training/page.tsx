@@ -33,17 +33,6 @@ const DIFF_CONFIG: Record<string, { icon: any; color: string }> = {
   hard: { icon: UserX, color: 'from-red-500/20 to-transparent border-red-500/20' },
 };
 
-// ── Fallback game list (shown when DB is empty) ───────────────────────────
-const GAME_CATALOGUE: Game[] = [
-  { _id: '0', name: 'Phishing Awareness Game', description: 'Identify phishing emails and links before it\'s too late!', category: 'Phishing', difficulty: 'easy', maxScore: 100, gameUrl: '', targetRoles: ['all'], isLocked: false },
-  { _id: '1', name: 'Phishing Awareness Game', description: 'Medium difficulty phishing scenarios. Can you spot them all?', category: 'Phishing', difficulty: 'medium', maxScore: 100, gameUrl: '', targetRoles: ['all'], isLocked: false },
-  { _id: '2', name: 'Phishing Awareness Game', description: 'Advanced phishing attacks. Only experts can pass!', category: 'Phishing', difficulty: 'hard', maxScore: 100, gameUrl: '', targetRoles: ['all'], isLocked: false },
-  { _id: '3', name: 'Hangman', description: 'Guess cybersecurity terms before the hangman is complete.', category: 'Vocabulary', difficulty: 'easy', maxScore: 100, gameUrl: '', targetRoles: ['all'], isLocked: false },
-  { _id: '4', name: 'Defeat the Hacker', description: 'Stop the hacker from breaching your system step by step.', category: 'Defense', difficulty: 'medium', maxScore: 100, gameUrl: '', targetRoles: ['all'], isLocked: false },
-  { _id: '5', name: 'Identity Theft Game', description: 'Protect your identity from thieves in this interactive story.', category: 'Social Engineering', difficulty: 'medium', maxScore: 100, gameUrl: '', targetRoles: ['all'], isLocked: false },
-  { _id: '6', name: 'Wack the Hacker', description: 'Whack the hackers before they steal your data!', category: 'Awareness', difficulty: 'easy', maxScore: 100, gameUrl: '', targetRoles: ['all'], isLocked: false },
-];
-
 const GAME_ICONS: Record<string, string> = {
   'Phishing Awareness Game': '🎯',
   'Hangman': '🔤',
@@ -63,21 +52,20 @@ export default function TrainingPage() {
   const videos: StaticVideo[] = getVideos(lang, category || undefined);
   const vLoading = false;
 
-  // ── Quizzes — still from API/DB ────────────────────────────────────────
+  // ── Quizzes — from API/DB ──────────────────────────────────────────────
   const { data: quizzes = [], isLoading: qLoading } = useSWR<QuizCategory[]>(
     'training-quizzes',
     () => quizApi.getCategories(),
     { revalidateOnFocus: false }
   );
 
-  // ── Games — static fallback if DB empty ────────────────────────────────
-  const { data: gamesRaw = [], isLoading: gLoading } = useSWR<Game[]>(
+  // ── Games — from API/DB ─────────────────────────────────────────────────
+  const { data: games = [], isLoading: gLoading } = useSWR<Game[]>(
     'training-games',
     () => gameApi.getAll(),
     { revalidateOnFocus: false }
   );
 
-  const games: Game[] = gamesRaw.length > 0 ? gamesRaw : GAME_CATALOGUE;
   const isLoading = tab === 'videos' ? vLoading : tab === 'quizzes' ? qLoading : gLoading;
 
   return (
@@ -316,7 +304,8 @@ export default function TrainingPage() {
                             ? 'border-slate-700 opacity-70 cursor-not-allowed'
                             : `${diff.color} hover:-translate-y-1 cursor-pointer hover:shadow-lg`
                             }`}
-                          onClick={() => !game.isLocked && router.push(`/dashboard/games/${game._id}`)}                      >
+                          onClick={() => !game.isLocked && router.push(`/dashboard/games/${game._id}`)}
+                        >
                           <div className="flex items-start justify-between mb-4">
                             <span className="text-4xl">{icon}</span>
                             <div className="flex flex-col items-end gap-1">

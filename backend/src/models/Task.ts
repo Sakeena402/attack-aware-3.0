@@ -13,7 +13,7 @@ export interface ITask extends Document {
 
   // ── New fields for content linking ──────────────────────────
   contentType: TaskContentType;      // 'video' | 'quiz' | 'game'
-  contentId: Types.ObjectId;         // refers to Video/Quiz/Game _id
+  contentId: Types.ObjectId | string; // ObjectId for quiz/game, string (e.g. 'en-1') for video     
   points: number;                    // points awarded on completion
   completedAt?: Date;
 
@@ -32,7 +32,7 @@ const taskSchema = new Schema<ITask>(
     dueDate: { type: Date },
 
     contentType: { type: String, enum: ['video', 'quiz', 'game'], required: true },
-    contentId: { type: Schema.Types.ObjectId, required: true },
+    contentId: { type: Schema.Types.Mixed, required: true },
     points: { type: Number, default: 10 },
     completedAt: { type: Date },
   },

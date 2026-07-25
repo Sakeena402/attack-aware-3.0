@@ -45,3 +45,16 @@ export const watchVideo = async (req: AuthRequest, res: Response<ApiResponse>): 
     res.status(error.statusCode || 500).json({ success: false, error: error.message });
   }
 };
+
+export const getMyWatchedVideos = async (req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new AppError('Unauthorized', 401);
+    const records = await UserVideo.find({ userId, status: 'Completed' })
+      .select('videoId watchedAt')
+      .lean();
+    res.json({ success: true, data: records });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+};

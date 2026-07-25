@@ -869,15 +869,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
-
 import {
-  Shield, Menu, X, ArrowRight, CheckCircle2, Lock, AlertTriangle,
-  BarChart3, Users, Zap, TrendingUp, Star, Github, Linkedin, Twitter,
+  Shield, ArrowRight, CheckCircle2, Lock, AlertTriangle,
+  BarChart3, Users, Zap, TrendingUp, Star,
 } from 'lucide-react';
+import Footer from '@/components/layout/Footer';
+import Navbar from '@/components/layout/Navbar';
+import PricingPreview from '@/components/pricing/PricingPreview';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -897,127 +897,14 @@ const itemVariants = {
 };
 
 export default function LandingPage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const navLinks = [
-    { label: 'Home', href: '#home' },
-    { label: 'Features', href: '#features' },
-    { label: 'How It Works', href: '#howitworks' },
-    { label: 'Pricing', href: '#pricing' },
-    { label: 'About', href: '#about' },
-    { label: 'Contact', href: '#contact' },
-  ];
-
   return (
-    // ✅ bg-background text-foreground — theme ke saath switch hoga
     <div className="bg-background text-foreground overflow-hidden">
 
       {/* ───────────────── NAVBAR ───────────────── */}
-      <motion.nav
-        className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-          scrolled
-            ? 'bg-background/80 backdrop-blur-xl border-b border-purple-500/10'
-            : 'bg-transparent'
-        }`}
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          {/* Logo */}
-          <motion.div className="flex items-center gap-3" whileHover={{ scale: 1.05 }}>
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 via-purple-600 to-blue-600 flex items-center justify-center relative">
-              <Shield className="w-6 h-6 text-white relative z-10" />
-            </div>
-            <span className="text-xl font-bold font-poppins bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">
-              AttackAware
-            </span>
-          </motion.div>
-
-          {/* Desktop Nav Links */}
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {link.label}
-              </a>
-            ))}
-          </div>
-
-          {/* Right Actions */}
-          <div className="hidden md:flex items-center gap-2">
-            <ThemeToggle />
-            <Link href="/login">
-              <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
-                Login
-              </Button>
-            </Link>
-            <Link href="/register">
-              <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white">
-                Get Started
-              </Button>
-            </Link>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center gap-2">
-            <ThemeToggle />
-            <button
-              className="text-muted-foreground hover:text-foreground p-1"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        <motion.div
-          className="md:hidden bg-background/95 backdrop-blur-xl border-b border-purple-500/10 overflow-hidden"
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: mobileMenuOpen ? 1 : 0, height: mobileMenuOpen ? 'auto' : 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <div className="px-4 py-4 space-y-1">
-            {navLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className="block text-muted-foreground hover:text-foreground transition-colors py-2 text-sm"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {link.label}
-              </a>
-            ))}
-            <div className="pt-4 border-t border-purple-500/10 space-y-2">
-              <Link href="/login" className="block">
-                <Button variant="ghost" className="w-full text-muted-foreground hover:text-foreground">
-                  Login
-                </Button>
-              </Link>
-              <Link href="/register" className="block">
-                <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white">
-                  Get Started
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </motion.div>
-      </motion.nav>
+      <Navbar />
 
       {/* ───────────────── HERO ───────────────── */}
       <section className="relative min-h-screen flex items-center pt-20 px-4 overflow-hidden" id="home">
-        {/* Animated blobs — light mode mein subtle, dark mein vibrant */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <motion.div
             className="absolute top-20 right-10 w-96 h-96 bg-purple-500/15 dark:bg-purple-600/20 rounded-full blur-3xl"
@@ -1029,7 +916,6 @@ export default function LandingPage() {
             animate={{ y: [0, -30, 0], x: [0, -20, 0] }}
             transition={{ duration: 10, repeat: Infinity }}
           />
-          {/* Grid pattern */}
           <div className="absolute inset-0 opacity-[0.07] dark:opacity-10">
             <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
               <defs>
@@ -1044,7 +930,6 @@ export default function LandingPage() {
 
         <div className="max-w-7xl mx-auto w-full relative z-10">
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            {/* Left */}
             <motion.div variants={containerVariants} initial="hidden" animate="visible">
               <motion.div
                 variants={itemVariants}
@@ -1089,7 +974,6 @@ export default function LandingPage() {
                 </Button>
               </motion.div>
 
-              {/* Metrics */}
               <motion.div
                 variants={itemVariants}
                 className="mt-12 pt-8 border-t border-purple-500/10 grid grid-cols-3 gap-6"
@@ -1107,7 +991,6 @@ export default function LandingPage() {
               </motion.div>
             </motion.div>
 
-            {/* Right — Dashboard mockup */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -1119,7 +1002,6 @@ export default function LandingPage() {
                 animate={{ scale: [1, 1.1, 1] }}
                 transition={{ duration: 4, repeat: Infinity }}
               />
-              {/* Card uses bg-card which switches with theme */}
               <div className="relative bg-card soft-border rounded-2xl p-6 shadow-xl">
                 <div className="bg-muted/50 rounded-lg p-6 space-y-4">
                   <div className="flex items-center justify-between">
@@ -1314,169 +1196,58 @@ export default function LandingPage() {
       </section>
 
       {/* ───────────────── PRICING ───────────────── */}
-      {/* ───────────────── PRICING ───────────────── */}
-<section className="py-24 px-4 bg-background" id="pricing">
-  <div className="max-w-7xl mx-auto">
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true }}
-      className="text-center mb-16"
-    >
-      <motion.div
-        variants={itemVariants}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 mb-6"
-      >
-        <Zap className="w-4 h-4 text-purple-500" />
-        <span className="text-sm text-purple-600 dark:text-purple-300 font-medium">
-          Flexible Pricing Plans
-        </span>
-      </motion.div>
-      <motion.h2
-        variants={itemVariants}
-        className="text-4xl md:text-5xl font-bold font-poppins mb-6 text-foreground"
-      >
-        Choose Your Plan
-      </motion.h2>
-      <motion.p
-        variants={itemVariants}
-        className="text-lg text-muted-foreground max-w-2xl mx-auto"
-      >
-        Start free and scale as your organization grows.
-      </motion.p>
-    </motion.div>
-  </div>
-</section>
+      <PricingPreview />
 
       {/* ───────────────── CTA ───────────────── */}
-    {/* ───────────────── CTA ───────────────── */}
-<section className="relative py-24 px-4 bg-gradient-to-b from-background via-muted/20 to-background">
-  
-  {/* soft top glow divider */}
-  <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-purple-500/15 to-transparent" />
+      <section className="relative py-24 px-4 bg-gradient-to-b from-background via-muted/20 to-background">
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-purple-500/15 to-transparent" />
+        <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-purple-500/15 to-transparent" />
 
-  {/* soft bottom glow divider */}
-  <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-purple-500/15 to-transparent" />
-
-  <div className="max-w-4xl mx-auto text-center relative z-10">
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true }}
-    >
-      <motion.h2
-        variants={itemVariants}
-        className="text-4xl md:text-5xl font-bold font-poppins mb-6 text-foreground"
-      >
-        Start Protecting Your Organization Today
-      </motion.h2>
-
-      <motion.p
-        variants={itemVariants}
-        className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto"
-      >
-        Join hundreds of companies training their employees against cyber threats. Get started with a free trial — no credit card required.
-      </motion.p>
-
-      <motion.div
-        variants={itemVariants}
-        className="flex flex-col sm:flex-row gap-4 justify-center"
-      >
-        <Link href="/register">
-          <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-6 text-base rounded-lg">
-            Start Your Free Trial
-            <ArrowRight className="w-5 h-5 ml-2" />
-          </Button>
-        </Link>
-
-        <Button
-          variant="outline"
-          className="border-purple-500/20 hover:border-purple-500/40 hover:bg-purple-500/5 px-8 py-6 text-base rounded-lg text-foreground"
-        >
-          Schedule a Demo
-        </Button>
-      </motion.div>
-    </motion.div>
-  </div>
-</section>
-
-      {/* ───────────────── FOOTER ───────────────── */}
-      <footer className="border-t border-purple-500/10 bg-background py-16 px-4">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-4xl mx-auto text-center relative z-10">
           <motion.div
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            className="grid md:grid-cols-5 gap-8 mb-12"
           >
-            <motion.div variants={itemVariants}>
-              <div className="flex items-center gap-2 mb-4">
-                <Shield className="w-5 h-5 text-purple-500" />
-                <span className="font-bold text-foreground">AttackAware</span>
-              </div>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Protecting organizations from social engineering threats.
-              </p>
+            <motion.h2
+              variants={itemVariants}
+              className="text-4xl md:text-5xl font-bold font-poppins mb-6 text-foreground"
+            >
+              Start Protecting Your Organization Today
+            </motion.h2>
+
+            <motion.p
+              variants={itemVariants}
+              className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto"
+            >
+              Join hundreds of companies training their employees against cyber threats. Get started with a free trial — no credit card required.
+            </motion.p>
+
+            <motion.div
+              variants={itemVariants}
+              className="flex flex-col sm:flex-row gap-4 justify-center"
+            >
+              <Link href="/register">
+                <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-6 text-base rounded-lg">
+                  Start Your Free Trial
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </Link>
+
+              <Button
+                variant="outline"
+                className="border-purple-500/20 hover:border-purple-500/40 hover:bg-purple-500/5 px-8 py-6 text-base rounded-lg text-foreground"
+              >
+                Schedule a Demo
+              </Button>
             </motion.div>
-
-            {[
-              { title: 'Product', links: [{ label: 'Features', href: '#features' }, { label: 'Pricing', href: '#pricing' }, { label: 'How It Works', href: '#howitworks' }] },
-              { title: 'Company', links: [{ label: 'About', href: '#about' }, { label: 'Contact', href: '#contact' }, { label: 'Blog', href: '#' }] },
-              { title: 'Resources', links: [{ label: 'Documentation', href: '#' }, { label: 'API Docs', href: '#' }, { label: 'Support', href: '#' }] },
-              { title: 'Legal', links: [{ label: 'Privacy', href: '#' }, { label: 'Terms', href: '#' }, { label: 'Security', href: '#' }] },
-            ].map((col) => (
-              <motion.div key={col.title} variants={itemVariants}>
-                <h4 className="font-semibold mb-4 text-foreground text-sm">{col.title}</h4>
-                <ul className="space-y-2">
-                  {col.links.map((link) => (
-                    <li key={link.label}>
-                      <a href={link.href} className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-                        {link.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            ))}
           </motion.div>
-
-          {/* Newsletter */}
-          <div className="border-t border-purple-500/10 pt-8 mb-8">
-            <div className="max-w-md">
-              <h4 className="font-semibold mb-3 text-foreground text-sm">Stay Updated</h4>
-              <div className="flex gap-2">
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  className="flex-1 px-4 py-2 bg-muted soft-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30"
-                />
-                <button className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg text-sm font-semibold transition">
-                  Subscribe
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom bar */}
-          <div className="border-t border-purple-500/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-muted-foreground text-sm">&copy; 2024 AttackAware. All rights reserved.</p>
-            <div className="flex gap-3">
-              {[Github, Linkedin, Twitter].map((Icon, idx) => (
-                <a
-                  key={idx}
-                  href="#"
-                  className="w-9 h-9 rounded-lg bg-muted soft-border flex items-center justify-center text-muted-foreground hover:text-purple-500 hover:border-purple-400/50 transition"
-                >
-                  <Icon className="w-4 h-4" />
-                </a>
-              ))}
-            </div>
-          </div>
         </div>
-      </footer>
+      </section>
+
+      {/* ───────────────── FOOTER ───────────────── */}
+      <Footer />
     </div>
   );
 }

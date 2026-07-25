@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { authorizeRoles } from '../middleware/rbac.js';
-import { getVideos, createVideo, watchVideo } from '../controllers/videoController.js';
+import { getVideos, createVideo, watchVideo, getMyWatchedVideos } from '../controllers/videoController.js';
 
 const router = Router();
 router.use(authenticate);
@@ -14,5 +14,7 @@ router.post('/', authorizeRoles('super_admin'), createVideo);
 
 // Completion action: any authenticated user
 router.post('/:id/watch', watchVideo);
+
+router.get('/me/completed', getMyWatchedVideos);
 
 export default router;

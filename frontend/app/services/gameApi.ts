@@ -1,33 +1,30 @@
-import { api } from './api';
+import { apiService } from './api';
 
 export interface Game {
-    _id: string;
-    name: string;
-    description?: string;
-    category: string;
-    difficulty: 'easy' | 'medium' | 'hard';
-    maxScore: number;
-    gameUrl: string;
-    targetRoles: string[];
-    isLocked?: boolean;
-    thumbnail?: string;
+  _id: string;
+  name: string;
+  description?: string;
+  category: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  maxScore: number;
+  gameUrl: string;
+  targetRoles: string[];
+  isLocked?: boolean;
+  thumbnail?: string;
 }
 
 export const gameApi = {
-    getAll: async (): Promise<Game[]> => {
-        const res = await api.get('/games');
-        return res.data.data;
-    },
+  getAll: async (): Promise<Game[]> => {
+    const res = await apiService.get<Game[]>('/games');
+    return res.data;
+  },
 
-    // NEW — this was missing, which is what made games/[id]/page.tsx unable
-    // to load anything (paired with the missing backend GET /:id route).
-    getById: async (id: string): Promise<Game> => {
-        const res = await api.get(`/games/${id}`);
-        return res.data.data;
-    },
+  getById: async (id: string): Promise<Game> => {
+    const res = await apiService.get<Game>(`/games/${id}`);
+    return res.data;
+  },
 
-    // NEW — reports a finished game's score to the backend.
-    saveScore: async (id: string, score: number): Promise<void> => {
-        await api.post(`/games/${id}/save-score`, { score });
-    },
+  saveScore: async (id: string, score: number): Promise<void> => {
+    await apiService.post<void>(`/games/${id}/save-score`, { score });
+  },
 };

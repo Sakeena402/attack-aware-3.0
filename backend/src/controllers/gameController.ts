@@ -22,7 +22,7 @@ export const getGameById = async (req: AuthRequest, res: Response<ApiResponse>):
       res.status(404).json({ success: false, error: 'Game not found' });
       return;
     }
-    res.json({ success: true, data: game });
+     res.json({ success: true, data: game });
   } catch (e: any) {
     res.status(404).json({ success: false, error: 'Game not found' });
   }
@@ -64,7 +64,8 @@ export const saveScore = async (req: AuthRequest, res: Response<ApiResponse>): P
     await completeLinkedTasks(userId, 'game', gameId);
 
     res.json({ success: true, data: userGame });
+
   } catch (error: any) {
-    res.status(error.statusCode || 500).json({ success: false, error: error.message });
+     res.status(error.statusCode || 500).json({ success: false, error: error.message });
   }
 };

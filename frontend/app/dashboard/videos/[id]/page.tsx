@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { getVideoById, getVideos, StaticVideo } from '@/app/data/videos.data';
 import { ArrowLeft, CheckCircle, SkipBack, SkipForward, Play, Pause } from 'lucide-react';
+import { videoApi } from '@/app/services/videoApi';
 
 const COMPLETED_KEY = 'completedVideos';
 
@@ -27,12 +28,12 @@ function markCompletedLocally(id: string) {
 }
 
 export default function VideoWatchPage() {
-  const { id }   = useParams<{ id: string }>();
-  const router   = useRouter();
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const [completed, setCompleted] = useState(false);
-  const [marking,   setMarking]   = useState(false);
+  const [marking, setMarking] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
   // Static data — instant, synchronous
@@ -49,10 +50,15 @@ export default function VideoWatchPage() {
   const handleComplete = async () => {
     if (completed || marking) return;
     setMarking(true);
-    // No backend — persist completion locally instead
-    markCompletedLocally(id);
-    setCompleted(true);
-    setMarking(false);
+    try {
+      await videoApi.markWatched(id);
+      markCompletedLocally(id); // keep local cache too, for instant UI feedback
+      setCompleted(true);
+    } catch {
+      // optional: show a saveError state like the game page does
+    } finally {
+      setMarking(false);
+    }
   };
 
   const togglePlay = () => {
@@ -101,7 +107,11 @@ export default function VideoWatchPage() {
                 src={video.filePath}
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
-                onEnded={handleComplete}
+                onEnded={() => {
+                  if (videoRef.current && videoRef.current.duration > 1) {
+                    handleComplete();
+                  }
+                }}
               />
 
               {/* Custom controls overlay */}
@@ -138,9 +148,8 @@ export default function VideoWatchPage() {
             </h1>
             <div className="flex items-center gap-3 mt-2 flex-wrap">
               <span className="text-xs text-slate-400">{video.category}</span>
-              <span className={`px-2 py-0.5 rounded-full text-xs ${
-                isUrdu ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
-              }`}>
+              <span className={`px-2 py-0.5 rounded-full text-xs ${isUrdu ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
+                }`}>
                 {isUrdu ? 'اردو' : 'English'}
               </span>
             </div>
@@ -183,13 +192,12 @@ export default function VideoWatchPage() {
                 <div
                   key={v._id}
                   onClick={() => !v.isLocked && router.push(`/dashboard/videos/${v._id}`)}
-                  className={`flex gap-3 p-2 rounded-lg transition ${
-                    v._id === id
+                  className={`flex gap-3 p-2 rounded-lg transition ${v._id === id
                       ? 'bg-purple-500/20 border border-purple-500/40'
                       : v.isLocked
-                      ? 'opacity-50 cursor-not-allowed'
-                      : 'hover:bg-slate-700/50 cursor-pointer'
-                  }`}
+                        ? 'opacity-50 cursor-not-allowed'
+                        : 'hover:bg-slate-700/50 cursor-pointer'
+                    }`}
                 >
                   {/* Thumb */}
                   <div className="relative shrink-0 w-24 h-14 bg-slate-800 rounded overflow-hidden">
