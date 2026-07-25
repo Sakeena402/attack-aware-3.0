@@ -1,4 +1,3 @@
-// frontend/app/dashboard/employees/page.tsx
 'use client';
 
 import { useState, useCallback } from 'react';
@@ -10,12 +9,13 @@ import { Modal, ConfirmDialog } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast-notification';
 import { useAuth } from '@/app/context/authContext';
 import { employeeApi } from '@/app/services/employeeApi';
+import { apiService } from '@/app/services/api';
 import type { Employee } from '@/app/services/types';
 import { StatCardSkeleton } from '@/components/ui/skeleton-loader';
 import {
   Plus, Search, Edit2, Trash2, Shield, AlertTriangle,
   CheckCircle, Download, Mail, Users, UserPlus,
-  TrendingUp, Award,
+  TrendingUp, Award, ClipboardList,
 } from 'lucide-react';
 
 const riskLevelColors = {
@@ -25,7 +25,7 @@ const riskLevelColors = {
   low:      { bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/30', icon: CheckCircle },
   very_low: { bg: 'bg-green-500/20',  text: 'text-green-400',  border: 'border-green-500/30',  icon: CheckCircle },
 };
-// phone field added in Employee interface by hifza and phone number is being sent to backend when adding target employees to campaign. This is required for smishing campaigns where we need to send SMS to employees.
+
 interface EmployeeFormData {
   name: string;
   email: string;
@@ -33,29 +33,30 @@ interface EmployeeFormData {
   department: string;
   role: string;
   riskLevel: 'very_low' | 'low' | 'moderate' | 'high' | 'critical';
-  phoneNumber: string;  // ← ADD
+  phoneNumber: string;
 }
 
-// Stable SWR key — always the same string so mutate() hits the same cache entry
 const EMPLOYEES_KEY = '/employees';
 
 export default function EmployeesPage() {
   const { state }                      = useAuth();
   const { success, error: showError }  = useToast();
 
-  const [searchTerm,        setSearchTerm]        = useState('');
-  const [filterDepartment,  setFilterDepartment]  = useState('all');
-  const [filterRisk,        setFilterRisk]        = useState('all');
-  const [isModalOpen,       setIsModalOpen]       = useState(false);
-  const [isDeleteDialogOpen,setIsDeleteDialogOpen]= useState(false);
-  const [selectedEmployee,  setSelectedEmployee]  = useState<Employee | null>(null);
-  const [isSubmitting,      setIsSubmitting]      = useState(false);
+  const [searchTerm,         setSearchTerm]         = useState('');
+  const [filterDepartment,   setFilterDepartment]   = useState('all');
+  const [filterRisk,         setFilterRisk]         = useState('all');
+  const [isModalOpen,        setIsModalOpen]        = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedEmployee,   setSelectedEmployee]   = useState<Employee | null>(null);
+  const [isSubmitting,       setIsSubmitting]       = useState(false);
+  const [isTaskModalOpen,    setIsTaskModalOpen]    = useState(false);
+  const [taskTarget,         setTaskTarget]         = useState<Employee | null>(null);
+  const [taskForm,           setTaskForm]           = useState({ title: '', description: '', dueDate: '' });
+  const [taskSubmitting,     setTaskSubmitting]     = useState(false);
   const [formData, setFormData] = useState<EmployeeFormData>({
-    name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low', phoneNumber: '',//←PH NO ADDED BY HIFZA,
-  }); 
+    name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low', phoneNumber: '',
+  });
 
-  // Single consistent fetcher — apiService already returns the unwrapped `data` field,
-  // so res.data here is already { employees: [...], pagination: {} }
   const { data: employeesResponse, isLoading } = useSWR(
     EMPLOYEES_KEY,
     () => employeeApi.getAll(
@@ -89,17 +90,17 @@ export default function EmployeesPage() {
     if (employee) {
       setSelectedEmployee(employee);
       setFormData({
-        name:       employee.name,
-        email:      employee.email,
-        password:   '',
-        department: employee.department ?? '',
-        role:       employee.role ?? 'employee',
-        riskLevel:  (employee.riskLevel as 'very_low' | 'low' | 'moderate' | 'high' | 'critical') ?? 'low',
-        phoneNumber: employee.phoneNumber ?? '',  // ←PH NO ADDED BY HIFZA
+        name:        employee.name,
+        email:       employee.email,
+        password:    '',
+        department:  employee.department ?? '',
+        role:        employee.role ?? 'employee',
+        riskLevel:   (employee.riskLevel as 'very_low' | 'low' | 'moderate' | 'high' | 'critical') ?? 'low',
+        phoneNumber: employee.phoneNumber ?? '',
       });
     } else {
       setSelectedEmployee(null);
-setFormData({ name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low',phoneNumber: '' });//←PHNOAddByHIFZA
+      setFormData({ name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low', phoneNumber: '' });
     }
     setIsModalOpen(true);
   }, []);
@@ -107,25 +108,23 @@ setFormData({ name: '', email: '', password: '', department: '', role: 'employee
   const closeModal = useCallback(() => {
     setIsModalOpen(false);
     setSelectedEmployee(null);
-    setFormData({ name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low', phoneNumber: '' });//←PHNOAddByHIFZA
+    setFormData({ name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low', phoneNumber: '' });
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     try {
       if (selectedEmployee) {
         const updateData: Partial<Employee> & { password?: string } = {
-          name:       formData.name,
-          email:      formData.email,
-          department: formData.department,
-          phoneNumber: formData.phoneNumber,  // ← ADDED BY HIFZA 
-          role:       formData.role as Employee['role'],
-          riskLevel:  formData.riskLevel,
+          name:        formData.name,
+          email:       formData.email,
+          department:  formData.department,
+          phoneNumber: formData.phoneNumber,
+          role:        formData.role as Employee['role'],
+          riskLevel:   formData.riskLevel,
         };
         if (formData.password) updateData.password = formData.password;
-
         await employeeApi.update(selectedEmployee._id, updateData);
         success('Employee Updated', `${formData.name} has been updated successfully`);
       } else {
@@ -138,7 +137,7 @@ setFormData({ name: '', email: '', password: '', department: '', role: 'employee
           name:             formData.name,
           email:            formData.email,
           password:         formData.password,
-          phoneNumber: formData.phoneNumber,  // ← ADDED BY HIFZA 
+          phoneNumber:      formData.phoneNumber,
           department:       formData.department,
           role:             formData.role as Employee['role'],
           riskLevel:        formData.riskLevel,
@@ -149,8 +148,6 @@ setFormData({ name: '', email: '', password: '', department: '', role: 'employee
         });
         success('Employee Added', `${formData.name} has been added successfully`);
       }
-
-      // Invalidate using the exact same key SWR is subscribed to
       mutate(EMPLOYEES_KEY);
       closeModal();
     } catch (err) {
@@ -163,7 +160,6 @@ setFormData({ name: '', email: '', password: '', department: '', role: 'employee
   const handleDelete = async () => {
     if (!selectedEmployee) return;
     setIsSubmitting(true);
-
     try {
       await employeeApi.delete(selectedEmployee._id);
       success('Employee Removed', `${selectedEmployee.name} has been removed`);
@@ -184,7 +180,6 @@ setFormData({ name: '', email: '', password: '', department: '', role: 'employee
 
   const handleExport = () => {
     if (!employees.length) { showError('Export Failed', 'No employees to export'); return; }
-
     const headers = ['Name', 'Email', 'Department', 'Role', 'Risk Level', 'Points', 'Training Progress'];
     const csvContent = [
       headers.join(','),
@@ -192,7 +187,6 @@ setFormData({ name: '', email: '', password: '', department: '', role: 'employee
         [e.name, e.email, e.department ?? '', e.role, e.riskLevel ?? 'low', e.points ?? 0, `${e.trainingProgress ?? 0}%`].join(',')
       ),
     ].join('\n');
-
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
@@ -201,8 +195,28 @@ setFormData({ name: '', email: '', password: '', department: '', role: 'employee
     success('Export Complete', 'Employee data exported successfully');
   };
 
-  return (
-    <div className="space-y-8">
+  async function handleAssignTask() {
+    if (!taskForm.title.trim() || !taskTarget) return;
+    setTaskSubmitting(true);
+    try {
+      await apiService.post('/tasks', {
+        title:       taskForm.title.trim(),
+        description: taskForm.description.trim(),
+        dueDate:     taskForm.dueDate || undefined,
+        assignedTo:  taskTarget._id,
+      });
+      success('Task assigned successfully!');
+      setIsTaskModalOpen(false);
+      setTaskForm({ title: '', description: '', dueDate: '' });
+      setTaskTarget(null);
+    } catch {
+      showError('Failed to assign task.');
+    } finally {
+      setTaskSubmitting(false);
+    }
+  }
+
+  return (<div className="space-y-8">
       {/* Header */}
       <motion.div
         className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
@@ -395,7 +409,14 @@ setFormData({ name: '', email: '', password: '', department: '', role: 'employee
                         </div>
                       </div>
 
+                      {/* Action Buttons */}
                       <div className="flex gap-2 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => { setTaskTarget(employee); setIsTaskModalOpen(true); }}
+                          className="flex-1 px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all"
+                        >
+                          <ClipboardList className="w-4 h-4" /> Task
+                        </button>
                         <button
                           onClick={() => openModal(employee)}
                           className="flex-1 px-3 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all"
@@ -475,18 +496,16 @@ setFormData({ name: '', email: '', password: '', department: '', role: 'employee
               minLength={6}
             />
           </div>
-        {/* comment by hifza: added phone number field in employee form */}
-         <div>
-  <label className="block text-sm font-medium text-foreground mb-2">Phone Number</label>
-  <input
-    type="tel"
-    value={formData.phoneNumber}
-    onChange={e => setFormData({ ...formData, phoneNumber: e.target.value })}
-    className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
-    placeholder="+92xxxxxxxxxx"
-  />
-</div>
-
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Phone Number</label>
+            <input
+              type="tel"
+              value={formData.phoneNumber}
+              onChange={e => setFormData({ ...formData, phoneNumber: e.target.value })}
+              className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
+              placeholder="+92xxxxxxxxxx"
+            />
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Department</label>
@@ -539,6 +558,65 @@ setFormData({ name: '', email: '', password: '', department: '', role: 'employee
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Assign Task Modal */}
+      <Modal
+        isOpen={isTaskModalOpen}
+        onClose={() => { setIsTaskModalOpen(false); setTaskForm({ title: '', description: '', dueDate: '' }); }}
+        title={`Assign Task to ${taskTarget?.name ?? ''}`}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+              Task Title *
+            </label>
+            <input
+              className="w-full bg-muted/50 border border-purple-500/20 rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 transition-colors"
+              placeholder="e.g. Complete phishing awareness quiz"
+              value={taskForm.title}
+              onChange={e => setTaskForm(f => ({ ...f, title: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+              Description
+            </label>
+            <textarea
+              className="w-full bg-muted/50 border border-purple-500/20 rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 transition-colors resize-none"
+              placeholder="Task details..."
+              rows={3}
+              value={taskForm.description}
+              onChange={e => setTaskForm(f => ({ ...f, description: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+              Due Date
+            </label>
+            <input
+              type="date"
+              className="w-full bg-muted/50 border border-purple-500/20 rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-purple-500/50 transition-colors"
+              value={taskForm.dueDate}
+              onChange={e => setTaskForm(f => ({ ...f, dueDate: e.target.value }))}
+            />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <Button
+              onClick={handleAssignTask}
+              disabled={taskSubmitting || !taskForm.title.trim()}
+              className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500"
+            >
+              {taskSubmitting ? 'Assigning...' : 'Assign Task'}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setIsTaskModalOpen(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
       </Modal>
 
       <ConfirmDialog

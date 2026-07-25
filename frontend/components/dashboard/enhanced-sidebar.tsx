@@ -55,13 +55,7 @@ const getMenuConfig = (role: string | undefined): MenuGroup[] => {
       { type: 'link',  icon: BarChart3,       label: 'Analytics',     href: '/dashboard/analytics' },
       { type: 'link',  icon: FileText,        label: 'Reports',       href: '/dashboard/reports' },
       { type: 'link',  icon: Activity,        label: 'User Activity', href: '/dashboard/user-activity' },
-      { type: 'group', icon: BookOpen,        label: 'Training',
-        children: [
-          { icon: PlayCircle,    label: 'Videos',   href: '/dashboard/training' },
-          { icon: Brain,         label: 'Quizzes',  href: '/dashboard/training?tab=quizzes' },
-          { icon: Gamepad2,      label: 'Games',    href: '/dashboard/training?tab=games' },
-        ]
-      },
+      { type: 'link', icon: BookOpen, label: 'Training', href: '/dashboard/training' },
       { type: 'group', icon: MessageCircle, label: 'Community',
         children: [
           { icon: MessageCircle, label: 'Forum',          href: '/dashboard/forum' },
