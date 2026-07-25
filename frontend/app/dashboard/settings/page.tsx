@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AccountSettings from "./AccountSettings";
 import SecuritySettings from "./SecuritySettings";
 import NotificationsSettings from "./NotificationsSettings";
 import TeamManagement from "./TeamManagement";
@@ -22,7 +21,7 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("account");
+  const [activeTab, setActiveTab] = useState("security");
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -64,7 +63,6 @@ export default function SettingsPage() {
   const isSuperAdmin = settings.role === "super_admin";
 
   const tabs = [
-    { id: "account", label: "👤 Account" },
     { id: "security", label: "🔒 Security" },
     { id: "notifications", label: "🔔 Notifications" },
     ...(isAdmin || isSuperAdmin ? [{ id: "team", label: "👥 Team" }] : []),
@@ -103,9 +101,6 @@ export default function SettingsPage() {
 
       {/* Tab Content */}
       <div className="mt-4">
-        {activeTab === "account" && (
-          <AccountSettings settings={settings} onUpdate={handleUpdate} />
-        )}
         {activeTab === "security" && (
           <SecuritySettings settings={settings} onUpdate={handleUpdate} />
         )}

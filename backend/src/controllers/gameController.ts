@@ -3,36 +3,41 @@ import { AuthRequest, ApiResponse } from '../types/index.js';
 import { Game } from '../models/Game.js';
 import { UserGame } from '../models/UserGame.js';
 import { updateUserPoints } from '../services/analyticsService.js';
+import { completeLinkedTasks } from '../services/taskService.js';
 import { AppError } from '../utils/errorHandler.js';
 
-export const getGames = async (_req: AuthRequest, res: Response<ApiResponse>) => {
+export const getGames = async (_req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
   try {
     const games = await Game.find();
     res.json({ success: true, data: games });
-  } catch (e: any) { res.status(500).json({ success: false, error: e.message }); }
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
 };
 
-export const getGameById = async (req: AuthRequest, res: Response<ApiResponse>) => {
+export const getGameById = async (req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
   try {
     const game = await Game.findById(req.params.id);
     if (!game) {
-      return res.status(404).json({ success: false, error: 'Game not found' });
+      res.status(404).json({ success: false, error: 'Game not found' });
+      return;
     }
     res.json({ success: true, data: game });
   } catch (e: any) {
-    // Malformed ObjectId also lands here — treat as 404, not 500
     res.status(404).json({ success: false, error: 'Game not found' });
   }
 };
 
-export const createGame = async (req: AuthRequest, res: Response<ApiResponse>) => {
+export const createGame = async (req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
   try {
     const game = await Game.create(req.body);
     res.status(201).json({ success: true, data: game });
-  } catch (e: any) { res.status(500).json({ success: false, error: e.message }); }
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
 };
 
-export const saveScore = async (req: AuthRequest, res: Response<ApiResponse>) => {
+export const saveScore = async (req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
   try {
     const gameId = req.params.id;
     const userId = req.user?.id;
@@ -51,10 +56,12 @@ export const saveScore = async (req: AuthRequest, res: Response<ApiResponse>) =>
     });
 
     await updateUserPoints(userId, 'game_played');
-    
+
     if (score >= game.maxScore * 0.8) {
       await updateUserPoints(userId, 'game_high_score');
     }
+
+    await completeLinkedTasks(userId, 'game', gameId);
 
     res.json({ success: true, data: userGame });
   } catch (error: any) {

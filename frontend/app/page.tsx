@@ -873,6 +873,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+
 import {
   Shield, Menu, X, ArrowRight, CheckCircle2, Lock, AlertTriangle,
   BarChart3, Users, Zap, TrendingUp, Star, Github, Linkedin, Twitter,
@@ -1313,115 +1314,40 @@ export default function LandingPage() {
       </section>
 
       {/* ───────────────── PRICING ───────────────── */}
-      <section className="py-24 px-4 bg-background" id="pricing">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <motion.div
-              variants={itemVariants}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 mb-6"
-            >
-              <Zap className="w-4 h-4 text-purple-500" />
-              <span className="text-sm text-purple-600 dark:text-purple-300 font-medium">Flexible Pricing Plans</span>
-            </motion.div>
-            <motion.h2 variants={itemVariants} className="text-4xl md:text-5xl font-bold font-poppins mb-6 text-foreground">
-              Choose Your Plan
-            </motion.h2>
-            <motion.p variants={itemVariants} className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Start free and scale as your organization grows. No credit card required.
-            </motion.p>
-          </motion.div>
-
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="grid md:grid-cols-3 gap-8"
-          >
-            {[
-              {
-                name: 'Starter', price: '$99', period: '/month',
-                description: 'Perfect for small organizations',
-                features: ['Up to 50 employees', 'Phishing simulations only', 'Basic analytics', 'Email support', 'Monthly reports'],
-                highlighted: false,
-              },
-              {
-                name: 'Professional', price: '$499', period: '/month',
-                description: 'Most popular for growing teams',
-                features: ['Up to 500 employees', 'All simulation types', 'Real-time analytics', 'Custom training modules', 'Priority support', 'Department leaderboards', 'API access'],
-                highlighted: true,
-              },
-              {
-                name: 'Enterprise', price: 'Custom', period: '',
-                description: 'For large organizations',
-                features: ['Unlimited employees', 'Advanced features', 'Dedicated account manager', 'Custom integrations', '24/7 phone support', 'White-label options', 'SLA guarantee'],
-                highlighted: false,
-              },
-            ].map((plan, idx) => (
-              <motion.div
-                key={idx}
-                variants={itemVariants}
-                whileHover={{ scale: plan.highlighted ? 1.03 : 1.01, transition: { duration: 0.2 } }}
-                className={`relative p-8 rounded-2xl transition-all ${
-                  plan.highlighted
-                    ? 'bg-gradient-to-br from-purple-600 to-blue-600 text-white shadow-2xl shadow-purple-500/25 border-0'
-                    : 'bg-card soft-border hover:border-purple-500/30 hover:border-purple-400/40 hover:shadow-lg'
-                }`}
-              >
-                {plan.highlighted && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-white text-purple-700 px-4 py-1 rounded-full text-sm font-bold shadow-md">
-                      Most Popular
-                    </span>
-                  </div>
-                )}
-
-                <h3 className={`text-2xl font-bold font-poppins mb-1 ${plan.highlighted ? 'text-white' : 'text-foreground'}`}>
-                  {plan.name}
-                </h3>
-                <p className={`text-sm mb-6 ${plan.highlighted ? 'text-white/70' : 'text-muted-foreground'}`}>
-                  {plan.description}
-                </p>
-                <div className="mb-8">
-                  <span className={`text-5xl font-bold ${plan.highlighted ? 'text-white' : 'text-foreground'}`}>
-                    {plan.price}
-                  </span>
-                  {plan.period && (
-                    <span className={`text-sm ${plan.highlighted ? 'text-white/70' : 'text-muted-foreground'}`}>
-                      {plan.period}
-                    </span>
-                  )}
-                </div>
-
-                <button
-                  className={`w-full py-3 rounded-lg font-semibold transition-all mb-8 ${
-                    plan.highlighted
-                      ? 'bg-white text-purple-700 hover:bg-white/90'
-                      : 'border border-purple-500/40 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10'
-                  }`}
-                >
-                  Get Started
-                </button>
-
-                <ul className="space-y-3">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className={`flex items-start gap-3 text-sm ${plan.highlighted ? 'text-white/90' : 'text-muted-foreground'}`}>
-                      <CheckCircle2 className={`w-5 h-5 flex-shrink-0 mt-0.5 ${plan.highlighted ? 'text-white' : 'text-purple-500'}`} />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
+      {/* ───────────────── PRICING ───────────────── */}
+<section className="py-24 px-4 bg-background" id="pricing">
+  <div className="max-w-7xl mx-auto">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true }}
+      className="text-center mb-16"
+    >
+      <motion.div
+        variants={itemVariants}
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 mb-6"
+      >
+        <Zap className="w-4 h-4 text-purple-500" />
+        <span className="text-sm text-purple-600 dark:text-purple-300 font-medium">
+          Flexible Pricing Plans
+        </span>
+      </motion.div>
+      <motion.h2
+        variants={itemVariants}
+        className="text-4xl md:text-5xl font-bold font-poppins mb-6 text-foreground"
+      >
+        Choose Your Plan
+      </motion.h2>
+      <motion.p
+        variants={itemVariants}
+        className="text-lg text-muted-foreground max-w-2xl mx-auto"
+      >
+        Start free and scale as your organization grows.
+      </motion.p>
+    </motion.div>
+  </div>
+</section>
 
       {/* ───────────────── CTA ───────────────── */}
     {/* ───────────────── CTA ───────────────── */}

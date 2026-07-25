@@ -3,9 +3,10 @@ import { AuthRequest, ApiResponse } from '../types/index.js';
 import { Video } from '../models/Video.js';
 import { UserVideo } from '../models/UserVideo.js';
 import { updateUserPoints } from '../services/analyticsService.js';
+import { completeLinkedTasks } from '../services/taskService.js';
 import { AppError } from '../utils/errorHandler.js';
 
-export const getVideos = async (req: AuthRequest, res: Response<ApiResponse>) => {
+export const getVideos = async (_req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
   try {
     const videos = await Video.find();
     res.json({ success: true, data: videos });
@@ -14,7 +15,7 @@ export const getVideos = async (req: AuthRequest, res: Response<ApiResponse>) =>
   }
 };
 
-export const createVideo = async (req: AuthRequest, res: Response<ApiResponse>) => {
+export const createVideo = async (req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
   try {
     const video = await Video.create(req.body);
     res.status(201).json({ success: true, data: video });
@@ -23,7 +24,7 @@ export const createVideo = async (req: AuthRequest, res: Response<ApiResponse>) 
   }
 };
 
-export const watchVideo = async (req: AuthRequest, res: Response<ApiResponse>) => {
+export const watchVideo = async (req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
   try {
     const videoId = req.params.id;
     const userId = req.user?.id;
@@ -36,6 +37,8 @@ export const watchVideo = async (req: AuthRequest, res: Response<ApiResponse>) =
     );
 
     await updateUserPoints(userId, 'video_completed');
+
+    await completeLinkedTasks(userId, 'video', videoId);
 
     res.json({ success: true, data: userVideo });
   } catch (error: any) {
