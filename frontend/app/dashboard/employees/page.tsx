@@ -36,6 +36,14 @@ interface EmployeeFormData {
   phoneNumber: string;
 }
 
+type TaskContentType = 'video' | 'quiz' | 'game';
+
+interface ContentOption {
+  _id: string;
+  title?: string;
+  name?: string;
+}
+
 const EMPLOYEES_KEY = '/employees';
 
 export default function EmployeesPage() {
@@ -53,6 +61,11 @@ export default function EmployeesPage() {
   const [taskTarget,         setTaskTarget]         = useState<Employee | null>(null);
   const [taskForm,           setTaskForm]           = useState({ title: '', description: '', dueDate: '' });
   const [taskSubmitting,     setTaskSubmitting]     = useState(false);
+
+  const [taskContentType, setTaskContentType] = useState<TaskContentType>('quiz');
+  const [taskContentId,   setTaskContentId]   = useState('');
+  const [taskPoints,      setTaskPoints]      = useState(10);
+
   const [formData, setFormData] = useState<EmployeeFormData>({
     name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low', phoneNumber: '',
   });
@@ -64,6 +77,15 @@ export default function EmployeesPage() {
     ),
     { revalidateOnFocus: false }
   );
+
+  const { data: videosRes }  = useSWR(isTaskModalOpen ? '/videos'  : null, () => apiService.get<ContentOption[]>('/videos'));
+  const { data: quizzesRes } = useSWR(isTaskModalOpen ? '/quizzes' : null, () => apiService.get<ContentOption[]>('/quizzes'));
+  const { data: gamesRes }   = useSWR(isTaskModalOpen ? '/games'   : null, () => apiService.get<ContentOption[]>('/games'));
+
+  const contentOptions: ContentOption[] =
+    taskContentType === 'video' ? (videosRes?.data ?? [])
+    : taskContentType === 'quiz' ? (quizzesRes?.data ?? [])
+    : (gamesRes?.data ?? []);
 
   const employees = employeesResponse?.employees ?? [];
 
@@ -195,8 +217,17 @@ export default function EmployeesPage() {
     success('Export Complete', 'Employee data exported successfully');
   };
 
+  const resetTaskModal = () => {
+    setIsTaskModalOpen(false);
+    setTaskForm({ title: '', description: '', dueDate: '' });
+    setTaskContentType('quiz');
+    setTaskContentId('');
+    setTaskPoints(10);
+    setTaskTarget(null);
+  };
+
   async function handleAssignTask() {
-    if (!taskForm.title.trim() || !taskTarget) return;
+    if (!taskForm.title.trim() || !taskTarget || !taskContentId) return;
     setTaskSubmitting(true);
     try {
       await apiService.post('/tasks', {
@@ -204,19 +235,18 @@ export default function EmployeesPage() {
         description: taskForm.description.trim(),
         dueDate:     taskForm.dueDate || undefined,
         assignedTo:  taskTarget._id,
+        contentType: taskContentType,
+        contentId:   taskContentId,
+        points:      taskPoints,
       });
       success('Task assigned successfully!');
-      setIsTaskModalOpen(false);
-      setTaskForm({ title: '', description: '', dueDate: '' });
-      setTaskTarget(null);
+      resetTaskModal();
     } catch {
       showError('Failed to assign task.');
     } finally {
       setTaskSubmitting(false);
     }
-  }
-
-  return (<div className="space-y-8">
+  }return (<div className="space-y-8">
       {/* Header */}
       <motion.div
         className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
@@ -563,7 +593,7 @@ export default function EmployeesPage() {
       {/* Assign Task Modal */}
       <Modal
         isOpen={isTaskModalOpen}
-        onClose={() => { setIsTaskModalOpen(false); setTaskForm({ title: '', description: '', dueDate: '' }); }}
+        onClose={resetTaskModal}
         title={`Assign Task to ${taskTarget?.name ?? ''}`}
       >
         <div className="space-y-4">
@@ -590,6 +620,62 @@ export default function EmployeesPage() {
               onChange={e => setTaskForm(f => ({ ...f, description: e.target.value }))}
             />
           </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+                Content Type *
+              </label>
+              <select
+                className="w-full bg-muted/50 border border-purple-500/20 rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-purple-500/50 transition-colors"
+                value={taskContentType}
+                onChange={e => {
+                  setTaskContentType(e.target.value as TaskContentType);
+                  setTaskContentId('');
+                }}
+              >
+                <option value="video">Video</option>
+                <option value="quiz">Quiz</option>
+                <option value="game">Game</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+                Points
+              </label>
+              <input
+                type="number"
+                min={1}
+                className="w-full bg-muted/50 border border-purple-500/20 rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-purple-500/50 transition-colors"
+                value={taskPoints}
+                onChange={e => setTaskPoints(Number(e.target.value) || 10)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+              Select {taskContentType === 'video' ? 'Video' : taskContentType === 'quiz' ? 'Quiz' : 'Game'} *
+            </label>
+            <select
+              className="w-full bg-muted/50 border border-purple-500/20 rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-purple-500/50 transition-colors"
+              value={taskContentId}
+              onChange={e => setTaskContentId(e.target.value)}
+            >
+              <option value="">-- Choose {taskContentType} --</option>
+              {contentOptions.map(item => (
+                <option key={item._id} value={item._id}>
+                  {item.title ?? item.name ?? item._id}
+                </option>
+              ))}
+            </select>
+            {contentOptions.length === 0 && (
+              <p className="text-xs text-muted-foreground mt-1">
+                No {taskContentType}s found.
+              </p>
+            )}
+          </div>
+
           <div>
             <label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
               Due Date
@@ -601,17 +687,18 @@ export default function EmployeesPage() {
               onChange={e => setTaskForm(f => ({ ...f, dueDate: e.target.value }))}
             />
           </div>
+
           <div className="flex gap-3 pt-2">
             <Button
               onClick={handleAssignTask}
-              disabled={taskSubmitting || !taskForm.title.trim()}
+              disabled={taskSubmitting || !taskForm.title.trim() || !taskContentId}
               className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500"
             >
               {taskSubmitting ? 'Assigning...' : 'Assign Task'}
             </Button>
             <Button
               variant="outline"
-              onClick={() => setIsTaskModalOpen(false)}
+              onClick={resetTaskModal}
             >
               Cancel
             </Button>
