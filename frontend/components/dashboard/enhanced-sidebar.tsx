@@ -47,37 +47,32 @@ const getMenuConfig = (role: string | undefined): MenuGroup[] => {
   }
 
   if (role === 'admin') {
-  return [
-    { type: 'link',  icon: LayoutDashboard, label: 'Dashboard',     href: '/dashboard' },
-    { type: 'link',  icon: Zap,             label: 'Campaigns',     href: '/dashboard/campaigns', badge: 'NEW' },
-    { type: 'link',  icon: Trophy,          label: 'Leaderboard',   href: '/dashboard/leaderboard' },
-    { type: 'link',  icon: Users,           label: 'Employees',     href: '/dashboard/employees' },
-    { type: 'link',  icon: BarChart3,       label: 'Analytics',     href: '/dashboard/analytics' },
-    { type: 'link',  icon: FileText,        label: 'Reports',       href: '/dashboard/reports' },
-    { type: 'link',  icon: Activity,        label: 'User Activity', href: '/dashboard/user-activity' },
-    { type: 'link',  icon: CheckSquare,     label: 'Task Progress', href: '/dashboard/tasks' },
-    { type: 'group', icon: BookOpen,        label: 'Training',
-      children: [
-        { icon: PlayCircle,    label: 'Videos',   href: '/dashboard/training' },
-        { icon: Brain,         label: 'Quizzes',  href: '/dashboard/training?tab=quizzes' },
-        { icon: Gamepad2,      label: 'Games',    href: '/dashboard/training?tab=games' },
-      ]
-    },
-    { type: 'group', icon: MessageCircle, label: 'Community',
-      children: [
-        { icon: MessageCircle, label: 'Forum',          href: '/dashboard/forum' },
-        { icon: Shield,        label: 'Attacks Catalog', href: '/dashboard/attacks' },
-      ]
-    },
-    { type: 'link', icon: Settings, label: 'Settings', href: '/dashboard/settings' },
-  ];
-}
+    return [
+      { type: 'link',  icon: LayoutDashboard, label: 'Dashboard',     href: '/dashboard' },
+      { type: 'link',  icon: Zap,             label: 'Campaigns',     href: '/dashboard/campaigns', badge: 'NEW' },
+      { type: 'link',  icon: Trophy,          label: 'Leaderboard',   href: '/dashboard/leaderboard' },
+      { type: 'link',  icon: Users,           label: 'Employees',     href: '/dashboard/employees' },
+      { type: 'link',  icon: BarChart3,       label: 'Analytics',     href: '/dashboard/analytics' },
+      { type: 'link',  icon: FileText,        label: 'Reports',       href: '/dashboard/reports' },
+      { type: 'link',  icon: Activity,        label: 'User Activity', href: '/dashboard/user-activity' },
+      { type: 'link',  icon: CheckSquare,     label: 'Task Progress', href: '/dashboard/tasks' },
+      { type: 'link',  icon: BookOpen,        label: 'Training',      href: '/dashboard/training' },
+      { type: 'group', icon: MessageCircle, label: 'Community',
+        children: [
+          { icon: MessageCircle, label: 'Forum',          href: '/dashboard/forum' },
+          { icon: Shield,        label: 'Attacks Catalog', href: '/dashboard/attacks' },
+        ]
+      },
+      { type: 'link', icon: Settings, label: 'Settings', href: '/dashboard/settings' },
+    ];
+  }
+
   if (role === 'employee') {
     return [
       { type: 'link',  icon: LayoutDashboard, label: 'Dashboard',   href: '/dashboard' },
       { type: 'link',  icon: Trophy,          label: 'Leaderboard', href: '/dashboard/leaderboard' },
-      { type: 'link', icon: BookOpen,   label: 'Training',    href: '/dashboard/training' },
-{ type: 'link', icon: TrendingUp, label: 'My Progress', href: '/dashboard/progress' },
+      { type: 'link',  icon: BookOpen,        label: 'Training',    href: '/dashboard/training' },
+      { type: 'link',  icon: TrendingUp,      label: 'My Progress', href: '/dashboard/progress' },
       { type: 'group', icon: MessageCircle, label: 'Community',
         children: [
           { icon: MessageCircle, label: 'Forum',           href: '/dashboard/forum' },
@@ -94,8 +89,8 @@ const getMenuConfig = (role: string | undefined): MenuGroup[] => {
     return [
       { type: 'link',  icon: LayoutDashboard, label: 'Dashboard',   href: '/dashboard' },
       { type: 'link',  icon: Trophy,          label: 'Leaderboard', href: '/dashboard/leaderboard' },
-      { type: 'link', icon: BookOpen,   label: 'Training',    href: '/dashboard/training' },
-{ type: 'link', icon: TrendingUp, label: 'My Progress', href: '/dashboard/progress' },
+      { type: 'link',  icon: BookOpen,        label: 'Training',    href: '/dashboard/training' },
+      { type: 'link',  icon: TrendingUp,      label: 'My Progress', href: '/dashboard/progress' },
       { type: 'group', icon: MessageCircle, label: 'Community',
         children: [
           { icon: MessageCircle, label: 'Forum',           href: '/dashboard/forum' },
