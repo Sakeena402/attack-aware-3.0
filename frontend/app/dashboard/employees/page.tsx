@@ -627,17 +627,17 @@ export default function EmployeesPage() {
                 Content Type *
               </label>
               <select
-                className="w-full bg-muted/50 border border-purple-500/20 rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-purple-500/50 transition-colors"
-                value={taskContentType}
-                onChange={e => {
-                  setTaskContentType(e.target.value as TaskContentType);
-                  setTaskContentId('');
-                }}
-              >
-                <option value="video">Video</option>
-                <option value="quiz">Quiz</option>
-                <option value="game">Game</option>
-              </select>
+  className="w-full bg-muted/50 border border-purple-500/20 rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-purple-500/50 transition-colors"
+  value={taskContentType}
+  onChange={e => {
+    setTaskContentType(e.target.value as TaskContentType);
+    setTaskContentId('');
+  }}
+>
+  <option value="video" style={{ color: '#000', backgroundColor: '#fff' }}>Video</option>
+  <option value="quiz" style={{ color: '#000', backgroundColor: '#fff' }}>Quiz</option>
+  <option value="game" style={{ color: '#000', backgroundColor: '#fff' }}>Game</option>
+</select>
             </div>
             <div>
               <label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
@@ -658,17 +658,23 @@ export default function EmployeesPage() {
               Select {taskContentType === 'video' ? 'Video' : taskContentType === 'quiz' ? 'Quiz' : 'Game'} *
             </label>
             <select
-              className="w-full bg-muted/50 border border-purple-500/20 rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-purple-500/50 transition-colors"
-              value={taskContentId}
-              onChange={e => setTaskContentId(e.target.value)}
-            >
-              <option value="">-- Choose {taskContentType} --</option>
-              {contentOptions.map(item => (
-                <option key={item._id} value={item._id}>
-                  {item.title ?? item.name ?? item._id}
-                </option>
-              ))}
-            </select>
+  className="w-full bg-muted/50 border border-purple-500/20 rounded-lg px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-purple-500/50 transition-colors"
+  value={taskContentId}
+  onChange={e => setTaskContentId(e.target.value)}
+>
+  <option value="" style={{ color: '#000', backgroundColor: '#fff' }}>
+    -- Choose {taskContentType} --
+  </option>
+  {contentOptions.map(item => (
+    <option
+      key={item._id}
+      value={item._id}
+      style={{ color: '#000', backgroundColor: '#fff' }}
+    >
+      {item.title ?? item.name ?? item._id}
+    </option>
+  ))}
+</select>
             {contentOptions.length === 0 && (
               <p className="text-xs text-muted-foreground mt-1">
                 No {taskContentType}s found.
