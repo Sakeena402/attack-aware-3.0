@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Shield, CheckCircle } from 'lucide-react';
+import { TRACKING_API_BASE } from '@/lib/trackingApi';
 
 export default function CaughtPage() {
   const [visible, setVisible] = useState(false);

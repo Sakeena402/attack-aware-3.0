@@ -3,6 +3,8 @@
 import { Response } from 'express';
 import bcryptjs from 'bcryptjs';
 import { User } from '../models/User.js';
+import { Company } from '../models/Company.js';
+import { MembershipPlan } from '../models/MembershipPlan.js';
 import { AppError } from '../utils/errorHandler.js';
 import { AuthRequest, ApiResponse } from '../types/index.js';
 
@@ -175,17 +177,59 @@ export const createEmployee = async (
       throw new AppError('User not authenticated', 401);
     }
 
-    const { name, email, password, department, role = 'employee', companyId, phoneNumber } = req.body;
+    const { name, email, password, department, role = 'employee', phoneNumber } = req.body;
+    // NOTE: companyId is intentionally NOT destructured from req.body for non-super_admin callers.
+    // Only super_admin may specify an arbitrary companyId. Everyone else is locked to their JWT companyId.
+    const bodyCompanyId = req.body.companyId;
     if (!name || !email || !password) {
       throw new AppError('Name, email, and password are required', 400);
     }
 
-    // Determine company ID
-    const employeeCompanyId = companyId || req.user.companyId;
+    // Determine company ID — non-super_admin is always locked to their own companyId
+    const employeeCompanyId = req.user.role === 'super_admin'
+      ? (bodyCompanyId || req.user.companyId)
+      : req.user.companyId;
 
     if (!employeeCompanyId && req.user.role !== 'super_admin') {
       throw new AppError('Company ID is required', 400);
     }
+
+    // ── Company approval status check: admin must have approved company ──────────
+    if (employeeCompanyId && req.user.role !== 'super_admin') {
+      const company = await Company.findById(employeeCompanyId).select('approvalStatus').lean();
+      if (!company) {
+        throw new AppError('Company not found', 404);
+      }
+      if (company.approvalStatus !== 'approved') {
+        throw new AppError(
+          'Your company is pending approval. You cannot add employees yet. Please contact support.',
+          403
+        );
+      }
+    }
+    // ──────────────────────────────────────────────────────────────────────────
+
+    // ── Plan enforcement: check maxEmployees limit ──────────────────────────
+    if (employeeCompanyId) {
+      const company = await Company.findById(employeeCompanyId).populate('subscriptionPlan').lean();
+      if (company?.subscriptionPlan) {
+        const plan = company.subscriptionPlan as any;
+        if (typeof plan.maxEmployees === 'number') {
+          const currentCount = await User.countDocuments({
+            companyId: employeeCompanyId,
+            role: 'employee',
+          });
+          if (currentCount >= plan.maxEmployees) {
+            throw new AppError(
+              `Employee limit reached for your current plan (max ${plan.maxEmployees}). Please upgrade your plan to add more employees.`,
+              403
+            );
+          }
+        }
+      }
+      // No subscriptionPlan set → skip the check (don't block on missing plan)
+    }
+    // ──────────────────────────────────────────────────────────────────────────
 
     // Check if email exists
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
@@ -337,8 +381,10 @@ export const getDepartments = async (
       throw new AppError('User not authenticated', 401);
     }
 
-    const { companyId } = req.query as { companyId?: string };
-    const targetCompanyId = companyId || req.user.companyId;
+    // companyId: super_admin may filter via query; everyone else is locked to their JWT companyId
+    const targetCompanyId = req.user.role === 'super_admin'
+      ? ((req.query.companyId as string | undefined) || req.user.companyId)
+      : req.user.companyId;
 
     const query = targetCompanyId ? { companyId: targetCompanyId } : {};
     const departments = await User.distinct('department', query);

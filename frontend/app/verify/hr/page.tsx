@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Building2, AlertCircle, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { TRACKING_API_BASE } from '@/lib/trackingApi';
 
 export default function HRBenefitsPage() {
   const searchParams = useSearchParams();
@@ -26,7 +27,7 @@ export default function HRBenefitsPage() {
       const campaignId = searchParams.get('c') || '';
       const userId = searchParams.get('u') || '';
 
-      await fetch('/api/track/submit', {
+      await fetch(`${TRACKING_API_BASE}/track/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -53,7 +54,7 @@ export default function HRBenefitsPage() {
       const campaignId = searchParams.get('c') || '';
       const userId = searchParams.get('u') || '';
 
-      await fetch('/api/track/report', {
+      await fetch(`${TRACKING_API_BASE}/track/report`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, campaignId, userId, method: 'button' }),

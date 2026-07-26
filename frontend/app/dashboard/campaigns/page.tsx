@@ -100,6 +100,12 @@ const smsTemplates = [
   { key: 'tax_refund', name: 'Tax Refund', description: 'Fake IRS tax refund notification' },
 ];
 
+const emailTemplates = [
+  { key: 'bank_phishing', name: 'Bank Login Verification', description: 'Fake bank security alert requiring account verification' },
+  { key: 'office365_phishing', name: 'Office 365 Verification', description: 'Fake Microsoft 365 account verification request' },
+  { key: 'hr_phishing', name: 'HR Benefits Update', description: 'Fake HR benefits enrollment deadline notice' },
+];
+
 const voiceScripts = [
   { key: 'bank_verification', name: 'Bank Verification', description: 'Fake call from financial institution' },
   { key: 'it_support', name: 'IT Support Call', description: 'Fake IT department security issue call' },
@@ -125,7 +131,7 @@ export default function CampaignsPage() {
     endDate: '',
     targetEmployees: [],
     targetDepartments: [],
-    emailTemplate: '',
+    emailTemplate: 'bank_phishing',
     smsTemplate: 'bank_alert',
     voiceScript: 'bank_verification',
     description: '',
@@ -182,7 +188,7 @@ const employees = Array.isArray(data) ? data : [];
         endDate: campaign.endDate?.split('T')[0] || '',
         targetEmployees: campaign.targetEmployees || [],
         targetDepartments: campaign.targetDepartments || [],
-        emailTemplate: campaign.emailTemplate || '',
+        emailTemplate: campaign.emailTemplate || 'bank_phishing',
         smsTemplate: campaign.smsTemplate || 'bank_alert',
         voiceScript: campaign.voiceScript || 'bank_verification',
         description: campaign.description || '',
@@ -196,7 +202,7 @@ const employees = Array.isArray(data) ? data : [];
         endDate: '',
         targetEmployees: [],
         targetDepartments: [],
-        emailTemplate: '',
+        emailTemplate: 'bank_phishing',
         smsTemplate: 'bank_alert',
         voiceScript: 'bank_verification',
         description: '',
@@ -286,30 +292,54 @@ const employees = Array.isArray(data) ? data : [];
 //hifza code 
 const toggleEmployee = (employee: Employee) => {
   setFormData(prev => {
-    const exists = prev.targetEmployees.some((e) => e._id === employee._id);
+    const exists = prev.targetEmployees?.some((e) => e._id === employee._id);
+    
+    let employeeData: any;
+    
+    if (formData.type === 'phishing') {
+      employeeData = {
+        _id: employee._id,
+        email: employee.email || ''
+      };
+    } else if (formData.type === 'smishing') {
+      employeeData = {
+        _id: employee._id,
+        phone: employee.phoneNumber || employee.phone || ''
+      };
+    } else {
+      employeeData = {
+        _id: employee._id,
+        phone: employee.phoneNumber || employee.phone || '',
+        email: employee.email || ''
+      };
+    }
+    
     return {
       ...prev,
       targetEmployees: exists
-        ? prev.targetEmployees.filter((e) => e._id !== employee._id)
-        : [...prev.targetEmployees, { 
-            _id: employee._id, 
-            phone: employee.phoneNumber || employee.phone || ''  // ← ye fix
-          }],
+        ? (prev.targetEmployees || []).filter((e) => e._id !== employee._id)
+        : [...(prev.targetEmployees || []), employeeData]
     };
   });
 };
 
 const selectAllEmployees = () => {
   if (employees) {
-    const allSelected = formData.targetEmployees.length === employees.length;
+    const allSelected = (formData.targetEmployees || []).length === employees.length;
+    
+    const mapped = employees.map(e => {
+      if (formData.type === 'phishing') {
+        return { _id: e._id, email: e.email || '' };
+      } else if (formData.type === 'smishing') {
+        return { _id: e._id, phone: e.phoneNumber || e.phone || '' };
+      } else {
+        return { _id: e._id, email: e.email || '', phone: e.phoneNumber || e.phone || '' };
+      }
+    });
+    
     setFormData(prev => ({
       ...prev,
-      targetEmployees: allSelected
-        ? []
-        : employees.map(e => ({ 
-            _id: e._id, 
-            phone: e.phoneNumber || e.phone || ''  // ← ye fix
-          })),
+      targetEmployees: allSelected ? [] : mapped
     }));
   }
 };
@@ -801,13 +831,24 @@ onChange={() => toggleEmployee(employee)}  // poora employee object pass karo
 
     {/* EMAIL TEMPLATE */}
     {formData.type === 'phishing' && (
-      <textarea
-        value={formData.emailTemplate}
-        onChange={(e) => setFormData({ ...formData, emailTemplate: e.target.value })}
-        rows={4}
-        placeholder="Email template..."
-        className="w-full px-4 py-2 border rounded-lg"
-      />
+      <div>
+        <label className="text-sm font-medium mb-2 block">Email Template</label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          {emailTemplates.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setFormData({ ...formData, emailTemplate: t.key })}
+              className={`p-3 border rounded-lg text-left ${
+                formData.emailTemplate === t.key ? 'bg-red-500/20 border-red-500/30' : ''
+              }`}
+            >
+              <p className="font-medium text-sm">{t.name}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
+            </button>
+          ))}
+        </div>
+      </div>
     )}
 
     {/* DESCRIPTION */}

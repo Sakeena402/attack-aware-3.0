@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Defeat Hacker👹</title>
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="128x128"
+      href="favicon.png"
+    />
+
+  <style>
+    @import url('https://fonts.googleapis.com/css?family=Open+Sans:400,700');
+
+body {
+  font-family: "Open Sans", sans-serif;
+  color: white;
+  text-align: center;
+  background-repeat: repeat;
+  background-size: 200px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+
+}
+.back-button {
+  position: fixed;
+  top: 10px; /* Adjust the distance from the top */
+  left: 10px; /* Adjust the distance from the left */
+  background-color: rgba(0, 0, 0, 0.7); /* Dark background for better visibility */
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: bold;
+  z-index: 10; /* Ensure it stays on top of other elements */
+  transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+  background-color: rgba(0, 0, 0, 0.9); /* Darker background on hover */
+}
+
+.game-board {
+  height: 100%;
+  position: absolute;
+  height: 100vh;
+  width: 100%;
+  display: flex;
+}
+
+/* .game-board h1 {
+  padding: 12px 10px 0 10px;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 400;
+  color: rgba(255,255,255,.6);
+  font-style: italic;
+  position: absolute;
+  top: 2%;
+  left: 25%;
+  z-index: 2;
+}
+
+h1 strong {
+  color: white;
+  font-style: normal;
+} */
+
+.game-board .title-h1 {
+  margin: 0;
+  font-weight: 400;
+  color: rgba(255,255,255,.6);
+  font-style: italic;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  z-index: 2;
+}
+
+.title-h1 h1 {
+  font-size: 2.5vh;
+  text-align: center;
+}
+
+.title-h1 h1 strong {
+  color: white;
+  font-style: normal;
+}
+
+.hacker-area,
+.player-area {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px 100px 260px 10px;
+  min-height: 235px;
+  background-repeat: repeat;
+  background-size: 200px;
+  height: 100vh;
+  width: 50vw;
+  box-sizing: border-box;
+}
+
+.player-area .card {
+  cursor: pointer;
+}
+
+.life-bar {
+  background: rgba(255,255,255,.15);
+  width: 10px;
+  height: 90px;
+  position: relative;
+}
+
+.life-left {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  background: white;
+  width: 100%;
+  height: 50%;
+  transition: height .25s ease-out;
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  min-width: 90px;
+  padding: 0 5px 0 5px;
+  border-radius: 4px;
+}
+
+.hacker-area .stats {
+  left: 0;
+}
+
+.player-area .stats {
+  right: 0;
+}
+
+.stats .thumbnail {
+  font-size: 40px;
+  line-height: 40px;
+  margin: 0 0 5px 0;
+  text-shadow: 5px 5px 0px rgba(0,0,0,.2);
+}
+
+.stats .thumbnail.ouch {
+  animation: ouch .15s linear 3;
+}
+
+.stats .name {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+.life-total {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 8px 0;
+}
+
+@keyframes ouch {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-10px);
+  }
+  75% {
+    transform: translateX(10px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.game-over button {
+  display: none;
+}
+
+button.next-turn {
+  position: fixed;
+  bottom: 40px;
+  transition: all .15s ease-out;
+  background: black;
+  display: none;
+}
+
+.during-game .next-turn {
+  display: block;
+}
+
+button.start-game {
+  position: absolute;
+  background: linear-gradient(90deg, #2a79d0, #ce3d20);
+  padding: 20px 30px;
+  display: none;
+  top: 50%;
+  left:-15%;
+}
+
+.before-game .start-game {
+  display: block;
+}
+
+button:hover {
+  transform: scale(1.03);
+}
+
+button:active {
+  transform: scale(.97);
+}
+
+.winner-section {
+  display: none;
+  position: fixed;
+  padding: 30px 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  align-items: center;
+  justify-content: center;
+  animation: winnerAppear .4s ease-out;
+}
+
+.winner-section button {
+  margin-left: 15px;
+}
+
+.winner-message {
+  color: white;
+  font-size: 22px;
+  font-weight: 700;
+  position: relative;
+  top: 1px;
+}
+
+@keyframes winnerAppear {
+  0% {
+    transform: translateY(150px);
+  }
+  60% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+button {
+  font-size: 15px;
+  line-height: 15px;
+  padding: 8px 22px 9px 22px;
+  box-sizing: border-box;
+  font-weight: 700;
+  border: solid 3px white;
+  color: white;
+  background: transparent;
+  border-radius: 30px;
+  transition: all ease-out .2s;
+  cursor: pointer;
+  outline: none;
+  animation: buttonPulse .2s infinite ease-in-out;
+}
+
+@keyframes buttonPulse {
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+button[disabled=true] {
+  opacity: 0;
+  transform: scale(.95);
+  cursor: default;
+}
+
+.card {
+  opacity: 0;
+  margin: 0 10px;
+  width: 150px;
+  height: 200px;
+  padding: 10px 15px;
+  color: black;
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: bold;
+  position: relative;
+  box-sizing: border-box;
+  text-align: left;
+  transition: all .15s ease-out;
+  box-shadow: 0px 5px 5px rgba(0,0,0,.3);
+  overflow: hidden;
+}
+
+.card:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -20%;
+  width: 140%;
+  height: 0%;
+  background: white;
+  animation: sheen infinite .5s ease-in-out;
+  display: none;
+  transform: rotate(-7deg);
+}
+
+.game-board:not(.card-selected) .player-card:hover:after {
+  display: block;
+  animation: sheen .35s linear 1;
+}
+
+@keyframes sheen {
+  0% {
+    top: -10%;
+    height: 0%;
+    opacity: 0;
+  }
+  25% {
+    top: -10%;
+    height: 20%;
+    opacity: .2;
+  }
+  50% {
+    top: 20%;
+    height: 50%;
+    opacity: .3;
+  }
+  75% {
+    top: 110%;
+    height: 20%;
+    opacity: .2;
+  }
+  100% {
+    top: 110%;
+    height: 0%;
+    opacity: 0;
+  }
+}
+
+.card.prepared {
+  display: block;
+  opacity: 0;
+}
+
+.card.showCard {
+  opacity: 1;
+}
+
+.hacker-card.showCard {
+  animation: hackerShowCard .5s ease-out;
+}
+
+/* When the hacker card appears */
+@keyframes hackerShowCard {
+  0%   { transform: translateY(-25px); opacity: .5; }
+  60%  { transform: translateY(5px); }
+  100% { transform: translateY(0px); }
+}
+
+.player-card.showCard {
+  animation: playerShowCard .5s ease-out;
+}
+
+/* When the player card appears */
+@keyframes playerShowCard {
+  0%   { transform: translateY(25px); opacity: .5; }
+  60%  { transform: translateY(-5px); }
+  100% { transform: translateY(0px); }
+}
+
+.card.tie-card {
+  transform: translateY(0px) !important;
+}
+
+.card.worse-card {
+  background: #888;
+}
+
+.hacker-card.better-card {
+  transform: scale(1.03);
+}
+
+.hacker-card.worse-card {
+  transform: scale(.90) translateY(-25px) rotate(3deg);
+}
+
+
+.game-board:not(.card-selected) .player-area .card:not(.played-card):hover {
+  transform: translateY(-10px);
+  box-shadow: 0px 15px 15px rgba(0,0,0,.3);
+}
+
+.player-card.played-card {
+  transform: translateY(-40px);
+  box-shadow: 0px 15px 15px rgba(0,0,0,.3);
+}
+
+.player-card.worse-card {
+  transform: translateY(10px) rotate(3deg) !important;
+  box-shadow: 0px 5px 5px rgba(0,0,0,.3);
+}
+
+.player-card.better-card {
+  transform: scale(1.03) translateY(-60px);
+}
+
+
+/* Shows a checkmark on the better card */
+
+.card.better-card:before,
+.card.worse-card:before {
+  font-size: 30px;
+  position: absolute;
+  bottom: 18px;
+  right: 20px;
+  color: rgba(0,0,0,.3);
+  display: block;
+}
+
+.card.better-card:before {
+  content: "\2713";
+}
+
+.card.worse-card:before {
+  content: "\2717";
+}
+
+.card .power {
+  font-size: 30px;
+  position: absolute;
+  bottom: 12px;
+  line-height: 30px;
+  left: 10px;
+  width: 30px;
+  height: 30px;
+  text-align: center;
+  border-radius: 50%;
+  color: rgba(0,0,0,0);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.card.reveal-power .power {
+  color: black;
+  animation: showPower .2s ease-out;
+  background: none;
+}
+
+
+@keyframes showPower {
+  0% {
+    background: none;
+    transform: scaleX(1);
+    color: rgba(0,0,0,0);
+  }
+  49% {
+    color: rgba(0,0,0,0);
+    transform: scaleX(0);
+  }
+  51% {
+    background: none;
+    color: black;
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+.hacker-area .thumbnail {
+  position: absolute;
+  left: 0;
+  bottom: -10px;
+}
+
+.hacker-area .thumbnail img {
+  height: 50vh;
+}
+
+.player-area .thumbnail {
+  position: absolute;
+  right: 0;
+  bottom: -10px;
+}
+
+.player-area .thumbnail img {
+  height: 50vh;
+}
+
+
+
+.player-color {
+  background-color: #2a79d0;
+}
+
+.player-area {
+  background: linear-gradient(0deg, #2a79d0, #000);
+}
+
+.player-card .power {
+  background-image: url(images/shield.svg);
+}
+
+/* Hacker Styles */
+
+.hacker-color {
+  background-color: #ce3d20;
+}
+
+.hacker-area {
+  background: linear-gradient(0deg, #ce3d20, #000);
+}
+
+.hacker-card .power {
+  background-image: url(images/skull.svg);
+}
+
+  </style>  
+  </head>
+
+  <body>
+    <a href="medium_game.html" class="back-button">Back</a>
+
+    <div class="game-board">
+      <div class="title-h1">
+        <h1>
+          <strong>Hacker's attack Cards</strong> <br />
+          Choose the best card to stop the hackers' attack
+        </h1>
+      </div>
+      <div class="hacker-area">
+        <div class="stats hacker-stats">
+          <div class="life-bar">
+            <div class="life-left hacker-color"></div>
+          </div>
+          <div class="life-total"></div>
+          <div class="thumbnail">
+            <img src="1.png" alt="hacker" />
+          </div>
+          <div class="name">Hacker</div>
+        </div>
+
+        <div class="card hacker-card hacker-color">
+          <div class="text"></div>
+          <div class="power"></div>
+        </div>
+      </div>
+
+      <div class="player-area">
+        <div class="stats player-stats">
+          <div class="life-bar">
+            <div class="life-left player-color"></div>
+          </div>
+          <div class="life-total"></div>
+          <!-- Change the name and emoji here -->
+          <div class="thumbnail">
+            <img src="2.png" alt="hacker" />
+          </div>
+          <div class="name">You</div>
+        </div>
+
+        <div class="card player-card player-color">
+          <div class="text"></div>
+          <div class="power"></div>
+        </div>
+
+        <div class="card player-card player-color">
+          <div class="text"></div>
+          <div class="power"></div>
+        </div>
+
+        <div class="card player-card player-color">
+          <div class="text"></div>
+          <div class="power"></div>
+        </div>
+
+        <button class="start-game" onClick="startGame()">Play the Game!</button>
+        <button class="next-turn" onClick="playTurn()">Next!</button>
+      </div>
+    </div>
+
+    <div class="winner-section">
+      <div>
+        <span class="winner-message">You got hacked!</span>
+        <button class="restart" onClick="location.reload()">Play Again</button>
+       
+      </div>
+    </div>
+<script>
+  // You can add new scenarios, but make sure that there is exactly...
+// * 1 hackerCard per scenario
+// * 3 playerCards per scenario
+
+var scenarios = [
+  {
+    hackerCard : {
+      description : "I set up a fake Wi-Fi station to steal people’s email and track them online.",
+      power : 4,
+    },
+    playerCards : [
+      {
+        description : "I never use public wifi networks.",
+        power : 5,
+      },
+      {
+        description : "I browse the web, but I never do any personal business on a public wifi network.",
+        power : 3,
+      },
+      {
+        description : "I connect to any wifi network I can use in public.",
+        power : 1,
+      }
+    ]
+  },
+  {
+    hackerCard : {
+      description : "I sent a fake email from your bank asking for your account details.",
+      power : 3,
+    },
+    playerCards : [
+      {
+        description : "I checked the email address - the message didn’t come from my bank.",
+        power : 5,
+      },
+      {
+        description : "I never give out personal information in response to an email.",
+        power : 4,
+      },
+      {
+        description : "I sent the details you asked for so you could check on my account.",
+        power : 1,
+      }
+    ]
+  },
+  {
+    hackerCard : {
+      description : "I figured out where you live from all the personal information you share on social media.",
+      power : 3,
+    },
+    playerCards : [
+      {
+        description : "I never share personal information on my social media accounts.",
+        power : 5,
+      },
+      {
+        description : "I keep my accounts private so only my friends can see them.",
+        power : 4,
+      },
+      {
+        description : "I tag everything so my friends always know what I’m doing.",
+        power : 1,
+      }
+    ]
+  },
+  {
+    hackerCard : {
+      description : "I watched you type your password and hacked your account.",
+      power : 2,
+    },
+    playerCards : [
+      {
+        description : "I use different passwords for all of my other accounts.",
+        power : 4,
+      },
+      {
+        description : "I changed my password on all of my accounts because they are the same.",
+        power : 2,
+      },
+      {
+        description : "I deleted that account and started a new one. ",
+        power : 1,
+      }
+    ]
+  },
+  {
+    hackerCard : {
+      description : "I looked at your browsing history on your phone to see what you do online.",
+      power : 2,
+    },
+    playerCards : [
+      {
+        description : "I always use a private browser that never keeps my history.",
+        power : 4,
+      },
+      {
+        description : "I set my browser to delete my history every time I quit. ",
+        power : 3,
+      },
+      {
+        description : "I never clear my browser history because I don’t like typing in big web addresses.",
+        power : 1,
+      }
+    ]
+  }, 
+
+  {
+    hackerCard : {
+      description : "I hacked your system and all your data is deleted now.",
+      power : 2,
+    },
+    playerCards : [
+      {
+        description : "I follow the 3-2-1 backup rule. I have on-site as well as off-site location (cloud storage) backup.",
+        power : 4,
+      },
+      {
+        description : "I have my data backed up in local and external hard drive.",
+        power : 3,
+      },
+      {
+        description : "I never backed up my data in any way.",
+        power : 1,
+      }
+    ]
+  }, 
+
+  {
+    hackerCard : {
+      description : "I provided you my USB for content transfer.",
+      power : 2,
+    },
+    playerCards : [
+      {
+        description : "I use Anti-Virus Protection & Firewall to protect my system.",
+        power : 4,
+      },
+      {
+        description : "I refused to use your USB as my system was not having Anti-Virus Protection & Firewall.",
+        power : 3,
+      },
+      {
+        description : "I used your USB as I am not afraid of my system getting corrupted.",
+        power : 1,
+      }
+    ]
+  },
+  {
+    hackerCard : {
+      description : "I gained access to your webcam and recorded your activities.",
+      power : 3,
+    },
+    playerCards : [
+      {
+        description : "I always cover my webcam with a sticker or a physical cover when not in use.",
+        power : 5,
+      },
+      {
+        description : "I regularly check for any unauthorized access to my webcam through system monitoring tools.",
+        power : 4,
+      },
+      {
+        description : "I don't worry about my webcam as I rarely use it.",
+        power : 2,
+      }
+    ]
+  },
+  {
+    hackerCard : {
+      description : "I intercepted your sensitive data while it was being transmitted over an unsecured connection.",
+      power : 4,
+    },
+    playerCards : [
+      {
+        description : "I always use encrypted connections (HTTPS) when transmitting sensitive information.",
+        power : 5,
+      },
+      {
+        description : "I utilize a Virtual Private Network (VPN) to secure my internet connection, especially on public networks.",
+        power : 4,
+      },
+      {
+        description : "I never bother with encryption or secure connections because it slows down my browsing speed.",
+        power : 2,
+      }
+    ]
+  },
+  {
+    hackerCard : {
+      description : "I gained access to your online accounts through phishing attacks.",
+      power : 3,
+    },
+    playerCards : [
+      {
+        description : "I always verify the legitimacy of links and emails before clicking on them, especially if they ask for login credentials.",
+        power : 5,
+      },
+      {
+        description : "I use two-factor authentication (2FA) wherever possible to add an extra layer of security to my accounts.",
+        power : 4,
+      },
+      {
+        description : "I tend to click on links and provide my login details without much thought.",
+        power : 2,
+      }
+    ]
+  },
+  {
+    hackerCard : {
+      description : "I infected your system with malware through a malicious download.",
+      power : 4,
+    },
+    playerCards : [
+      {
+        description : "I always download software from official sources and scan them with antivirus programs before installation.",
+        power : 5,
+      },
+      {
+        description : "I regularly update my antivirus and run full system scans to detect and remove any malware.",
+        power : 4,
+      },
+      {
+        description : "I download software from questionable sources without considering the risks.",
+        power : 2,
+      }
+    ]
+  },
+  {
+    hackerCard : {
+      description : "I gained access to your email and contacts list and sent out spam or phishing emails from your account.",
+      power : 3,
+    },
+    playerCards : [
+      {
+        description : "I use strong, unique passwords for all my accounts, including email, to prevent unauthorized access.",
+        power : 5,
+      },
+      {
+        description : "I regularly review and revoke access permissions for third-party apps connected to my email account.",
+        power : 4,
+      },
+      {
+        description : "I reuse passwords across multiple accounts, making it easier for hackers to gain access.",
+        power : 2,
+      }
+    ]
+  },
+  
+  {
+    hackerCard : {
+      description : "I will crash your vulnerable system using ransomware attacks, malware and data breaches.",
+      power : 2,
+    },
+    playerCards : [
+      {
+        description : "You can't because I have turned on Automatic Updates for my operating system.",
+        power : 4,
+      },
+      {
+        description : "I use web browsers such as Chrome or Firefox that receive frequent, automatic security updates.",
+        power : 3,
+      },
+      {
+        description : "I don't update my softwares nor do I download security updates.",
+        power : 1,
+      }
+    ]
+  }
+];
+
+
+var audioObj = new Audio("sound.mp3");
+// Set starting life totals here
+var playerLife = 5;
+var hackerLife = 5;
+
+// Message when the game is over
+var hackerWinnerMessage = "Game over: You got hacked!";
+var playerWinnerMessage = "You defeated the hacker!";
+
+
+// Game code starts here
+var playerStartLife = parseInt(playerLife);
+var hackerStartLife = parseInt(hackerLife);
+
+var roundFinished = false;
+var cardSelected = false;
+
+updateScores();
+
+document.querySelector(".game-board").classList.add("before-game");
+
+var allCardElements = document.querySelectorAll(".card");
+
+// Adds click handler to all player card elements
+for(var i = 0; i < allCardElements.length; i++) {
+  var card = allCardElements[i];
+  if(card.classList.contains("player-card")) {
+    card.addEventListener("click",function(e){
+      cardClicked(this);
+    });
+  }
+}
+
+
+// When a card is clicked
+function cardClicked(cardEl) {
+
+  if(cardSelected) { return; }
+  cardSelected = true;
+
+  cardEl.classList.add("played-card");
+
+  document.querySelector(".game-board").classList.add("card-selected");
+
+  // Wait 500ms to reveal the hacker power
+  setTimeout(function(){
+    revealHackerPower();
+  },500)
+
+  // Wait 750ms to reveal the player power
+  setTimeout(function(){
+    revealPlayerPower();
+  },800)
+
+  // Wait 1250ms to compare the card scoers
+  setTimeout(function(){
+    compareCards();
+  }, 1400);
+}
+
+// Shows the power level on the player card
+function revealPlayerPower(){
+  var playerCard = document.querySelector(".played-card");
+  playerCard.classList.add("reveal-power");
+}
+
+// Shows the power level on the hacker card
+function revealHackerPower(){
+  var hackerCard = document.querySelector(".hacker-card");
+  hackerCard.classList.add("reveal-power");
+}
+
+function compareCards(){
+  var playerCard = document.querySelector(".played-card");
+  var playerPowerEl = playerCard.querySelector(".power");
+
+  var hackerCard = document.querySelector(".hacker-card");
+  var hackerPowerEl = hackerCard.querySelector(".power");
+
+  var playerPower = parseInt(playerPowerEl.innerHTML);
+  var hackerPower = parseInt(hackerPowerEl.innerHTML);
+
+  var powerDifference = playerPower - hackerPower;
+
+  if (powerDifference < 0) {
+    // Player Loses
+    playerLife = playerLife + powerDifference;
+    hackerCard.classList.add("better-card");
+    playerCard.classList.add("worse-card");
+    document.querySelector(".player-stats .thumbnail").classList.add("ouch");
+  } else if (powerDifference > 0) {
+    // Player Wins
+    hackerLife = hackerLife - powerDifference;
+    playerCard.classList.add("better-card");
+    hackerCard.classList.add("worse-card");
+    document.querySelector(".hacker-stats .thumbnail").classList.add("ouch");
+  } else {
+    playerCard.classList.add("tie-card");
+    hackerCard.classList.add("tie-card");
+  }
+
+  updateScores();
+
+  if(playerLife <= 0) {
+    gameOver("Hacker");
+  } else if (hackerLife <= 0){
+    gameOver("Player")
+  }
+
+  roundFinished = true;
+
+  document.querySelector("button.next-turn").removeAttribute("disabled");
+}
+
+// Shows the winner message
+function gameOver(winner) {
+  audioObj.pause();
+  document.querySelector(".game-board").classList.add("game-over");
+  document.querySelector(".winner-section").style.display = "flex";
+  document.querySelector(".winner-section").classList.remove("player-color");
+  document.querySelector(".winner-section").classList.remove("hacker-color");
+
+  if(winner == "Hacker") {
+    let evilAudio = new Audio("evil-laugh.mp3");
+    evilAudio.play();
+    document.querySelector(".winner-message").innerHTML = hackerWinnerMessage;
+    document.querySelector(".winner-section").classList.add("hacker-color");
+  } else {
+    let ohNoAudio = new Audio("Oh-no-sound-effect.mp3");
+    ohNoAudio.play();
+    document.querySelector(".winner-message").innerHTML = playerWinnerMessage;
+    document.querySelector(".winner-section").classList.add("player-color");
+  }
+}
+
+
+// Starts the game
+function startGame() {
+  audioObj.loop = true;
+  audioObj.addEventListener("canplaythrough", event => {
+    /* the audio is now playable; play it if permissions allow */
+    myAudioElement.play();
+  });
+  audioObj.play();
+  document.querySelector(".game-board").classList.remove("before-game");
+  document.querySelector(".game-board").classList.add("during-game");
+  playTurn();
+}
+
+
+// Start the game over from scratch
+function restartGame(){
+  document.querySelector(".game-board").classList.remove("game-over");
+  document.querySelector(".game-board").classList.remove("during-game");
+  document.querySelector(".game-board").classList.add("before-game");
+
+  document.querySelector(".winner-section").style.display = "none";
+  document.querySelector(".hacker-card").style.display = "none";
+
+  var cards = allCardElements;
+
+  document.querySelector("button").removeAttribute("disabled");
+
+  for(var i = 0; i < cards.length; i++) {
+    cards[i].style.display = "none";
+  }
+
+  playerLife = playerStartLife;
+  hackerLife = hackerStartLife;
+
+  roundFinished = true;
+  cardSelected = false;
+
+  updateScores();
+}
+
+// Updates the displayed life bar and life totals
+function updateScores(){
+
+  // Update life totals for each player
+  document.querySelector(".player-stats .life-total").innerHTML = playerLife;
+  document.querySelector(".hacker-stats .life-total").innerHTML = hackerLife;
+
+  // Update the player lifebar
+  var playerPercent = playerLife / playerStartLife * 100;
+  if (playerPercent < 0) {
+    playerPercent = 0;
+  }
+  document.querySelector(".player-stats .life-left").style.height =  playerPercent + "%";
+
+  // Update the hacker lifebar
+  var hackerPercent = hackerLife / hackerStartLife * 100
+  if (hackerPercent < 0) {
+    hackerPercent = 0;
+  }
+  document.querySelector(".hacker-stats .life-left").style.height =  hackerPercent + "%";
+}
+
+
+// Shuffles an array
+function shuffleArray(a) {
+  var j, x, i;
+  for (i = a.length; i; i--) {
+    j = Math.floor(Math.random() * i);
+    x = a[i - 1];
+    a[i - 1] = a[j];
+    a[j] = x;
+  }
+  return a;
+}
+
+
+// Plays one turn of the game
+function playTurn() {
+
+  roundFinished = true;
+  cardSelected = false;
+
+  document.querySelector(".game-board").classList.remove("card-selected");
+
+  // Remove "ouch" class from player and hacker thumbnails
+  document.querySelector(".hacker-stats .thumbnail").classList.remove("ouch");
+  document.querySelector(".player-stats .thumbnail").classList.remove("ouch");
+
+  // Hides the "next turn" button, will show again when turn is over
+  document.querySelector(".next-turn").setAttribute("disabled", "true");
+
+  for(var i = 0; i < allCardElements.length; i++) {
+    var card = allCardElements[i];
+    card.classList.remove("showCard");
+  }
+
+  setTimeout(function(){
+    revealCards();
+  }, 500);
+}
+
+function revealCards(){
+
+
+  var j = 0;
+  var cardIndexes = shuffleArray([0, 1, 2]);
+
+  // Get scenario cards
+  console.log("scenarios.length == " + scenarios.length);
+
+  var randomScenarioIndex = Math.floor(Math.random() * scenarios.length);
+  var scenario = scenarios[randomScenarioIndex];
+  console.log(scenario.hackerCard.description);
+
+  scenarios.splice(randomScenarioIndex, 1);
+
+  console.log("scenarios.length after splice == " + scenarios.length);
+
+  var hackerCard = scenario.hackerCard;
+  var hackerCardEl = document.querySelector(".hacker-area .card");
+
+  // Contents of the player cards
+  var playerCards = scenario.playerCards;
+
+  for(var i = 0; i < allCardElements.length; i++) {
+    var card = allCardElements[i];
+
+    card.classList.remove("worse-card");
+    card.classList.remove("better-card");
+    card.classList.remove("played-card");
+    card.classList.remove("tie-card");
+    card.classList.remove("prepared");
+    card.classList.remove("reveal-power");
+
+    // Display the payer card details
+    if(card.classList.contains("player-card")) {
+      card.querySelector(".text").innerHTML = playerCards[cardIndexes[j]].description;
+      card.querySelector(".power").innerHTML = playerCards[cardIndexes[j]].power;
+      j++;
+    }
+
+    // Reveal each card one by one with a delay of 100ms
+    setTimeout(function(card, j){
+      return function() {
+        card.classList.remove("prepared");
+        card.style.display = "block";
+        card.classList.add("showCard");
+      }
+    }(card,i), parseInt(i+1) * 200);
+  }
+
+  // Display the hacker card
+  hackerCardEl.querySelector(".text").innerHTML = hackerCard.description;
+  hackerCardEl.querySelector(".power").innerHTML = hackerCard.power;
+}
+
+</script>
+   
+  </body>
+</html>

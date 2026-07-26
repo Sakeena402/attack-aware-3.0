@@ -1,0 +1,291 @@
+// All 26 videos from AttackAware 2.0 — hardcoded, no DB needed
+// English: 13 videos | Urdu: 13 videos
+
+export interface StaticVideo {
+  _id: string;
+  title: string;
+  category: string;
+  language: 'en' | 'ur';
+  filePath: string;     // path after /videos/ in your public folder
+  thumbnail: string;    // same
+  isLocked: boolean;
+  isCompleted: boolean;
+}
+
+export const STATIC_VIDEOS: StaticVideo[] = [
+  // ── English Videos ──────────────────────────────────────────────────────
+  {
+    _id: 'en-1',
+    title: 'How to protect yourself from fake website scams',
+    category: 'Phishing Awareness',
+    language: 'en',
+    filePath: '/videos/v1/How-to-protect-data-from-hacker-fake-trick-English.mp4',
+    thumbnail: '/videos/v1/phising attack.jpg',
+    isLocked: false,
+    isCompleted: false,
+  },
+  {
+    _id: 'en-2',
+    title: 'How to be aware of fake email or messages',
+    category: 'Phishing Awareness',
+    language: 'en',
+    filePath: '/videos/v1/How to be aware of fake email or messages - English.mp4',
+    thumbnail: '/videos/v1/fake web scam.jpg',
+    isLocked: false,
+    isCompleted: false,
+  },
+  {
+    _id: 'en-3',
+    title: 'How to create a strong password',
+    category: 'Password Security',
+    language: 'en',
+    filePath: '/videos/v1/How to create strong password - English.mp4',
+    thumbnail: '/videos/v1/strong pass 1.jfif',
+    isLocked: false,
+    isCompleted: false,
+  },
+  {
+    _id: 'en-4',
+    title: 'Learn how to secure WhatsApp',
+    category: 'Mobile Security',
+    language: 'en',
+    filePath: '/videos/v1/Learn how to secure whatsapp(english).mp4',
+    thumbnail: '/videos/v1/web.jpg',
+    isLocked: false,
+    isCompleted: false,
+  },
+  {
+    _id: 'en-5',
+    title: 'How to keep your files safe from hackers',
+    category: 'Ransomware',
+    language: 'en',
+    filePath: '/videos/v1/-THE RANSOMWARE ATTACK-.mp4',
+    thumbnail: '/videos/v1/security_img.png',
+    isLocked: false,
+    isCompleted: false,
+  },
+  {
+    _id: 'en-6',
+    title: 'Online Purchase Scam',
+    category: 'Online Scams',
+    language: 'en',
+    filePath: '/videos/v1/Online Purchase Scam (eng).mp4',
+    thumbnail: '/videos/v1/online job.jpeg',
+    isLocked: false,
+    isCompleted: false,
+  },
+  {
+    _id: 'en-7',
+    title: 'Phishing Attack',
+    category: 'Phishing Awareness',
+    language: 'en',
+    filePath: '/videos/v1/phising attack.mp4',
+    thumbnail: '/videos/v1/ps.jfif',
+    isLocked: false,
+    isCompleted: false,
+  },
+  {
+    _id: 'en-8',
+    title: 'Ransomware: How Hackers Lock Your Files',
+    category: 'Ransomware',
+    language: 'en',
+    filePath: '/videos/v1/ransomware 2E.mp4',
+    thumbnail: '/videos/v1/ran.jpg',
+    isLocked: false,
+    isCompleted: false,
+  },
+  {
+    _id: 'en-9',
+    title: 'Why is it important to create strong passwords?',
+    category: 'Password Security',
+    language: 'en',
+    filePath: '/videos/v1/Strong Password(Eng).mp4',
+    thumbnail: '/videos/v1/strong pass 2.jpg',
+    isLocked: false,
+    isCompleted: false,
+  },
+  {
+    _id: 'en-10',
+    title: 'Scammers Pretending as Officials',
+    category: 'Online Scams',
+    language: 'en',
+    filePath: '/videos/v2/Impersonation of Officials (eng).mp4',
+    thumbnail: '/videos/v2/scammer.avif',
+    isLocked: true,
+    isCompleted: false,
+  },
+  {
+    _id: 'en-11',
+    title: 'Beware of Fake Apps: How Hackers Steal Your Data',
+    category: 'Mobile Security',
+    language: 'en',
+    filePath: '/videos/v2/Malicious Mobile App (eng).mp4',
+    thumbnail: '/videos/v2/malicious mob app.jpeg',
+    isLocked: true,
+    isCompleted: false,
+  },
+  {
+    _id: 'en-12',
+    title: 'Never Share Your One-Time Password',
+    category: 'Online Scams',
+    language: 'en',
+    filePath: '/videos/v2/OTP Scam (eng).mp4',
+    thumbnail: '/videos/v2/OTP scam.webp',
+    isLocked: true,
+    isCompleted: false,
+  },
+  {
+    _id: 'en-13',
+    title: 'Think Before You Connect: Public WiFi Risks',
+    category: 'WiFi Security',
+    language: 'en',
+    filePath: '/videos/v2/wifi snooping (eng).mp4',
+    thumbnail: '/videos/v2/WiFi-Spoofing.jpg',
+    isLocked: true,
+    isCompleted: false,
+  },
+
+  // ── Urdu Videos ─────────────────────────────────────────────────────────
+  {
+    _id: 'ur-1',
+    title: 'جعلی ویب سائٹ کے دھوکے سے اپنے آپ کو کیسے بچایا جائے',
+    category: 'Phishing Awareness',
+    language: 'ur',
+    filePath: '/videos/v1/How to protect data from hacker fake trick - Urdu.mp4',
+    thumbnail: '/videos/v1/phising attack.jpg',
+    isLocked: false,
+    isCompleted: false,
+  },
+  {
+    _id: 'ur-2',
+    title: 'ای میلز یا پیغامات سے کیسے آگاہ رہیں',
+    category: 'Phishing Awareness',
+    language: 'ur',
+    filePath: '/videos/v1/How to be aware of fake email or messages - Urdu.mp4',
+    thumbnail: '/videos/v1/fake web scam.jpg',
+    isLocked: false,
+    isCompleted: false,
+  },
+  {
+    _id: 'ur-3',
+    title: 'محفوظ پاس ورڈ کیسے بنایا جائے',
+    category: 'Password Security',
+    language: 'ur',
+    filePath: '/videos/v1/How to create strong password - urdu.mp4',
+    thumbnail: '/videos/v1/strong pass 1.jfif',
+    isLocked: false,
+    isCompleted: false,
+  },
+  {
+    _id: 'ur-4',
+    title: 'واٹس ایپ کو کیسے محفوظ کیا جائے',
+    category: 'Mobile Security',
+    language: 'ur',
+    filePath: '/videos/v1/Learh how to secure whatsapp(urdu).mp4',
+    thumbnail: '/videos/v1/web.jpg',
+    isLocked: false,
+    isCompleted: false,
+  },
+  {
+    _id: 'ur-5',
+    title: 'اپنی فائلوں کو ہیکرز سے کیسے محفوظ رکھیں',
+    category: 'Ransomware',
+    language: 'ur',
+    filePath: '/videos/v1/ransomware 2u.mp4',
+    thumbnail: '/videos/v1/security_img.png',
+    isLocked: false,
+    isCompleted: false,
+  },
+  {
+    _id: 'ur-6',
+    title: 'آن لائن خریداری کے دھوکے سے بچاؤ',
+    category: 'Online Scams',
+    language: 'ur',
+    filePath: '/videos/v1/Online Purchase Scam (urdu).mp4',
+    thumbnail: '/videos/v1/online purchase.jpg',
+    isLocked: false,
+    isCompleted: false,
+  },
+  {
+    _id: 'ur-7',
+    title: 'کمپیوٹر فائل لاکنگ سے بچاؤ',
+    category: 'Ransomware',
+    language: 'ur',
+    filePath: '/videos/v1/ransomware urdu.mp4',
+    thumbnail: '/videos/v1/ran.jpg',
+    isLocked: false,
+    isCompleted: false,
+  },
+  {
+    _id: 'ur-8',
+    title: 'مضبوط پاس ورڈز بنانا کیوں ضروری ہے؟',
+    category: 'Password Security',
+    language: 'ur',
+    filePath: '/videos/v1/Strong Password(urdu).mp4',
+    thumbnail: '/videos/v1/strong pass 2.jpg',
+    isLocked: false,
+    isCompleted: false,
+  },
+  {
+    _id: 'ur-9',
+    title: 'ہیکرز کو اپنے ڈیوائس تک رسائی سے کیسے روکا جائے',
+    category: 'Mobile Security',
+    language: 'ur',
+    filePath: '/videos/v1/how to prevent hackers to access your device(urdu).mp4',
+    thumbnail: '/videos/v1/org.jfif',
+    isLocked: false,
+    isCompleted: false,
+  },
+  {
+    _id: 'ur-10',
+    title: 'فراڈ لوگ اصلی اداروں کے نمائندے بن کر آپ کو دھوکہ دیتے ہیں',
+    category: 'Online Scams',
+    language: 'ur',
+    filePath: '/videos/v2/Impersonation of Officials (urdu).mp4',
+    thumbnail: '/videos/v2/scammer.avif',
+    isLocked: true,
+    isCompleted: false,
+  },
+  {
+    _id: 'ur-11',
+    title: 'OTP کبھی شیئر نہ کریں',
+    category: 'Online Scams',
+    language: 'ur',
+    filePath: '/videos/v2/OTP Scam (urdu).mp4',
+    thumbnail: '/videos/v2/OTP scam.webp',
+    isLocked: true,
+    isCompleted: false,
+  },
+  {
+    _id: 'ur-12',
+    title: 'جعلی موبائل ایپس سے بچاؤ',
+    category: 'Mobile Security',
+    language: 'ur',
+    filePath: '/videos/v2/mobile app urdu.mp4',
+    thumbnail: '/videos/v2/malicious mob app.jpeg',
+    isLocked: true,
+    isCompleted: false,
+  },
+  {
+    _id: 'ur-13',
+    title: 'پبلک وائی فائی ہمیشہ محفوظ نہیں ہوتا',
+    category: 'WiFi Security',
+    language: 'ur',
+    filePath: '/videos/v2/wifi snooping (Urdu).mp4',
+    thumbnail: '/videos/v2/WiFi-Spoofing.jpg',
+    isLocked: true,
+    isCompleted: false,
+  },
+];
+
+// Helper to filter by language and category
+export function getVideos(language?: 'en' | 'ur', category?: string): StaticVideo[] {
+  let result = STATIC_VIDEOS;
+  if (language)            result = result.filter(v => v.language === language);
+  if (category && category !== 'All') result = result.filter(v => v.category === category);
+  return result;
+}
+
+export function getVideoById(id: string): StaticVideo | undefined {
+  return STATIC_VIDEOS.find(v => v._id === id);
+}

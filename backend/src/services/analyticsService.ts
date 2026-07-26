@@ -1,9 +1,11 @@
 import SimulationResult from '../models/SimulationResult.js';
 import { Campaign } from '../models/Campaign.js';
 import { User } from '../models/User.js';
+import { UserGame } from '../models/UserGame.js';
+import { UserQuiz } from '../models/UserQuiz.js';
 import mongoose from 'mongoose';
-
-// ─────────────────────────────────────────────────────────────────────────────
+import { computeUserRiskProfile } from './riskEngine.js';
+import { evaluateAchievements } from './achievementService.js';
 // PERIOD DATE RANGE HELPER
 // Converts period string to a start date for filtering
 // ─────────────────────────────────────────────────────────────────────────────
@@ -56,12 +58,14 @@ export function calculateRiskScore(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// RISK LEVEL — Industry-aligned thresholds
+// RISK LEVEL — 5-tier Enterprise Model
 // ─────────────────────────────────────────────────────────────────────────────
-export function getRiskLevel(score: number): 'low' | 'medium' | 'high' {
-  if (score <= 15) return 'low';
-  if (score <= 35) return 'medium';
-  return 'high';
+export function getRiskLevel(score: number): 'very_low' | 'low' | 'moderate' | 'high' | 'critical' {
+  if (score <= 25) return 'very_low';
+  if (score <= 50) return 'low';
+  if (score <= 70) return 'moderate';
+  if (score <= 85) return 'high';
+  return 'critical';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -69,16 +73,36 @@ export function getRiskLevel(score: number): 'low' | 'medium' | 'high' {
 // ─────────────────────────────────────────────────────────────────────────────
 export function calculatePoints(
   currentPoints: number,
-  action: 'click' | 'credentials' | 'report' | 'ignored'
+  action:
+    | 'click'
+    | 'credentials'
+    | 'report'
+    | 'ignored'
+    | 'video_completed'
+    | 'quiz_90'
+    | 'quiz_75'
+    | 'quiz_60'
+    | 'quiz_40'
+    | 'quiz_0'
+    | 'game_played'
+    | 'game_high_score'
 ): number {
   const safePoints = Number.isFinite(currentPoints) ? currentPoints : 0;
 
   const delta =
     action === 'report' ? +50 :
-      action === 'ignored' ? +5 :
-        action === 'click' ? -30 :
-          action === 'credentials' ? -60 :
-            0;
+    action === 'ignored' ? +5 :
+    action === 'click' ? -30 :
+    action === 'credentials' ? -60 :
+    action === 'video_completed' ? +10 :
+    action === 'quiz_90' ? +30 :
+    action === 'quiz_75' ? +20 :
+    action === 'quiz_60' ? +15 :
+    action === 'quiz_40' ? +8 :
+    action === 'quiz_0' ? +3 :
+    action === 'game_played' ? +5 :
+    action === 'game_high_score' ? +15 :
+    0;
 
   return Math.max(0, safePoints + delta);
 }
@@ -95,53 +119,31 @@ export function calculateBadge(points: number): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// RECALCULATE USER RISK — Called after each simulation event
+// RECALCULATE USER RISK
+// Called by the queue worker after each simulation event.
+// This is the ONLY place that writes risk fields to User.
+// Computing for display (computeUserAnalytics) never writes.
 // ─────────────────────────────────────────────────────────────────────────────
 export async function recalculateUserRisk(userId: string): Promise<void> {
-  const userObjectId = new mongoose.Types.ObjectId(userId);
+  const profile = await computeUserRiskProfile(userId);
 
-  const [agg] = await SimulationResult.aggregate([
-    { $match: { userId: userObjectId } },
-    {
-      $group: {
-        _id: null,
-        total: { $sum: 1 },
-        clicks: {
-          $sum: {
-            $cond: [{
-              $or: [
-                { $eq: ['$smsLinkClicked', true] },
-                { $eq: ['$linkClicked', true] },
-              ]
-            }, 1, 0],
-          },
-        },
-        credentials: {
-          $sum: { $cond: [{ $eq: ['$credentialsSubmitted', true] }, 1, 0] },
-        },
-        reports: {
-          $sum: {
-            $cond: [{
-              $or: [
-                { $eq: ['$reportedPhishing', true] },
-                { $eq: ['$voiceReported', true] },
-              ]
-            }, 1, 0],
-          },
-        },
-      },
-    },
-  ]);
+  await User.findByIdAndUpdate(userId, {
+    riskScore:        profile.riskScore,
+    riskLevel:        profile.riskLevel,
+    riskTrend:        profile.trend,
+    riskConfidence:   profile.confidence,
+    riskBreakdown:    profile.breakdown,
+    riskCalculatedAt: profile.riskCalculatedAt,
+  });
 
-  const total = agg?.total ?? 0;
-  const clicks = agg?.clicks ?? 0;
-  const credentials = agg?.credentials ?? 0;
-  const reports = agg?.reports ?? 0;
-
-  const riskScore = calculateRiskScore(clicks, credentials, reports, total);
-  const riskLevel = getRiskLevel(riskScore);
-
-  await User.findByIdAndUpdate(userId, { riskScore, riskLevel });
+  // After every risk recalculation, check zero-click achievement
+  // (this is the batch path — runs after the full profile is computed)
+  const earned = await evaluateAchievements(userId, 'risk_recalc');
+  if (earned.length > 0) {
+    await User.findByIdAndUpdate(userId, {
+      $addToSet: { achievements: { $each: earned } },
+    });
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -149,15 +151,48 @@ export async function recalculateUserRisk(userId: string): Promise<void> {
 // ─────────────────────────────────────────────────────────────────────────────
 export async function updateUserPoints(
   userId: string,
-  action: 'click' | 'credentials' | 'report' | 'ignored'
+  action:
+    | 'click'
+    | 'credentials'
+    | 'report'
+    | 'ignored'
+    | 'video_completed'
+    | 'quiz_90'
+    | 'quiz_75'
+    | 'quiz_60'
+    | 'quiz_40'
+    | 'quiz_0'
+    | 'game_played'
+    | 'game_high_score'
 ): Promise<void> {
-  const user = await User.findById(userId).select('points').lean();
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  if (action === 'game_played' || action === 'game_high_score') {
+    const count = await UserGame.countDocuments({ userId, createdAt: { $gte: startOfDay } });
+    if (count >= 5) return;
+  } else if (action.startsWith('quiz_')) {
+    const count = await UserQuiz.countDocuments({ userId, createdAt: { $gte: startOfDay } });
+    if (count >= 5) return;
+  }
+
+  const user = await User.findById(userId).select('points achievements').lean() as any;
   if (!user) return;
 
   const newPoints = calculatePoints(user.points ?? 0, action);
   const badge = calculateBadge(newPoints);
 
-  await User.findByIdAndUpdate(userId, { points: newPoints, badge });
+  // Route achievement checks through achievementService.
+  // Only checks relevant to the current trigger are run.
+  const newAchievements = await evaluateAchievements(userId, action);
+
+  await User.findByIdAndUpdate(userId, {
+    points: newPoints,
+    badge,
+    ...(newAchievements.length > 0
+      ? { $addToSet: { achievements: { $each: newAchievements } } }
+      : {}),
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -219,6 +254,38 @@ export async function computeDashboardStats(
         smsDelivered: { $sum: { $cond: [{ $eq: ['$smsDelivered', true] }, 1, 0] } },
         callsInit: { $sum: { $cond: [{ $eq: ['$callInitiated', true] }, 1, 0] } },
         callsAnswered: { $sum: { $cond: [{ $eq: ['$callAnswered', true] }, 1, 0] } },
+        respExcellent: {
+          $sum: {
+            $cond: [
+              { $and: [
+                { $ne: ['$reportedAt', null] },
+                { $lt: [ { $subtract: ['$reportedAt', { $ifNull: ['$smsSentAt', { $ifNull: ['$callInitiatedAt', '$createdAt'] }] }] }, 300000 ] }
+              ]}, 1, 0
+            ]
+          }
+        },
+        respGood: {
+          $sum: {
+            $cond: [
+              { $and: [
+                { $ne: ['$reportedAt', null] },
+                { $gte: [ { $subtract: ['$reportedAt', { $ifNull: ['$smsSentAt', { $ifNull: ['$callInitiatedAt', '$createdAt'] }] }] }, 300000 ] },
+                { $lt: [ { $subtract: ['$reportedAt', { $ifNull: ['$smsSentAt', { $ifNull: ['$callInitiatedAt', '$createdAt'] }] }] }, 1800000 ] }
+              ]}, 1, 0
+            ]
+          }
+        },
+        respAverage: {
+          $sum: {
+            $cond: [
+              { $and: [
+                { $ne: ['$reportedAt', null] },
+                { $gte: [ { $subtract: ['$reportedAt', { $ifNull: ['$smsSentAt', { $ifNull: ['$callInitiatedAt', '$createdAt'] }] }] }, 1800000 ] },
+                { $lt: [ { $subtract: ['$reportedAt', { $ifNull: ['$smsSentAt', { $ifNull: ['$callInitiatedAt', '$createdAt'] }] }] }, 10800000 ] }
+              ]}, 1, 0
+            ]
+          }
+        },
       },
     },
   ]);
@@ -226,12 +293,13 @@ export async function computeDashboardStats(
   const s = agg ?? {
     total: 0, clicks: 0, credentials: 0, reports: 0,
     smsSent: 0, smsDelivered: 0, callsInit: 0, callsAnswered: 0,
+    respExcellent: 0, respGood: 0, respAverage: 0
   };
 
   const pct = (n: number, d: number) =>
     d > 0 ? Math.round((n / d) * 1000) / 10 : 0;
 
-  const companyFilter = companyId ? { companyId } : {};
+  const companyFilter = companyId ? { companyId: new mongoose.Types.ObjectId(companyId) } : {};
 
   const [totalEmployees, totalCampaigns, activeCampaigns, riskCounts] = await Promise.all([
     User.countDocuments({ ...companyFilter, role: 'employee' }),
@@ -243,11 +311,11 @@ export async function computeDashboardStats(
     ]),
   ]);
 
-const riskDist = { low: 0, medium: 0, high: 0 };
+const riskDist = { very_low: 0, low: 0, moderate: 0, high: 0, critical: 0 };
 riskCounts.forEach((r: any) => {
   // ✅ cast to specific type first
-  const level = r._id as 'low' | 'medium' | 'high';
-  if (level === 'low' || level === 'medium' || level === 'high') {
+  const level = r._id as 'very_low' | 'low' | 'moderate' | 'high' | 'critical';
+  if (['very_low', 'low', 'moderate', 'high', 'critical'].includes(level)) {
     riskDist[level] = r.count;
   }
 });
@@ -269,6 +337,12 @@ riskCounts.forEach((r: any) => {
     trainingProgress: pct(s.reports, Math.max(totalEmployees, 1)),
     overallRiskScore: calculateRiskScore(s.clicks, s.credentials, s.reports, s.total),
     riskDistribution: riskDist,
+    responseTimeBuckets: {
+      excellent: s.respExcellent || 0,
+      good: s.respGood || 0,
+      average: s.respAverage || 0,
+      poor: Math.max(0, s.total - (s.respExcellent || 0) - (s.respGood || 0) - (s.respAverage || 0)),
+    },
     period: period || 'all',                     // ✅ echo back period for UI
   };
 }
@@ -397,7 +471,7 @@ export async function computeDepartmentRisk(
   companyId?: string,
   period?: string       // ✅ new param
 ) {
-  const companyFilter = companyId ? { companyId } : {};
+  const companyFilter = companyId ? { companyId: new mongoose.Types.ObjectId(companyId) } : {};
   const campaignIds = await getCampaignIdsForCompany(companyId);
   const startDate = getPeriodDateRange(period);
 
@@ -459,9 +533,11 @@ export async function computeDepartmentRisk(
     totalCreds: number;
     totalReports: number;
     totalRiskScore: number;
+    critical: number;
     high: number;
-    medium: number;
+    moderate: number;
     low: number;
+    very_low: number;
   }> = {};
 
   users.forEach((u: any) => {
@@ -470,7 +546,7 @@ export async function computeDepartmentRisk(
       deptMap[dept] = {
         employees: 0, totalSims: 0, totalClicks: 0,
         totalCreds: 0, totalReports: 0, totalRiskScore: 0,
-        high: 0, medium: 0, low: 0,
+        critical: 0, high: 0, moderate: 0, low: 0, very_low: 0,
       };
     }
 
@@ -486,11 +562,16 @@ export async function computeDepartmentRisk(
     d.totalReports += sim.reports;
     d.totalRiskScore += u.riskScore ?? 0;
 
-    // ✅ Use updated thresholds
-    const level = getRiskLevel(u.riskScore ?? 0);
-    if (level === 'high') d.high++;
-    else if (level === 'medium') d.medium++;
-    else d.low++;
+    // ✅ Use updated 5-tier thresholds via the DB's actual values
+    // We already migrated getRiskLevel to riskEngine.ts. Since the value is populated
+    // by the risk engine, u.riskLevel should directly be one of the 5 tiers.
+    // We use getRiskLevel from riskEngine just in case it's not set.
+    const level = u.riskLevel || getRiskLevel(u.riskScore ?? 0);
+    if (level === 'critical') d.critical++;
+    else if (level === 'high') d.high++;
+    else if (level === 'moderate') d.moderate++;
+    else if (level === 'low') d.low++;
+    else d.very_low++;
   });
 
   const pct = (n: number, d: number) =>
@@ -508,9 +589,11 @@ export async function computeDepartmentRisk(
     avgRiskScore: d.employees > 0
       ? Math.round(d.totalRiskScore / d.employees)
       : 0,
+    criticalRiskCount: d.critical,
     highRiskCount: d.high,
-    mediumRiskCount: d.medium,
+    moderateRiskCount: d.moderate,
     lowRiskCount: d.low,
+    veryLowRiskCount: d.very_low,
   })).sort((a, b) => b.avgRiskScore - a.avgRiskScore);
 }
 
@@ -543,12 +626,13 @@ export async function computeUserAnalytics(userId: string, companyId?: string) {
   const reports = results.filter(r => r.reportedPhishing || r.voiceReported).length;
   const ignored = Math.max(0, total - clicks - credentials - reports);
 
-  const riskScore = calculateRiskScore(clicks, credentials, reports, total);
-  const riskLevel = getRiskLevel(riskScore);
-
-  if (user.riskScore !== riskScore) {
-    await User.findByIdAndUpdate(userId, { riskScore, riskLevel });
-  }
+  const riskScore = user.riskScore ?? 0;
+  const riskLevel = user.riskLevel ?? 'low';
+  // NOTE: We intentionally use the STORED riskScore/riskLevel here.
+  // computeUserAnalytics() is a READ path — it never writes to User.
+  // The risk engine write path is exclusively recalculateUserRisk() in this file.
+  // This eliminates the side-effect bug where a dashboard view could update risk
+  // independently of the queue-driven recalculation.
 
   const pct = (n: number) => total > 0 ? Math.round((n / total) * 100) : 0;
 
@@ -577,11 +661,21 @@ export async function computeUserAnalytics(userId: string, companyId?: string) {
     else if (r.reportedPhishing || r.voiceReported) action = 'reported';
     else if (r.voiceEngaged || r.voiceVerified) action = 'engaged';
 
+    const start = r.smsSentAt || r.callInitiatedAt || r.createdAt;
+    let responseTimeBucket = 'poor';
+    if (r.reportedAt && start) {
+      const diff = r.reportedAt.getTime() - start.getTime();
+      if (diff < 300000) responseTimeBucket = 'excellent';
+      else if (diff < 1800000) responseTimeBucket = 'good';
+      else if (diff < 10800000) responseTimeBucket = 'average';
+    }
+
     return {
-      date: r.smsSentAt || r.callInitiatedAt || r.createdAt,
+      date: start,
       campaignName: campaign?.campaignName ?? 'Unknown',
       type: r.simulationType || campaign?.type || 'unknown',
       action,
+      responseTimeBucket,
       pointsEarned:
         action === 'reported' ? +50 :
           action === 'ignored' ? +5 :

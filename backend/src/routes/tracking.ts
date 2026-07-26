@@ -1,326 +1,168 @@
-
-
-// // backend/src/routes/tracking.ts
-// import { Router, Request, Response } from 'express';
-// import {
-//   recordSmsClick,
-//   recordCredentialsSubmitted,
-//   recordPhishingReported,
-// } from '../services/trackingService.js';
-// import { generatePhishingPageUrl } from '../services/twilioService.js';
-
-// const trackingRouter = Router();
-
-// // ── CLICK TRACKING ────────────────────────────────────────────────────────────
-// trackingRouter.get('/click', async (req: Request, res: Response) => {
-//   const {
-//     t: token,
-//     c: campaignId,
-//     u: userId,
-//     p: pageType,
-//   } = req.query as Record<string, string>;
-
-//   console.log(`\n[TRACK CLICK] ──────────────────────────────`);
-//   console.log(`  token      : ${token}`);
-//   console.log(`  campaignId : ${campaignId}`);
-//   console.log(`  userId     : ${userId}`);
-//   console.log(`  pageType   : ${pageType || 'bank'}`);
-
-//   // Always redirect — pass campaignId and userId through so verify page has them
-//   const phishingUrl = generatePhishingPageUrl(
-//     token,
-//     pageType || 'bank',
-//     campaignId,
-//     userId
-//   );
-
-//   if (!token || !campaignId || !userId) {
-//     console.warn(`[TRACK CLICK] ⚠ Missing params`);
-//     return res.redirect(302, phishingUrl);
-//   }
-
-//   try {
-//     const ipAddress =
-//       (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
-//       req.ip ||
-//       '';
-//     const userAgent = req.headers['user-agent'] || '';
-
-//     const result = await recordSmsClick(
-//       token,
-//       campaignId,
-//       userId,
-//       ipAddress,
-//       userAgent
-//     );
-
-//     if (!result.success) {
-//       console.warn(`[TRACK CLICK] ⚠ Token not found in DB — click NOT recorded`);
-//     } else if (result.alreadyClicked) {
-//       console.info(`[TRACK CLICK] ℹ Duplicate click ignored`);
-//     } else {
-//       console.info(`[TRACK CLICK] ✓ Click recorded successfully`);
-//     }
-
-//     console.log(`[TRACK CLICK] Redirecting → ${phishingUrl}`);
-//     console.log(`──────────────────────────────────────────\n`);
-//     return res.redirect(302, phishingUrl);
-//   } catch (error) {
-//     console.error('[TRACK CLICK] Error:', error);
-//     return res.redirect(302, phishingUrl);
-//   }
-// });
-
-// // ── CREDENTIAL SUBMISSION ─────────────────────────────────────────────────────
-// trackingRouter.post('/submit', async (req: Request, res: Response) => {
-//   const { token, campaignId, userId, ...formData } = req.body;
-
-//   console.log(`\n[TRACK SUBMIT] ─────────────────────────────`);
-//   console.log(`  token      : ${token}`);
-//   console.log(`  campaignId : ${campaignId}`);
-//   console.log(`  userId     : ${userId}`);
-//   console.log(`  fields     : ${Object.keys(formData).join(', ')}`);
-//   console.log(`  ⚠  Actual values NOT logged for privacy`);
-
-//   if (!token || !campaignId || !userId) {
-//     console.warn(`[TRACK SUBMIT] ⚠ Missing token/campaignId/userId`);
-//     return res.status(400).json({
-//       success: false,
-//       error: 'Missing required tracking parameters',
-//     });
-//   }
-
-//   try {
-//     const result = await recordCredentialsSubmitted(
-//       token,
-//       campaignId,
-//       userId,
-//       formData
-//     );
-
-//     if (result.success) {
-//       console.info(`[TRACK SUBMIT] ✓ Credential submission recorded`);
-//       console.log(`──────────────────────────────────────────\n`);
-//       return res.json({
-//         success: true,
-//         message: 'Recorded',
-//         redirect: '/verify/caught',
-//       });
-//     } else {
-//       console.warn(`[TRACK SUBMIT] ⚠ SimulationResult not found for this token`);
-//       // Still return success so employee sees the caught page
-//       return res.json({
-//         success: true,
-//         message: 'Recorded',
-//         redirect: '/verify/caught',
-//       });
-//     }
-//   } catch (error) {
-//     console.error('[TRACK SUBMIT] Error:', error);
-//     return res.status(500).json({ success: false, error: 'Internal server error' });
-//   }
-// });
-
-// // ── PHISHING REPORT ───────────────────────────────────────────────────────────
-// trackingRouter.post('/report', async (req: Request, res: Response) => {
-//   const { token, campaignId, userId } = req.body;
-
-//   console.log(`\n[TRACK REPORT] ─────────────────────────────`);
-//   console.log(`  token      : ${token}`);
-//   console.log(`  campaignId : ${campaignId}`);
-//   console.log(`  userId     : ${userId}`);
-
-//   if (!token || !campaignId || !userId) {
-//     return res
-//       .status(400)
-//       .json({ success: false, error: 'Missing required parameters' });
-//   }
-
-//   try {
-//     await recordPhishingReported(token, campaignId, userId, 'button');
-//     console.info(`[TRACK REPORT] ✓ Report recorded — user earned 50 points`);
-//     console.log(`──────────────────────────────────────────\n`);
-//     return res.json({ success: true, pointsEarned: 50 });
-//   } catch (error) {
-//     console.error('[TRACK REPORT] Error:', error);
-//     return res.status(500).json({ success: false, error: 'Internal server error' });
-//   }
-// });
-
-// export default trackingRouter;
-
-
-// backend/src/routes/tracking.ts
-
 import { Router, Request, Response } from 'express';
 import {
   recordSmsClick,
+  recordEmailClick,
+  recordEmailOpened,
   recordCredentialsSubmitted,
   recordPhishingReported,
 } from '../services/trackingService.js';
-import { generatePhishingPageUrl } from '../services/twilioService.js';
 
 const trackingRouter = Router();
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GET /api/track/click
-//
-// Receives: ?t=RAW_UUID&c=CAMPAIGN_ID&u=USER_ID&p=PAGE_TYPE
-// Records the click then redirects to the phishing simulation page.
-// The redirect URL carries token+campaignId+userId so the verify page
-// can send them back on form submit.
-// ─────────────────────────────────────────────────────────────────────────────
 trackingRouter.get('/click', async (req: Request, res: Response) => {
-  const {
-    t: token,
-    c: campaignId,
-    u: userId,
-    p: pageType,
-  } = req.query as Record<string, string>;
-
-  console.log('\n[TRACK CLICK] ──────────────────────────────');
-  console.log(`  token      : ${token}`);
-  console.log(`  campaignId : ${campaignId}`);
-  console.log(`  userId     : ${userId}`);
-  console.log(`  pageType   : ${pageType || 'bank'}`);
-
-  // Build redirect URL — ALWAYS include all four params so verify page has them
-  const phishingUrl = generatePhishingPageUrl(
-    token      || '',
-    pageType   || 'bank',
-    campaignId || '',
-    userId     || ''
-  );
-
-  if (!token || !campaignId || !userId) {
-    console.warn('[TRACK CLICK] ⚠ Missing params — redirecting without recording');
-    return res.redirect(302, phishingUrl);
-  }
+  const awarenessUrl = process.env.AWARENESS_PAGE_URL || 'http://localhost:3000/awareness';
+  const verifyBaseUrl = process.env.PHISHING_PAGE_BASE_URL || 'http://localhost:3000/verify';
 
   try {
+    const { t: token, c: campaignId, u: userId, type, p: pageType } = req.query as Record<string, string>;
+
+    if (!token || !campaignId || !userId) {
+      return res.redirect(302, awarenessUrl);
+    }
+
     const ipAddress =
-      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-      req.socket?.remoteAddress ||
-      req.ip ||
-      '';
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || req.ip || '';
     const userAgent = req.headers['user-agent'] || '';
 
-    const result = await recordSmsClick(token, campaignId, userId, ipAddress, userAgent);
+    if (type === 'email') {
+      const result = await recordEmailClick(token, campaignId, userId, ipAddress, userAgent);
+      if (!result.success) {
+        console.warn(`[TRACK] Email token not found. campaignId=${campaignId} userId=${userId}`);
+      } else if (result.alreadyClicked) {
+        console.info(`[TRACK] Email already clicked. campaignId=${campaignId} userId=${userId}`);
+      } else {
+        console.info(`[TRACK] Email click recorded. campaignId=${campaignId} userId=${userId}`);
+      }
 
-    if (!result.success)          console.warn('[TRACK CLICK] ⚠ Token not found in DB');
-    else if (result.alreadyClicked) console.info('[TRACK CLICK] ℹ Duplicate click — skipped');
-    else                            console.info('[TRACK CLICK] ✓ Click recorded');
-  } catch (err) {
-    // Never let tracking failure block the redirect
-    console.error('[TRACK CLICK] Error:', err);
-  }
+      return res.redirect(302, awarenessUrl);
+    } else {
+      const result = await recordSmsClick(token, campaignId, userId, ipAddress, userAgent);
+      if (!result.success) {
+        console.warn(`[TRACK] SMS token not found. campaignId=${campaignId} userId=${userId}`);
+      } else if (result.alreadyClicked) {
+        console.info(`[TRACK] SMS already clicked. campaignId=${campaignId} userId=${userId}`);
+      } else {
+        console.info(`[TRACK] SMS click recorded. campaignId=${campaignId} userId=${userId}`);
+      }
 
-  console.log(`[TRACK CLICK] → ${phishingUrl}\n`);
-  return res.redirect(302, phishingUrl);
-});
+      // SMS links carry a "p" (pageType) param telling us which fake landing
+      // page to show (bank, hr_benefits, password_reset, etc). Credential
+      // capture happens on that page, not here — so send them there instead
+      // of straight to the awareness page.
+      if (pageType) {
+        const landingUrl = `${verifyBaseUrl}/${pageType}?token=${encodeURIComponent(token)}&c=${encodeURIComponent(campaignId)}&u=${encodeURIComponent(userId)}`;
+        return res.redirect(302, landingUrl);
+      }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// POST /api/track/submit
-//
-// Called when employee submits credentials on the phishing sim page.
-// Body MUST contain: { token, campaignId, userId, ...formFields }
-//
-// IMPORTANT NOTE FOR FRONTEND:
-// The verify page URL is: /verify/bank?token=X&c=CAMPAIGN_ID&u=USER_ID
-// When POSTing to this endpoint, read query params as:
-//   token      = searchParams.get('token')
-//   campaignId = searchParams.get('c')
-//   userId     = searchParams.get('u')
-// Then include them in the POST body.
-// ─────────────────────────────────────────────────────────────────────────────
-trackingRouter.post('/submit', async (req: Request, res: Response) => {
-  const { token, campaignId, userId, ...formData } = req.body;
+      return res.redirect(302, awarenessUrl);
+    }
 
-  console.log('\n[TRACK SUBMIT] ─────────────────────────────');
-  console.log(`  token      : ${token}`);
-  console.log(`  campaignId : ${campaignId}`);
-  console.log(`  userId     : ${userId}`);
-  console.log(`  fields     : ${Object.keys(formData).join(', ')}`);
-  console.log('  ⚠  Actual values NOT logged for privacy');
-
-  if (!token || !campaignId || !userId) {
-    console.warn('[TRACK SUBMIT] ⚠ Missing token/campaignId/userId in request body');
-    // Still return 200 so employee sees the caught page
-    // (missing params is a frontend config issue, not a user error)
-    return res.json({
-      success:  true,
-      message:  'Recorded',
-      redirect: '/verify/caught',
-    });
-  }
-
-  try {
-    await recordCredentialsSubmitted(token, campaignId, userId, formData);
-    console.info('[TRACK SUBMIT] ✓ Credential submission recorded in DB');
-    console.log('──────────────────────────────────────────\n');
-
-    return res.json({
-      success:  true,
-      message:  'Recorded',
-      redirect: '/verify/caught',
-    });
-  } catch (err) {
-    console.error('[TRACK SUBMIT] Error:', err);
-    return res.status(500).json({ success: false, error: 'Internal server error' });
+  } catch (error) {
+    console.error('[TRACK] Error recording click:', error);
+    return res.redirect(302, awarenessUrl);
   }
 });
-
-// ─────────────────────────────────────────────────────────────────────────────
-// POST /api/track/report
-//
-// Called when employee clicks "Report as Phishing" on the sim page.
-// Body MUST contain: { token, campaignId, userId }
-// ─────────────────────────────────────────────────────────────────────────────
-trackingRouter.post('/report', async (req: Request, res: Response) => {
-  const { token, campaignId, userId } = req.body;
-
-  console.log('\n[TRACK REPORT] ─────────────────────────────');
-  console.log(`  token      : ${token}`);
-  console.log(`  campaignId : ${campaignId}`);
-  console.log(`  userId     : ${userId}`);
-
-  if (!token || !campaignId || !userId) {
-    console.warn('[TRACK REPORT] ⚠ Missing params');
-    return res.status(400).json({
-      success: false,
-      error:   'Missing required parameters',
-    });
-  }
-
-  try {
-    await recordPhishingReported(token, campaignId, userId, 'button');
-    console.info('[TRACK REPORT] ✓ Report recorded in DB');
-    console.log('──────────────────────────────────────────\n');
-
-    return res.json({ success: true, pointsEarned: 10 });
-  } catch (err) {
-    console.error('[TRACK REPORT] Error:', err);
-    return res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// GET /api/track/pixel — 1×1 transparent GIF for email open tracking
-// ─────────────────────────────────────────────────────────────────────────────
-const TRACKING_PIXEL = Buffer.from(
-  'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
-  'base64'
-);
 
 trackingRouter.get('/pixel', async (req: Request, res: Response) => {
-  res.set('Content-Type',  'image/gif');
-  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-  res.send(TRACKING_PIXEL);
+  try {
+    const { t: token, c: campaignId, u: userId } = req.query as Record<string, string>;
 
-  const { t: token, c: campaignId, u: userId } = req.query as Record<string, string>;
-  if (token && campaignId && userId) {
-    console.log(`[TRACK PIXEL] email open — campaign=${campaignId} user=${userId}`);
-    // Future: recordEmailOpened(token, campaignId, userId)
+    if (token && campaignId && userId) {
+      await recordEmailOpened(token);
+      console.info(`[TRACK] Email opened. campaignId=${campaignId} userId=${userId}`);
+    }
+
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.send(Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64'));
+  } catch (error) {
+    console.error('[TRACK] Pixel tracking error:', error);
+    res.setHeader('Content-Type', 'image/png');
+    res.send(Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64'));
+  }
+});
+
+// Called by the fake landing page when the employee submits the login form.
+// The frontend sends the actual typed values (...formValues) so the fake
+// page can look and feel real — but we NEVER persist those values. We only
+// record which field NAMES were filled in (e.g. ["accountNumber", "password"]).
+// The real value strings are discarded the instant this handler reads them.
+trackingRouter.post('/submit', async (req: Request, res: Response) => {
+  try {
+    const { token, campaignId, userId, ...rest } = req.body as {
+      token?: string;
+      campaignId?: string;
+      userId?: string;
+      [key: string]: unknown;
+    };
+
+    if (!token || !campaignId || !userId) {
+      res.status(400).json({ success: false, error: 'Missing tracking parameters' });
+      return;
+    }
+
+    // Only keep the KEYS of the submitted fields — never the values.
+    const fieldNames = Object.keys(rest).filter((key) => rest[key] !== undefined && rest[key] !== '');
+
+    const ipAddress =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || req.ip || '';
+    const userAgent = req.headers['user-agent'] || '';
+
+    const result = await recordCredentialsSubmitted(
+      token,
+      campaignId,
+      userId,
+      fieldNames,
+      ipAddress,
+      userAgent
+    );
+
+    if (!result.success) {
+      console.warn(`[TRACK] Submit: token not found. campaignId=${campaignId} userId=${userId}`);
+      res.status(404).json({ success: false, error: 'Simulation record not found' });
+      return;
+    }
+
+    if (result.alreadySubmitted) {
+      console.info(`[TRACK] Credentials already submitted. campaignId=${campaignId} userId=${userId}`);
+    } else {
+      console.info(`[TRACK] Credentials submitted. campaignId=${campaignId} userId=${userId} fields=${fieldNames.join(',')}`);
+    }
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('[TRACK] Error recording submission:', error);
+    res.status(500).json({ success: false, error: 'Failed to record submission' });
+  }
+});
+
+// Called when the employee taps "Report as suspicious" on the fake landing page.
+trackingRouter.post('/report', async (req: Request, res: Response) => {
+  try {
+    const { token, campaignId, userId } = req.body as {
+      token?: string;
+      campaignId?: string;
+      userId?: string;
+    };
+
+    if (!token || !campaignId || !userId) {
+      res.status(400).json({ success: false, error: 'Missing tracking parameters' });
+      return;
+    }
+
+    const result = await recordPhishingReported(token, campaignId, userId, 'landing_page_report_button');
+
+    if (!result.success) {
+      console.warn(`[TRACK] Report: token not found. campaignId=${campaignId} userId=${userId}`);
+      res.status(404).json({ success: false, error: 'Simulation record not found' });
+      return;
+    }
+
+    console.info(`[TRACK] Phishing reported. campaignId=${campaignId} userId=${userId}`);
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('[TRACK] Error recording report:', error);
+    res.status(500).json({ success: false, error: 'Failed to record report' });
   }
 });
 

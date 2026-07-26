@@ -14,9 +14,10 @@ export interface DashboardStats {
   avgReportRate:      number;
   avgCompromiseRate:  number;
   trainingProgress:   number;
-  overallRiskScore:   number;   // ✅ new
-  riskDistribution:   { low: number; medium: number; high: number };
-  period?:            string;   // ✅ echoed back from backend
+  overallRiskScore:   number;
+  riskDistribution:   { very_low: number; low: number; moderate: number; high: number; critical: number };
+  responseTimeBuckets?: { excellent: number; good: number; average: number; poor: number }; // A.4
+  period?:            string;
 }
 
 export interface SimulationAnalytics {
@@ -51,15 +52,21 @@ export interface DepartmentRisk {
   reportRate:      number;
   compromiseRate:  number;
   avgRiskScore:    number;
+  criticalRiskCount: number;
   highRiskCount:   number;
-  mediumRiskCount: number;
+  moderateRiskCount: number;
   lowRiskCount:    number;
+  veryLowRiskCount:  number;
 }
 
 export interface UserAnalytics {
   user: {
     id: string; name: string; email: string; points: number;
     badge: string; riskScore: number; riskLevel: string; department: string;
+    achievements?: string[]; // A.5
+    riskTrend?: string;
+    riskConfidence?: string;
+    riskBreakdown?: any;
   };
   stats: {
     totalSimulations: number; clicks: number; credentials: number;
@@ -72,6 +79,7 @@ export interface UserAnalytics {
   history: {
     date: string; campaignName: string; type: string;
     action: string; pointsEarned: number;
+    responseTimeBucket?: string; // A.4
   }[];
 }
 

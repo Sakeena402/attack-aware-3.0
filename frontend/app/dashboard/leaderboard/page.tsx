@@ -261,7 +261,7 @@ export default function LeaderboardPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${badgeColor(entry.badge)}`}>
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${badgeColor(entry.badge ?? 'Rookie')}`}>
                             {entry.badge ?? 'Rookie'}
                           </span>
                         </td>

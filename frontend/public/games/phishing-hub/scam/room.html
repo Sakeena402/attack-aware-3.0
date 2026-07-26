@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rooms Grid</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: url('https://t4.ftcdn.net/jpg/02/42/89/79/360_F_242897945_gWfTmLYfk3iuuUnPDiqTpafBqHC99KKg.jpg');
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-attachment: fixed;
+            position: relative; /* Added */
+        }
+        .back-button {
+  position: fixed;
+  top: 10px; /* Adjust the distance from the top */
+  left: 10px; /* Adjust the distance from the left */
+  background-color: rgba(0, 0, 0, 0.7); /* Dark background for better visibility */
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: bold;
+  z-index: 10; /* Ensure it stays on top of other elements */
+  transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+  background-color: rgba(0, 0, 0, 0.9); /* Darker background on hover */
+}
+       .grid-container {
+    display: grid;
+    margin-top: 78px;
+    top: 5%;
+    margin-right: 57px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+    overflow: hidden;
+    max-width: 800px; /* Limit width */
+    margin: 0 auto; /* Center horizontally */
+}
+
+.grid-item {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease-in-out;
+}
+
+.grid-item:hover {
+    transform: translateY(-5px);
+}
+
+.grid-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease-in-out;
+}
+
+.grid-item:hover img {
+    transform: scale(1.05);
+}
+
+
+        /* Added styles for the bottom-left image */
+        .bottom-left-image {
+            position: absolute;
+            bottom: 20px;
+            left: -50px;
+            width: 100px; /* Adjust size as needed */
+            height: auto;
+            z-index: 1; /* Ensure it appears above the grid */
+        }
+        
+        /* Added styles for the heading */
+        h1 {
+            text-align: center;
+    color: powderblue;
+    z-index: 1;
+    position: absolute;
+    margin: 0;
+    font-size: 2.5em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    margin-bottom: auto;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.7);
+    width: 70%;
+    top: 2%;
+    border-radius: 5px;
+   
+        }
+    </style>
+</head>
+<body>
+<a href="main.html" class="back-button">Back</a>
+
+    <!-- Heading at the top -->
+    <h1>Choose a room for Sam to visit</h1>
+
+    <!-- Image at bottom left -->
+    <div class="bottom-left-image">
+        <img src="2.png" alt="Bottom Left Image">
+    </div>
+
+    <!-- Rooms Grid -->
+    <div class="grid-container">
+        <div class="grid-item">
+            <a href="tv.html"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQe5-iqDg4sj8rY2c8PYG0bR1Y1FsTAC1zPUFddEmITFK5Nutd9CT7bBtNFigLbVFiMW5c&usqp=CAU" alt="Room 1"></a>
+        </div>
+        <div class="grid-item">
+            <a href="kitchen.html"><img src="https://t4.ftcdn.net/jpg/01/09/35/01/360_F_109350111_zaEwTLOwTFIBOoCiRRVLxSRNhdNyU76K.jpg" alt="Room 2"></a>
+        </div>
+       <!-- <div class="grid-item">
+            <a href="room3.html"><img src="https://t4.ftcdn.net/jpg/00/80/73/15/360_F_80731595_iMG0bPT5F7gYpBEzEGqd0OIT3asWzA0Y.jpg" alt="Room 3"></a>
+        </div>
+        <div class="grid-item">
+            <a href="room4.html"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQXjsn7l762d8Qaco8WQCYQMkbJwYAMfuRvP4QAnzXUVw&s" alt="Room 4"></a>
+        </div> -->
+    </div>
+</body>
+</html>

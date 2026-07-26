@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Shopping - Buy a Tablet</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .back-button {
+  position: fixed;
+  top: 10px; /* Adjust the distance from the top */
+  left: 10px; /* Adjust the distance from the left */
+  background-color: rgba(0, 0, 0, 0.7); /* Dark background for better visibility */
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: bold;
+  z-index: 10; /* Ensure it stays on top of other elements */
+  transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+  background-color: rgba(0, 0, 0, 0.9); /* Darker background on hover */
+}
+        html {
+            background-image: url('https://static.vecteezy.com/system/resources/previews/003/573/767/original/brown-monochrome-kitchen-flat-color-illustration-modern-furniture-in-dining-room-apartnment-with-appliance-household-2d-cartoon-interior-with-modern-furniture-on-background-vector.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 20px;
+            text-align: center;
+        }
+
+        .heading {
+            width: 96%;
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background-color: #000;
+            color: white;
+            border-radius: 10px;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .phone {
+            position: relative;
+            margin-top: 45%;
+            width: 300px;
+            height: 600px;
+            background-color: #000;
+            border-radius: 30px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .phone::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            width: 60%;
+            height: 20px;
+            background-color: #333;
+            border-radius: 10px;
+        }
+
+        .status-bar {
+            position: absolute;
+            top: 0;
+            width: 90%;
+            height: 20px;
+            background-color: #000;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+        }
+
+        .status-bar .left, .status-bar .right {
+            display: flex;
+            align-items: center;
+        }
+
+        .battery-icon, .signal-bars {
+            width: 20px;
+            height: 10px;
+            margin-left: 5px;
+            margin-top: 71px;
+        }
+
+        .url-bar {
+            width: 90%;
+            height: 30px;
+            background-color: #f1f1f1;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0 10px;
+            margin-top: 91px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+        }
+
+        .url-bar img {
+            width: 15px;
+            height: 15px;
+            margin-right: 5px;
+        }
+
+        .url-bar span {
+            font-size: 0.9em;
+            color: #333;
+        }
+
+        .screen {
+            width: 86%;
+            height: 75%;
+            background-color: #fff;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            margin-top: 7px;
+            margin-bottom: 40px;
+        }
+
+        .product-image {
+            width: 80%;
+            height: auto;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .product-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .product-description {
+            font-size: 1em;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .price {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: green;
+            margin-bottom: 20px;
+        }
+
+        .buy-button {
+            padding: 10px 20px;
+            background-color: green;
+            color: white;
+            margin-top: -15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .buy-button:hover {
+            background-color: darkgreen;
+            transform: scale(1.05);
+        }
+
+        .bottom-left-image {
+            position: absolute;
+            bottom: -50px;
+            left: -50px;
+            width: 100px;
+            height: auto;
+            z-index: 1;
+        }
+
+        .right {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-top: 50vh;
+    margin-left: 40px;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    width: 300px;
+    text-align: left;
+}
+
+.clue-box {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.9); /* This is the background color for the clue boxes */
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    text-align: left;
+}
+
+.clue-box div {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.explanation {
+    font-size: 1em;
+    color: #a21313;
+    display: none; /* Initially hide the explanations */
+}
+
+.explanation.visible {
+    display: block;
+}
+.next-button {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 30px;
+            background-color: green;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .next-button:hover {
+            background-color: darkgreen;
+            transform: scale(1.05);
+        }
+
+        .next-button.visible {
+            display: block;
+        }
+        /* Style for the highlighted text */
+
+/* Style for the highlighted text */
+.selected {
+    background-color: rgba(255, 255, 0, 0.5); /* Yellow with transparency */
+    transition: background-color 0.3s; /* Add transition for smooth effect */
+}
+
+
+
+
+    </style>
+</head>
+<body>
+<a href="../medium_game.html" class="back-button">Back</a>
+
+    <div class="container">
+        <div class="bottom-left-image">
+            <img src="2.png" alt="Bottom Left Image">
+        </div>
+        <div class="left">
+            <div class="heading">Tap on the phone to help mum is this website secure or not.</div>
+            <div class="phone">
+                <div class="status-bar">
+                    <div class="left">
+                        <img src="https://img.icons8.com/ios-glyphs/30/ffffff/signal.png" alt="Signal" class="signal-bars">
+                    </div>
+                    <div class="right">
+                        <img src="https://img.icons8.com/ios-glyphs/30/ffffff/full-battery.png" alt="Battery" class="battery-icon">
+                    </div>
+                </div>
+                <div class="url-bar">
+                    <img src="https://img.icons8.com/ios-glyphs/30/00C853/lock--v1.png" alt="Lock" class="secure-padlock" data-clue="1">
+                    <span class="https-text" data-clue="2">https:</span>//www.onlineshop.com
+                    
+                </div>
+                <div class="screen">
+                    <img src="https://i5.walmartimages.com/seo/onn-7-Tablet-32GB-2022-Model-2-0-GHz-Quad-Core-Processor-Charcoal_ddbc2c52-e5aa-4879-8a1e-bbb15e25d287.2230b0b82672e902320d3bb951cef948.jpeg" alt="Tablet Image" class="product-image">
+                    <div class="product-title">Latest Tablet 2024</div>
+                    <div class="product-description">
+                        Discover the new features of the Latest Tablet 2024. With an improved display, faster performance, and longer battery life, this tablet is perfect for both work and play.
+                    </div>
+                    <div class="price">$100.00</div>
+                    <button class="buy-button" onclick="alert('Item added to cart!')">Buy Now</button>
+                </div>
+            </div>
+        </div>
+        <div class="right">
+
+            <div class="clue-box" id="clue1">
+                <div>Clue 1:</div>
+                <div class="explanation">
+                    This padlock icon indicates that the connection to the website is secure. It means that any data exchanged between your browser and the website is encrypted.
+                </div>
+            </div>
+            <div class="clue-box" id="clue2">
+                <div>Clue 2:</div>
+                <div class="explanation">
+                    This URL starts with "https://" which signifies that the website uses a secure connection.
+                </div>
+            </div>
+            
+         
+        </div>
+    </div>
+    <a href="scam_kit_think.html"><button class="next-button" id="nextButton">Next</button></a>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const securePadlock = document.querySelector(".secure-padlock");
+            const httpsText = document.querySelector(".https-text");
+            const explanation2 = document.getElementById("clue2").querySelector(".explanation");
+            const nextButton = document.querySelector(".next-button");
+    
+            securePadlock.addEventListener("click", toggleExplanations);
+            httpsText.addEventListener("click", toggleExplanations);
+    
+            function toggleExplanations() {
+                this.classList.toggle("selected");
+                if (this === securePadlock) {
+                    const explanation1 = document.getElementById("clue1").querySelector(".explanation");
+                    explanation1.classList.toggle("visible");
+                } else if (this === httpsText) {
+                    explanation2.classList.toggle("visible");
+                }
+                checkClues();
+            }
+    
+            function checkClues() {
+                const explanation1Visible = document.getElementById("clue1").querySelector(".explanation").classList.contains("visible");
+                const explanation2Visible = document.getElementById("clue2").querySelector(".explanation").classList.contains("visible");
+                const httpsTextSelected = httpsText.classList.contains("selected");
+    
+                if (explanation1Visible && explanation2Visible && httpsTextSelected) {
+                    nextButton.style.display = "block"; // Show the "Next" button
+                }
+            }
+        });
+    </script>
+    
+
+
+   
+    
+</body>
+</html>
