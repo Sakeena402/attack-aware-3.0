@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import useSWR from 'swr';
 import { Card } from '@/components/ui/card';
 import { getVideos, StaticVideo } from '@/app/data/videos.data';
+import { videoApi } from '@/app/services/videoApi';
 import { Play, Lock, CheckCircle, Globe } from 'lucide-react';
 
 const CATEGORIES = [
@@ -24,6 +26,12 @@ export default function VideosPage() {
 
   // Static data — instant, no loading state, no backend call
   const videos: StaticVideo[] = getVideos(lang, category || undefined);
+
+  // Real completion status from backend
+  const { data: watched = [] } = useSWR('watched-videos', () => videoApi.getMyWatched(), {
+    revalidateOnFocus: true,
+  });
+  const watchedIds = new Set(watched.map(w => w.videoId));
 
   return (
     <div className="space-y-6">
@@ -78,91 +86,94 @@ export default function VideosPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {videos.map((video, i) => (
-            <motion.div
-              key={video._id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-            >
-              <Card
-                className={`rounded-xl border overflow-hidden transition-all duration-300 ${
-                  video.isLocked
-                    ? 'border-slate-700 opacity-75 cursor-not-allowed'
-                    : 'border-purple-500/20 hover:border-purple-500/50 cursor-pointer hover:-translate-y-1'
-                }`}
-                onClick={() => !video.isLocked && router.push(`/dashboard/videos/${video._id}`)}
+          {videos.map((video, i) => {
+            const isCompleted = watchedIds.has(video._id);
+            return (
+              <motion.div
+                key={video._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
               >
-                {/* Thumbnail */}
-                <div className="relative h-44 bg-slate-800">
-                  {video.thumbnail ? (
-                    <img
-                      src={video.thumbnail}
-                      alt={video.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-900/50 to-slate-800">
-                      <Play className="w-12 h-12 text-purple-400" />
-                    </div>
-                  )}
-
-                  {/* Overlay badges */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    {video.isLocked ? (
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="p-3 rounded-full bg-black/60">
-                          <Lock className="w-6 h-6 text-yellow-400" />
-                        </div>
-                        <button
-                          onClick={e => { e.stopPropagation(); router.push('/dashboard/subscribe'); }}
-                          className="px-3 py-1 rounded-full bg-yellow-400 text-black text-xs font-bold"
-                        >
-                          👑 Upgrade to Watch
-                        </button>
-                      </div>
+                <Card
+                  className={`rounded-xl border overflow-hidden transition-all duration-300 ${
+                    video.isLocked
+                      ? 'border-slate-700 opacity-75 cursor-not-allowed'
+                      : 'border-purple-500/20 hover:border-purple-500/50 cursor-pointer hover:-translate-y-1'
+                  }`}
+                  onClick={() => !video.isLocked && router.push(`/dashboard/videos/${video._id}`)}
+                >
+                  {/* Thumbnail */}
+                  <div className="relative h-44 bg-slate-800">
+                    {video.thumbnail ? (
+                      <img
+                        src={video.thumbnail}
+                        alt={video.title}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
-                      <div className="p-3 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition">
-                        <Play className="w-8 h-8 text-white" />
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-900/50 to-slate-800">
+                        <Play className="w-12 h-12 text-purple-400" />
                       </div>
                     )}
-                  </div>
 
-                  {/* Completed badge */}
-                  {video.isCompleted && (
-                    <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/90 text-white text-xs font-medium">
-                      <CheckCircle className="w-3 h-3" /> Completed
+                    {/* Overlay badges */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      {video.isLocked ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="p-3 rounded-full bg-black/60">
+                            <Lock className="w-6 h-6 text-yellow-400" />
+                          </div>
+                          <button
+                            onClick={e => { e.stopPropagation(); router.push('/dashboard/subscribe'); }}
+                            className="px-3 py-1 rounded-full bg-yellow-400 text-black text-xs font-bold"
+                          >
+                            👑 Upgrade to Watch
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="p-3 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition">
+                          <Play className="w-8 h-8 text-white" />
+                        </div>
+                      )}
                     </div>
-                  )}
 
-                  {/* Language badge */}
-                  <div className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-medium ${
-                    video.language === 'ur'
-                      ? 'bg-green-500/80 text-white'
-                      : 'bg-blue-500/80 text-white'
-                  }`}>
-                    {video.language === 'ur' ? 'اردو' : 'English'}
-                  </div>
-                </div>
-
-                {/* Info */}
-                <div className="p-4">
-                  <h3
-                    className="font-semibold text-foreground text-sm leading-snug"
-                    dir={video.language === 'ur' ? 'rtl' : 'ltr'}
-                  >
-                    {video.title}
-                  </h3>
-                  <div className="flex items-center justify-between mt-3">
-                    <span className="text-xs text-slate-400">{video.category}</span>
-                    {!video.isLocked && !video.isCompleted && (
-                      <span className="text-xs text-purple-400">+10 pts on completion</span>
+                    {/* Completed badge */}
+                    {isCompleted && (
+                      <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/90 text-white text-xs font-medium">
+                        <CheckCircle className="w-3 h-3" /> Completed
+                      </div>
                     )}
+
+                    {/* Language badge */}
+                    <div className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-medium ${
+                      video.language === 'ur'
+                        ? 'bg-green-500/80 text-white'
+                        : 'bg-blue-500/80 text-white'
+                    }`}>
+                      {video.language === 'ur' ? 'اردو' : 'English'}
+                    </div>
                   </div>
-                </div>
-              </Card>
-            </motion.div>
-          ))}
+
+                  {/* Info */}
+                  <div className="p-4">
+                    <h3
+                      className="font-semibold text-foreground text-sm leading-snug"
+                      dir={video.language === 'ur' ? 'rtl' : 'ltr'}
+                    >
+                      {video.title}
+                    </h3>
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="text-xs text-slate-400">{video.category}</span>
+                      {!video.isLocked && !isCompleted && (
+                        <span className="text-xs text-purple-400">+10 pts on completion</span>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+            );
+          })}
         </div>
       )}
     </div>

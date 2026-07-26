@@ -180,12 +180,18 @@ function closeVideo() {
 function saveLog(e){
     e.preventDefault(); // direct redirect mat karo
 
-    fetch("save_game_log.php", { method: "POST" })
+    fetch('/api/logs', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ gameName: 'Identity Theft Game', action: 'start' })
+    })
     .then(res => res.text())
     .then(data => {
         console.log(data); 
         // ✅ ab game page open karao
-        window.location.href = "IdentityTheftGame.php";
+        window.location.href = "IdentityTheftGame.html";
     })
     .catch(err => console.error(err));
 }

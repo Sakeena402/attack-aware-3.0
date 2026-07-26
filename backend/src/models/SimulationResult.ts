@@ -1,4 +1,3 @@
-
 // backend/src/models/SimulationResult.ts
 
 
@@ -11,10 +10,15 @@ export interface ISimulationResult extends Document {
   trackingToken?: string;
 
   // Email / Phishing
-  emailOpened?:   boolean;
-  emailOpenedAt?: Date;
-  linkClicked?:   boolean;
-  clickedAt?:     Date;
+  emailOpened?:    boolean;
+  emailOpenedAt?:  Date;
+  emailClicked?:   boolean;
+  emailClickedAt?: Date;
+  emailTemplate?:  string;
+  emailSent?:      boolean;
+  emailSentAt?:    Date;
+  emailAddress?:   string;
+  messageId?:      string;
 
   // SMS / Smishing
   smsSent?:            boolean;
@@ -88,10 +92,15 @@ const simulationResultSchema = new Schema<ISimulationResult>(
     },
 
     // Email / Phishing
-    emailOpened:   { type: Boolean, default: false },
-    emailOpenedAt: Date,
-    linkClicked:   { type: Boolean, default: false },
-    clickedAt:     Date,
+    emailOpened:    { type: Boolean, default: false },
+    emailOpenedAt:  Date,
+    emailClicked:   { type: Boolean, default: false },
+    emailClickedAt: Date,
+    emailTemplate:  String,
+    emailSent:      { type: Boolean, default: false },
+    emailSentAt:    Date,
+    emailAddress:   String,
+    messageId:      String,
 
     // SMS / Smishing
     smsSent:           { type: Boolean, default: false },

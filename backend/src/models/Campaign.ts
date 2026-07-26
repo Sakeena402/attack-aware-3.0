@@ -1,4 +1,3 @@
-
 // backend/src/models/Campaign.ts
 
 import { Schema, model } from 'mongoose';
@@ -60,15 +59,16 @@ const campaignSchema = new Schema<ICampaign>(
       default: [],
     },
 
-    // Target employees: array of { _id: ObjectId, phone: string }
-    // Phone is stored here so launchCampaign can send SMS without
-    // an extra User lookup. Phone is also on the User document;
+    // Target employees: array of { _id: ObjectId, phone: string, email: string }
+    // Phone/email are stored here so launchCampaign can send SMS/email without
+    // an extra User lookup. Phone/email are also on the User document;
     // if they diverge, re-save the campaign to refresh.
     targetEmployees: {
       type: [
         {
           _id:   { type: Schema.Types.ObjectId, ref: 'User', required: true },
           phone: { type: String, default: '' },
+          email: { type: String, default: '' },
         },
       ],
       default: [],
@@ -102,8 +102,6 @@ const campaignSchema = new Schema<ICampaign>(
     },
 
     // ── Live counters (incremented atomically via $inc) ───────────────────
-    // These mirror what is in SimulationResult and give a fast dashboard
-    // view without aggregating all simulation results on every page load.
     sentCount: {
       type:    Number,
       default: 0,

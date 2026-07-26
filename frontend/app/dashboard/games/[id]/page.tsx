@@ -2,52 +2,81 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import useSWR from 'swr';
 import { useParams, useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
+import { gameApi, Game } from '@/app/services/gameApi';
+import { useAuth } from '@/app/context/authContext';
 import { ArrowLeft, Trophy, CheckCircle } from 'lucide-react';
 
-// Static game catalogue — matches games/page.tsx, points at the real
-// converted files already sitting in frontend/public/games/
-const GAME_CATALOGUE = [
-  { _id: '0', name: 'Phishing Awareness Game', difficulty: 'easy',   category: 'Phishing',           gameUrl: '/games/phishing-hub/easy_game.html',                         maxScore: 100, icon: '🎯' },
-  { _id: '1', name: 'Phishing Awareness Game', difficulty: 'medium', category: 'Phishing',           gameUrl: '/games/phishing-hub/medium_game.html',                       maxScore: 100, icon: '🎯' },
-  { _id: '2', name: 'Phishing Awareness Game', difficulty: 'hard',   category: 'Phishing',           gameUrl: '/games/phishing-hub/hard_game.html',                         maxScore: 100, icon: '🎯' },
-  { _id: '3', name: 'Hangman',                 difficulty: 'easy',   category: 'Vocabulary',         gameUrl: '/games/hangman/index.html',                                  maxScore: 100, icon: '🔤' },
-  { _id: '4', name: 'Defeat the Hacker',       difficulty: 'medium', category: 'Defense',            gameUrl: '/games/phishing-hub/defeat_Hacker.html',                     maxScore: 100, icon: '🛡️' },
-  { _id: '5', name: 'Identity Theft Game',     difficulty: 'medium', category: 'Social Engineering', gameUrl: '/games/phishing-hub/IdentityTheftGame/startGame.html',      maxScore: 100, icon: '🕵️' },
-  { _id: '6', name: 'Wack the Hacker',         difficulty: 'easy',   category: 'Awareness',          gameUrl: '/games/wack-the-hacker/index.html',                          maxScore: 100, icon: '🔨' },
-];
-
 const DIFF_COLORS: Record<string, string> = {
-  easy:   'text-green-400',
+  easy: 'text-green-400',
   medium: 'text-yellow-400',
-  hard:   'text-red-400',
+  hard: 'text-red-400',
 };
 
+const GAME_ICONS: Record<string, string> = {
+  'Phishing Awareness Game': '🎯',
+  'Hangman': '🔤',
+  'Defeat the Hacker': '🛡️',
+  'Identity Theft Game': '🕵️',
+  'Wack the Hacker': '🔨',
+};
+
+function getRemark(percentage: number): { text: string; emoji: string } {
+  if (percentage >= 90) return { text: "Outstanding! You're a cybersecurity pro.", emoji: '🏆' };
+  if (percentage >= 70) return { text: 'Great job! You have solid awareness.', emoji: '👏' };
+  if (percentage >= 50) return { text: 'Good effort! A bit more practice will help.', emoji: '💪' };
+  return { text: 'Keep practicing — review the tips below and try again.', emoji: '📚' };
+}
+
 export default function GamePlayPage() {
-  const { id }    = useParams<{ id: string }>();
-  const router    = useRouter();
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const { state } = useAuth();
 
   const [scoreSaved, setScoreSaved] = useState(false);
   const [finalScore, setFinalScore] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
-  const game = GAME_CATALOGUE.find(g => g._id === id);
+  const { data: game, isLoading } = useSWR<Game>(
+    `game:${id}`,
+    () => gameApi.getById(id),
+    { revalidateOnFocus: false }
+  );
 
-  // The converted static games postMessage a GAME_OVER event when a
-  // round finishes. We just display it here — no DB save (static mode).
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
+    const handleMessage = async (event: MessageEvent) => {
       if (scoreSaved) return;
-      if (event.data?.type === 'GAME_OVER') {
+      if (event.data?.type === 'GAME_OVER' || event.data?.type === 'GAME_SCORE') {
         const s = Number(event.data.score ?? 0);
         setFinalScore(s);
-        setScoreSaved(true);
+        setSaving(true);
+        setSaveError(false);
+        try {
+          await gameApi.saveScore(id, s);
+          setScoreSaved(true);
+        } catch {
+          setSaveError(true);
+        } finally {
+          setSaving(false);
+        }
       }
     };
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [scoreSaved]);
+  }, [id, scoreSaved]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-8 w-32 bg-slate-700 rounded animate-pulse" />
+        <div className="h-[600px] bg-slate-700 rounded-xl animate-pulse" />
+      </div>
+    );
+  }
 
   if (!game) {
     return (
@@ -59,6 +88,11 @@ export default function GamePlayPage() {
       </div>
     );
   }
+
+  const icon = GAME_ICONS[game.name] ?? '🎮';
+  const userName = state.user?.name ?? 'Player';
+  const percentage = finalScore !== null ? Math.min(100, Math.round((finalScore / (game.maxScore || 1)) * 100)) : 0;
+  const remark = getRemark(percentage);
 
   return (
     <div className="space-y-4">
@@ -72,7 +106,7 @@ export default function GamePlayPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            {game.icon} {game.name}
+            {icon} {game.name}
           </h1>
           <div className="flex items-center gap-3 mt-1 text-sm">
             <span className={`capitalize font-medium ${DIFF_COLORS[game.difficulty]}`}>
@@ -106,19 +140,42 @@ export default function GamePlayPage() {
           className="w-full rounded-lg border-0"
           style={{ height: '600px' }}
           allow="autoplay; fullscreen"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
         />
       </Card>
 
-      {scoreSaved && (
+      {finalScore !== null && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20"
+          className={`flex items-start gap-3 p-4 rounded-xl border ${scoreSaved
+              ? 'bg-green-500/10 border-green-500/20'
+              : saveError
+                ? 'bg-red-500/10 border-red-500/20'
+                : 'bg-slate-700/30 border-slate-700'
+            }`}
         >
-          <CheckCircle className="w-5 h-5 text-green-400 shrink-0" />
-          <p className="text-green-400 font-medium">Score {finalScore} — nice work!</p>
+          {scoreSaved ? (
+            <CheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
+          ) : (
+            <Trophy className="w-5 h-5 text-yellow-400 shrink-0 mt-0.5" />
+          )}
+          <div>
+            <p className={`font-bold ${scoreSaved ? 'text-green-400' : 'text-foreground'}`}>
+              {userName}, you scored {finalScore} / {game.maxScore} ({percentage}%)!
+            </p>
+            <p className="text-sm text-slate-300 mt-0.5">
+              {remark.emoji} {remark.text}
+            </p>
+            {saveError && (
+              <p className="text-xs text-red-400 mt-1">
+                Couldn't save your score — check your connection and try again.
+              </p>
+            )}
+          </div>
         </motion.div>
       )}
+      {saving && <p className="text-xs text-slate-400 text-center">Saving your score...</p>}
 
       <Card className="p-4 surface-1 rounded-xl border border-slate-700">
         <h3 className="text-sm font-semibold text-foreground mb-2">💡 Cyber Safety Tips</h3>

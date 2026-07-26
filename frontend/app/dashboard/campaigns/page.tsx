@@ -44,19 +44,17 @@ import { Campaign, Employee } from '@/app/services/types';
 // };
 
 
-const fetcher = async (url: string): Promise<Employee[]> => {
-  const response = await apiService.get<Employee[] | { employees: Employee[] } | { data: Employee[] | { employees: Employee[] } }>(url);
+const fetcher = async (url: string) => {
+  const response = await apiService.get(url);
   const data = response.data;
 
   // Normalize response shape
-  if (Array.isArray(data)) return data as Employee[];
-  const asObj = data as Record<string, unknown>;
-  if (Array.isArray(asObj.employees)) return asObj.employees as Employee[];
-  if (Array.isArray(asObj.data)) return asObj.data as Employee[];
-  const nested = asObj.data as Record<string, unknown> | undefined;
-  if (nested && Array.isArray(nested.employees)) return nested.employees as Employee[];
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.employees)) return data.employees;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.data?.employees)) return data.data.employees;
 
-  console.error('Invalid employees response:', data);
+  console.error("Invalid employees response:", data);
   return [];
 };
 const typeIcons = {
@@ -81,10 +79,11 @@ const statusColors = {
 interface CampaignFormData {
   campaignName: string;
   type: 'phishing' | 'smishing' | 'vishing';
-  difficulty: 'easy' | 'medium' | 'hard' | 'expert';
   startDate: string;
   endDate: string;
-  targetEmployees: { _id: string; phone: string }[];
+  //line below is added by hifza, the original line is commented out
+  targetEmployees: { _id: string; phone: string }[];  // string[] ki jagah
+ //(sakeenaa line is commented) targetEmployees: string[];
   targetDepartments: string[];
   emailTemplate: string;
   smsTemplate: string;
@@ -99,6 +98,12 @@ const smsTemplates = [
   { key: 'password_reset', name: 'Password Reset', description: 'Fake password reset request warning' },
   { key: 'prize_winner', name: 'Prize Winner', description: 'Fake prize/gift card claim' },
   { key: 'tax_refund', name: 'Tax Refund', description: 'Fake IRS tax refund notification' },
+];
+
+const emailTemplates = [
+  { key: 'bank_phishing', name: 'Bank Login Verification', description: 'Fake bank security alert requiring account verification' },
+  { key: 'office365_phishing', name: 'Office 365 Verification', description: 'Fake Microsoft 365 account verification request' },
+  { key: 'hr_phishing', name: 'HR Benefits Update', description: 'Fake HR benefits enrollment deadline notice' },
 ];
 
 const voiceScripts = [
@@ -122,21 +127,20 @@ export default function CampaignsPage() {
   const [formData, setFormData] = useState<CampaignFormData>({
     campaignName: '',
     type: 'phishing',
-    difficulty: 'medium',
     startDate: '',
     endDate: '',
     targetEmployees: [],
     targetDepartments: [],
-    emailTemplate: '',
+    emailTemplate: 'bank_phishing',
     smsTemplate: 'bank_alert',
     voiceScript: 'bank_verification',
     description: '',
   });
 
   // Fetch campaigns
-  const { data: campaigns = [], isLoading } = useSWR<Campaign[]>(
-    state.user?.companyId ? `campaigns-${state.user.companyId}` : 'campaigns',
-    () => campaignApi.getAll(state.user?.companyId),
+  const { data: campaigns, isLoading } = useSWR<Campaign[]>(
+    state.user?.companyId ? `/campaigns?companyId=${state.user.companyId}` : '/campaigns',
+    fetcher,
     { revalidateOnFocus: false }
   );
 
@@ -159,20 +163,17 @@ const employees = Array.isArray(data) ? data : [];
       : '0',
   };
 
-  const [filterDifficulty, setFilterDifficulty] = useState('all');
-
   // Filter campaigns
   const filteredCampaigns = campaigns?.filter((campaign) => {
     const matchesSearch = campaign.campaignName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || campaign.type === filterType;
     const matchesStatus = filterStatus === 'all' || campaign.status === filterStatus;
-    const matchesDiff   = filterDifficulty === 'all' || (campaign as any).difficulty === filterDifficulty;
-    return matchesSearch && matchesType && matchesStatus && matchesDiff;
+    return matchesSearch && matchesType && matchesStatus;
   }) || [];
 
   // Refresh data
   const refreshData = () => {
-    mutate(state.user?.companyId ? `campaigns-${state.user.companyId}` : 'campaigns');
+    mutate(state.user?.companyId ? `/campaigns?companyId=${state.user.companyId}` : '/campaigns');
   };
 
   
@@ -183,12 +184,11 @@ const employees = Array.isArray(data) ? data : [];
       setFormData({
         campaignName: campaign.campaignName,
         type: campaign.type,
-        difficulty: (campaign as any).difficulty ?? 'medium',
         startDate: campaign.startDate?.split('T')[0] || '',
         endDate: campaign.endDate?.split('T')[0] || '',
         targetEmployees: campaign.targetEmployees || [],
         targetDepartments: campaign.targetDepartments || [],
-        emailTemplate: campaign.emailTemplate || '',
+        emailTemplate: campaign.emailTemplate || 'bank_phishing',
         smsTemplate: campaign.smsTemplate || 'bank_alert',
         voiceScript: campaign.voiceScript || 'bank_verification',
         description: campaign.description || '',
@@ -198,12 +198,11 @@ const employees = Array.isArray(data) ? data : [];
       setFormData({
         campaignName: '',
         type: 'phishing',
-        difficulty: 'medium',
         startDate: '',
         endDate: '',
         targetEmployees: [],
         targetDepartments: [],
-        emailTemplate: '',
+        emailTemplate: 'bank_phishing',
         smsTemplate: 'bank_alert',
         voiceScript: 'bank_verification',
         description: '',
@@ -228,8 +227,6 @@ const employees = Array.isArray(data) ? data : [];
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    console.log("Submitting campaign flow:", formData);
 
     try {
       if (selectedCampaign) {
@@ -295,30 +292,54 @@ const employees = Array.isArray(data) ? data : [];
 //hifza code 
 const toggleEmployee = (employee: Employee) => {
   setFormData(prev => {
-    const exists = prev.targetEmployees.some((e) => e._id === employee._id);
+    const exists = prev.targetEmployees?.some((e) => e._id === employee._id);
+    
+    let employeeData: any;
+    
+    if (formData.type === 'phishing') {
+      employeeData = {
+        _id: employee._id,
+        email: employee.email || ''
+      };
+    } else if (formData.type === 'smishing') {
+      employeeData = {
+        _id: employee._id,
+        phone: employee.phoneNumber || employee.phone || ''
+      };
+    } else {
+      employeeData = {
+        _id: employee._id,
+        phone: employee.phoneNumber || employee.phone || '',
+        email: employee.email || ''
+      };
+    }
+    
     return {
       ...prev,
       targetEmployees: exists
-        ? prev.targetEmployees.filter((e) => e._id !== employee._id)
-        : [...prev.targetEmployees, { 
-            _id: employee._id, 
-            phone: employee.phoneNumber || employee.phone || ''  // ← ye fix
-          }],
+        ? (prev.targetEmployees || []).filter((e) => e._id !== employee._id)
+        : [...(prev.targetEmployees || []), employeeData]
     };
   });
 };
 
 const selectAllEmployees = () => {
   if (employees) {
-    const allSelected = formData.targetEmployees.length === employees.length;
+    const allSelected = (formData.targetEmployees || []).length === employees.length;
+    
+    const mapped = employees.map(e => {
+      if (formData.type === 'phishing') {
+        return { _id: e._id, email: e.email || '' };
+      } else if (formData.type === 'smishing') {
+        return { _id: e._id, phone: e.phoneNumber || e.phone || '' };
+      } else {
+        return { _id: e._id, email: e.email || '', phone: e.phoneNumber || e.phone || '' };
+      }
+    });
+    
     setFormData(prev => ({
       ...prev,
-      targetEmployees: allSelected
-        ? []
-        : employees.map(e => ({ 
-            _id: e._id, 
-            phone: e.phoneNumber || e.phone || ''  // ← ye fix
-          })),
+      targetEmployees: allSelected ? [] : mapped
     }));
   }
 };
@@ -472,18 +493,6 @@ const selectAllEmployees = () => {
           <option value="paused">Paused</option>
           <option value="completed">Completed</option>
         </select>
-
-        <select
-          value={filterDifficulty}
-          onChange={(e) => setFilterDifficulty(e.target.value)}
-          className="px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-sm text-foreground focus:outline-none focus:border-purple-500/50"
-        >
-          <option value="all">All Difficulties</option>
-          <option value="easy">Easy</option>
-          <option value="medium">Medium</option>
-          <option value="hard">Hard</option>
-          <option value="expert">Expert</option>
-        </select>
       </motion.div>
 
       {/* Campaigns Table */}
@@ -499,7 +508,6 @@ const selectAllEmployees = () => {
                 <tr className="border-b border-purple-500/20 bg-muted/30">
                   <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Campaign</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Type</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Difficulty</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Status</th>
                   <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">Targets</th>
                   <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">Click Rate</th>
@@ -549,16 +557,6 @@ const selectAllEmployees = () => {
                             <span className={`text-xs font-semibold px-3 py-1 rounded-full capitalize ${typeColors[campaign.type as keyof typeof typeColors] || ''}`}>
                               {campaign.type}
                             </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            {(() => {
-                              const d = (campaign as any).difficulty ?? 'medium';
-                              const dc = d === 'easy' ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                                       : d === 'medium' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-                                       : d === 'hard' ? 'bg-orange-500/20 text-orange-400 border-orange-500/30'
-                                       : 'bg-red-500/20 text-red-400 border-red-500/30';
-                              return <span className={`text-xs font-semibold px-3 py-1 rounded-full capitalize border ${dc}`}>{d}</span>;
-                            })()}
                           </td>
                           <td className="px-6 py-4">
                             <span className={`text-xs font-semibold px-3 py-1 rounded-full border capitalize ${statusColors[campaign.status as keyof typeof statusColors] || ''}`}>
@@ -740,31 +738,6 @@ const selectAllEmployees = () => {
       </div>
     </div>
 
-    {/* DIFFICULTY ROW */}
-    <div>
-      <label className="block text-sm font-medium mb-2">Campaign Difficulty</label>
-      <div className="flex gap-2 flex-wrap">
-        {(['easy', 'medium', 'hard', 'expert'] as const).map((d) => {
-          const dc = d === 'easy' ? 'bg-green-500/20 border-green-500/50 text-green-400'
-                   : d === 'medium' ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
-                   : d === 'hard' ? 'bg-orange-500/20 border-orange-500/50 text-orange-400'
-                   : 'bg-red-500/20 border-red-500/50 text-red-400';
-          return (
-            <button
-              key={d}
-              type="button"
-              onClick={() => setFormData({ ...formData, difficulty: d })}
-              className={`px-4 py-2 rounded-lg border text-sm font-medium capitalize transition-all ${
-                formData.difficulty === d ? dc : 'bg-muted/50 border-purple-500/20 text-muted-foreground'
-              }`}
-            >
-              {d}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-
     {/* ROW 2 - DATES */}
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <input
@@ -858,13 +831,24 @@ onChange={() => toggleEmployee(employee)}  // poora employee object pass karo
 
     {/* EMAIL TEMPLATE */}
     {formData.type === 'phishing' && (
-      <textarea
-        value={formData.emailTemplate}
-        onChange={(e) => setFormData({ ...formData, emailTemplate: e.target.value })}
-        rows={4}
-        placeholder="Email template..."
-        className="w-full px-4 py-2 border rounded-lg"
-      />
+      <div>
+        <label className="text-sm font-medium mb-2 block">Email Template</label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          {emailTemplates.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setFormData({ ...formData, emailTemplate: t.key })}
+              className={`p-3 border rounded-lg text-left ${
+                formData.emailTemplate === t.key ? 'bg-red-500/20 border-red-500/30' : ''
+              }`}
+            >
+              <p className="font-medium text-sm">{t.name}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
+            </button>
+          ))}
+        </div>
+      </div>
     )}
 
     {/* DESCRIPTION */}
@@ -945,29 +929,11 @@ onChange={() => toggleEmployee(employee)}  // poora employee object pass karo
               </div>
             </div>
 
-            {selectedCampaign.emailTemplate && selectedCampaign.type === 'phishing' && (
+            {selectedCampaign.emailTemplate && (
               <div>
                 <p className="text-sm font-medium text-foreground mb-2">Email Template</p>
                 <div className="p-4 rounded-lg bg-muted/30 text-sm text-muted-foreground whitespace-pre-wrap">
                   {selectedCampaign.emailTemplate}
-                </div>
-              </div>
-            )}
-
-            {selectedCampaign.smsTemplate && selectedCampaign.type === 'smishing' && (
-              <div>
-                <p className="text-sm font-medium text-foreground mb-2">SMS Template</p>
-                <div className="p-4 rounded-lg bg-muted/30 text-sm text-muted-foreground whitespace-pre-wrap">
-                  {selectedCampaign.smsTemplate}
-                </div>
-              </div>
-            )}
-
-            {selectedCampaign.voiceScript && selectedCampaign.type === 'vishing' && (
-              <div>
-                <p className="text-sm font-medium text-foreground mb-2">Voice Script</p>
-                <div className="p-4 rounded-lg bg-muted/30 text-sm text-muted-foreground whitespace-pre-wrap">
-                  {selectedCampaign.voiceScript}
                 </div>
               </div>
             )}

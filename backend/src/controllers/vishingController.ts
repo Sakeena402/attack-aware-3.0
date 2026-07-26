@@ -1,192 +1,22 @@
 import { Response } from 'express';
-import { AuthRequest, ApiResponse } from '../types/index.js';
-import { AppError } from '../utils/errorHandler.js';
-import {
-  generateTrackingToken,
-  makeVoiceCall,
-  voiceScripts,
-} from '../services/twilioService.js';
-import {
-  recordCallInitiated,
-  getCampaignSimulationStats,
-} from '../services/trackingService.js';
 import { Campaign } from '../models/Campaign.js';
-import { User } from '../models/User.js';          // ✅ named import (was default in first half)
+import SimulationResult from '../models/SimulationResult.js';
+import { AppError } from '../utils/errorHandler.js';
+import { AuthRequest, ApiResponse } from '../types/index.js';
+import { makeVoiceCall, generateTrackingToken, hashToken, voiceScripts } from '../services/twilioService.js';
+import {
+  recordCallStatus,
+  recordVoiceResponse,
+} from '../services/trackingService.js';
 
-// Make single vishing call
-export const sendVishingSimulation = async (
-  req: AuthRequest,
-  res: Response<ApiResponse>
-): Promise<void> => {
-  try {
-    if (!req.user) {
-      throw new AppError('User not authenticated', 401);
-    }
-
-    const { campaignId, userId, scriptKey } = req.body;
-
-    if (!campaignId || !userId || !scriptKey) {
-      throw new AppError('Missing required fields: campaignId, userId, scriptKey', 400);
-    }
-
-    if (!voiceScripts[scriptKey as keyof typeof voiceScripts]) {
-      throw new AppError('Invalid voice script', 400);
-    }
-
-    const campaign = await Campaign.findById(campaignId);
-    if (!campaign) {
-      throw new AppError('Campaign not found', 404);
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      throw new AppError('User not found', 404);
-    }
-
-    if (!user.phoneNumber) {
-      throw new AppError('User does not have a phone number', 400);
-    }
-
-    const trackingToken = generateTrackingToken();
-
-    const result = await makeVoiceCall({
-      to: user.phoneNumber,
-      scriptKey: scriptKey as keyof typeof voiceScripts,
-      trackingToken,
-      campaignId,
-      userId,
-    });
-
-    if (!result.success) {
-      throw new AppError(result.error || 'Failed to make call', 500);
-    }
-
-    await recordCallInitiated({
-      campaignId,
-      userId,
-      trackingToken,
-      callSid: result.callSid!,
-      phoneNumber: user.phoneNumber,
-      scriptKey,
-    });
-
-    res.json({
-      success: true,
-      data: { callSid: result.callSid, status: 'initiated' },
-      message: 'Vishing simulation call initiated',
-    });
-  } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ success: false, error: error.message });
-    } else {
-      res.status(500).json({ success: false, error: 'Failed to initiate vishing call' });
-    }
-  }
-};
-
-// Launch vishing campaign to all targets
-export const sendCampaignVishing = async (
-  req: AuthRequest,
-  res: Response<ApiResponse>
-): Promise<void> => {
-  try {
-    if (!req.user) {
-      throw new AppError('User not authenticated', 401);
-    }
-
-    const { campaignId } = req.params;
-    const { scriptKey, targetDepartment, callInterval = 5000 } = req.body;
-
-    if (!scriptKey) {
-      throw new AppError('Script key is required', 400);
-    }
-
-    const campaign = await Campaign.findById(campaignId);
-    if (!campaign) {
-      throw new AppError('Campaign not found', 404);
-    }
-
-    const query: Record<string, unknown> = {
-      companyId: campaign.companyId,
-      phoneNumber: { $exists: true, $ne: '' },
-    };
-
-    if (targetDepartment && targetDepartment !== 'all') {
-      query.department = targetDepartment;
-    } else if (campaign.targetDepartments && campaign.targetDepartments.length > 0) {
-      query.department = { $in: campaign.targetDepartments };
-    }
-
-    const users = await User.find(query);
-
-    if (users.length === 0) {
-      throw new AppError('No users with phone numbers found for this campaign', 400);
-    }
-
-    const results = {
-      total: users.length,
-      initiated: 0,
-      failed: 0,
-      errors: [] as string[],
-    };
-
-    for (const user of users) {
-      const trackingToken = generateTrackingToken();
-
-      const result = await makeVoiceCall({
-        to: user.phoneNumber!,
-        scriptKey: scriptKey as keyof typeof voiceScripts,
-        trackingToken,
-        campaignId,
-        userId: user._id.toString(),
-      });
-
-      if (result.success) {
-        await recordCallInitiated({
-          campaignId,
-          userId: user._id.toString(),
-          trackingToken,
-          callSid: result.callSid!,
-          phoneNumber: user.phoneNumber!,
-          scriptKey,
-        });
-        results.initiated++;
-      } else {
-        results.failed++;
-        results.errors.push(`${user.email}: ${result.error}`);
-      }
-
-      await new Promise(resolve => setTimeout(resolve, callInterval));
-    }
-
-    campaign.status = 'active';
-    campaign.voiceScript = scriptKey;
-    await campaign.save();
-
-    res.json({
-      success: true,
-      data: results,
-      message: `Vishing campaign launched: ${results.initiated} calls initiated, ${results.failed} failed`,
-    });
-  } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ success: false, error: error.message });
-    } else {
-      res.status(500).json({ success: false, error: 'Failed to launch vishing campaign' });
-    }
-  }
-};
-
-// Get available voice scripts
 export const getVoiceScripts = async (
   req: AuthRequest,
   res: Response<ApiResponse>
 ): Promise<void> => {
   try {
-    const scripts = Object.entries(voiceScripts).map(([key, script]) => ({
+    const scripts = Object.entries(voiceScripts).map(([key, value]) => ({
       key,
-      name: script.name,
-      description: getScriptDescription(key),
+      name: value.name,
     }));
 
     res.json({ success: true, data: scripts });
@@ -195,48 +25,199 @@ export const getVoiceScripts = async (
   }
 };
 
-const getScriptDescription = (key: string): string => {
-  const descriptions: Record<string, string> = {
-    bank_verification: 'Simulates a call from a financial institution about suspicious activity',
-    it_support: 'Simulates a call from IT support about a security issue',
-    insurance_claim: 'Simulates a call about an insurance policy update',
-  };
-  return descriptions[key] || 'Voice phishing simulation script';
+export const sendVishingSimulation = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    if (!req.user) throw new AppError('User not authenticated', 401);
+
+    const { recipientPhone, scriptKey, campaignId } = req.body;
+
+    if (!recipientPhone || !scriptKey || !campaignId) {
+      res.status(400).json({ success: false, error: 'Missing required fields' });
+      return;
+    }
+
+    const campaign = await Campaign.findById(campaignId);
+    if (!campaign) {
+      res.status(404).json({ success: false, error: 'Campaign not found' });
+      return;
+    }
+
+    const token = generateTrackingToken();
+    const hashedToken = hashToken(token);
+
+    const callResult = await makeVoiceCall({
+      to: recipientPhone,
+      scriptKey: scriptKey as keyof typeof voiceScripts,
+      trackingToken: token,
+      campaignId,
+      userId: req.user.id,
+    });
+
+    if (!callResult.success) {
+      res.status(500).json({ success: false, error: callResult.error });
+      return;
+    }
+
+    await SimulationResult.create({
+      userId: req.user.id,
+      campaignId,
+      simulationType: 'vishing',
+      trackingToken: hashedToken,
+      callInitiated: true,
+      callInitiatedAt: new Date(),
+      voiceScript: scriptKey,
+      callSid: callResult.callSid,
+      phoneNumber: recipientPhone,
+    });
+
+    campaign.sentCount = (campaign.sentCount || 0) + 1;
+    await campaign.save();
+
+    res.status(201).json({
+      success: true,
+      data: { campaignId, recipientPhone, scriptKey },
+      message: 'Vishing call initiated successfully',
+    });
+  } catch (error) {
+    console.error('sendVishingSimulation error:', error);
+    res.status(500).json({ success: false, error: 'Failed to initiate vishing call' });
+  }
 };
 
-// Get campaign vishing stats
+export const sendCampaignVishing = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    if (!req.user) throw new AppError('User not authenticated', 401);
+
+    const { campaignId } = req.params;
+    const companyFilter = (req as any).companyFilter || {};
+
+    const campaign = await Campaign.findOne({ _id: campaignId, ...companyFilter });
+    if (!campaign) {
+      res.status(404).json({ success: false, error: 'Campaign not found' });
+      return;
+    }
+
+    if (campaign.type !== 'vishing') {
+      res.status(400).json({ success: false, error: 'Campaign type is not vishing' });
+      return;
+    }
+
+    const targetEmployees = campaign.targetEmployees as Array<{ _id: string; phone?: string }>;
+
+    if (!targetEmployees || targetEmployees.length === 0) {
+      res.status(400).json({ success: false, error: 'No target employees for this campaign' });
+      return;
+    }
+
+    const results = { total: targetEmployees.length, sent: 0, failed: 0 };
+    const scriptKey = (campaign.voiceScript || 'bank_verification') as keyof typeof voiceScripts;
+
+    for (const target of targetEmployees) {
+      const phone = target.phone;
+      const userId = target._id?.toString();
+
+      if (!phone || !userId) continue;
+
+      const token = generateTrackingToken();
+      const hashedToken = hashToken(token);
+
+      const callResult = await makeVoiceCall({
+        to: phone,
+        scriptKey,
+        trackingToken: token,
+        campaignId: campaign._id.toString(),
+        userId,
+      });
+
+      await SimulationResult.create({
+        userId,
+        campaignId: campaign._id,
+        simulationType: 'vishing',
+        trackingToken: hashedToken,
+        callInitiated: callResult.success,
+        callInitiatedAt: new Date(),
+        voiceScript: scriptKey,
+        callSid: callResult.callSid,
+        phoneNumber: phone,
+      });
+
+      callResult.success ? results.sent++ : results.failed++;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { campaign, results },
+      message: `Vishing campaign initiated: ${results.sent} sent, ${results.failed} failed`,
+    });
+  } catch (error) {
+    console.error('sendCampaignVishing error:', error);
+    res.status(500).json({ success: false, error: 'Failed to initiate vishing campaign' });
+  }
+};
+
 export const getCampaignVishingStats = async (
   req: AuthRequest,
   res: Response<ApiResponse>
 ): Promise<void> => {
   try {
     const { campaignId } = req.params;
+    const companyFilter = (req as any).companyFilter || {};
 
-    const stats = await getCampaignSimulationStats(campaignId);
+    const campaign = await Campaign.findOne({ _id: campaignId, ...companyFilter });
+    if (!campaign) {
+      res.status(404).json({ success: false, error: 'Campaign not found' });
+      return;
+    }
 
-    res.json({
-      success: true,
-      data: {
-        ...stats,
-        answerRate: stats.callsInitiated > 0
-          ? Math.round((stats.callsAnswered / stats.callsInitiated) * 100)
-          : 0,
-        engagementRate: stats.callsAnswered > 0
-          ? Math.round((stats.callsEngaged / stats.callsAnswered) * 100)
-          : 0,
-        reportRate: stats.callsAnswered > 0
-          ? Math.round((stats.callsReported / stats.callsAnswered) * 100)
-          : 0,
-      },
-    });
+    const results = await SimulationResult.find({
+      campaignId,
+      simulationType: 'vishing',
+    }).populate('userId', 'name email phoneNumber');
+
+    const stats = {
+      campaignId,
+      campaignName: campaign.campaignName,
+      totalTargets: campaign.targetCount || results.length,
+      callsInitiated: results.filter((r) => r.callInitiated).length,
+      callsAnswered: results.filter((r) => r.callAnswered).length,
+      callsCompleted: results.filter((r) => r.callStatus === 'completed').length,
+      keyPressRate: 0,
+      conversionRate: 0,
+      details: results.map((r) => ({
+        userId: r.userId,
+        phoneNumber: r.phoneNumber,
+        callInitiated: r.callInitiated,
+        callInitiatedAt: r.callInitiatedAt,
+        callAnswered: r.callAnswered,
+        callAnsweredAt: r.callAnsweredAt,
+        callStatus: r.callStatus,
+        voiceResponse: r.voiceResponse,
+        callDuration: r.callDuration,
+      })),
+    };
+
+    const initiated = stats.callsInitiated;
+    if (initiated > 0) {
+      stats.keyPressRate = Math.round((stats.callsAnswered / initiated) * 100);
+      stats.conversionRate = Math.round((stats.callsCompleted / initiated) * 100);
+    }
+
+    res.json({ success: true, data: stats });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to fetch campaign stats' });
+    console.error('getCampaignVishingStats error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch vishing stats' });
   }
 };
 
 export default {
+  getVoiceScripts,
   sendVishingSimulation,
   sendCampaignVishing,
-  getVoiceScripts,
   getCampaignVishingStats,
 };
