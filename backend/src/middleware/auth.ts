@@ -6,11 +6,7 @@ import { AuthRequest, UserRole } from '../types/index.js';
 import { logAuth, logSecurity } from '../utils/logger.js';
 
 
-// JWT Error types
-interface JWTError extends Error {
-  name: 'TokenExpiredError' | 'JsonWebTokenError' | 'NotBeforeError';
-  expiredAt?: Date;
-}
+
 
 // Extract token from request
 // const extractToken = (req: AuthRequest): string | null => {

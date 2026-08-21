@@ -98,14 +98,14 @@ export const createCompanySelfService = async (
       updatedUser._id.toString(), 
       updatedUser.email, 
       updatedUser.role, // Now 'admin'
-      updatedUser.companyId // Now newCompany._id
+      updatedUser.companyId?.toString() // Now newCompany._id
     );
     
     const newRefreshToken = generateRefreshToken(
       updatedUser._id.toString(), 
       updatedUser.email, 
       updatedUser.role, // Now 'admin'
-      updatedUser.companyId // Now newCompany._id
+      updatedUser.companyId?.toString() // Now newCompany._id
     );
 
     // Set new cookies with updated user data

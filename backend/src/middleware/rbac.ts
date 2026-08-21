@@ -1,15 +1,15 @@
 // backend/src/middleware/rbac.ts
 import { Response, NextFunction } from 'express';
-import { AppError } from '../utils/errorHandler.js';
+import { AppError, ErrorCodes } from '../utils/errorHandler.js';
 import { AuthRequest } from '../types/index.js';
 
 /**
  * Authorize users by role.
  */
 export const authorizeRoles = (...allowedRoles: string[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
+  return (req: AuthRequest, _res: Response, next: NextFunction) => {
     try {
-      if (!req.user) return next(new AppError('Not authenticated', 401));
+      if (!req.user) return next(new AppError('Not authenticated', 401, ErrorCodes.UNAUTHORIZED));
 
       if (!allowedRoles.includes(req.user.role)) {
         console.warn(`[rbac] ${req.user.email} (${req.user.role}) denied — needs ${allowedRoles.join(', ')}`);
@@ -26,7 +26,7 @@ export const authorizeRoles = (...allowedRoles: string[]) => {
 /**
  * Super admin only.
  */
-export const requireSuperAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const requireSuperAdmin = (req: AuthRequest, _res: Response, next: NextFunction) => {
   try {
     if (!req.user) return next(new AppError('Not authenticated', 401));
 
@@ -44,7 +44,7 @@ export const requireSuperAdmin = (req: AuthRequest, res: Response, next: NextFun
 /**
  * Admin or super admin.
  */
-export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const requireAdmin = (req: AuthRequest, _res: Response, next: NextFunction) => {
   try {
     if (!req.user) return next(new AppError('Not authenticated', 401));
 
@@ -62,7 +62,7 @@ export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction
 /**
  * Employee only.
  */
-export const requireEmployee = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const requireEmployee = (req: AuthRequest, _res: Response, next: NextFunction) => {
   try {
     if (!req.user) return next(new AppError('Not authenticated', 401));
 
@@ -82,7 +82,7 @@ export const requireEmployee = (req: AuthRequest, res: Response, next: NextFunct
  * Sets req.companyFilter and/or req.userFilter — controllers read these
  * instead of trusting query params from the client.
  */
-export const isolateByCompany = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const isolateByCompany = (req: AuthRequest, _res: Response, next: NextFunction) => {
   try {
     if (!req.user) return next(new AppError('Not authenticated', 401));
 
@@ -100,7 +100,7 @@ export const isolateByCompany = (req: AuthRequest, res: Response, next: NextFunc
         return next(new AppError(
           'Your account is not associated with a company. Please contact support.',
           403,
-          'NO_COMPANY'
+          ErrorCodes.FORBIDDEN
         ));
       }
       (req as any).companyFilter = { companyId: req.user.companyId };
@@ -113,7 +113,7 @@ export const isolateByCompany = (req: AuthRequest, res: Response, next: NextFunc
         return next(new AppError(
           'Your account is not associated with a company. Please contact support.',
           403,
-          'NO_COMPANY'
+          ErrorCodes.FORBIDDEN
         ));
       }
       (req as any).companyFilter = { companyId: req.user.companyId };
@@ -121,7 +121,7 @@ export const isolateByCompany = (req: AuthRequest, res: Response, next: NextFunc
       return next();
     }
 
-    next(new AppError('Unknown role', 400, 'INVALID_REQUEST'));
+    next(new AppError('Unknown role', 400, ErrorCodes.INVALID_INPUT));
   } catch (err) {
     next(err);
   }
@@ -131,7 +131,7 @@ export const isolateByCompany = (req: AuthRequest, res: Response, next: NextFunc
  * Check resource ownership. Employees can only access their own data;
  * admins can access anyone in their company; super admins have no restriction.
  */
-export const checkOwnership = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const checkOwnership = (req: AuthRequest, _res: Response, next: NextFunction) => {
   try {
     if (!req.user) return next(new AppError('Not authenticated', 401, ));
 

@@ -4,13 +4,9 @@ import SimulationResult from '../models/SimulationResult.js';
 import { AppError } from '../utils/errorHandler.js';
 import { AuthRequest, ApiResponse } from '../types/index.js';
 import { makeVoiceCall, generateTrackingToken, hashToken, voiceScripts } from '../services/twilioService.js';
-import {
-  recordCallStatus,
-  recordVoiceResponse,
-} from '../services/trackingService.js';
 
 export const getVoiceScripts = async (
-  req: AuthRequest,
+  _req: AuthRequest,
   res: Response<ApiResponse>
 ): Promise<void> => {
   try {
@@ -108,7 +104,7 @@ export const sendCampaignVishing = async (
       return;
     }
 
-    const targetEmployees = campaign.targetEmployees as Array<{ _id: string; phone?: string }>;
+    const targetEmployees = campaign.targetEmployees as unknown as Array<{ _id: any; phone?: string }>;
 
     if (!targetEmployees || targetEmployees.length === 0) {
       res.status(400).json({ success: false, error: 'No target employees for this campaign' });

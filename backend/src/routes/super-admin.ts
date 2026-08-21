@@ -10,11 +10,11 @@ import { authenticate } from '../middleware/auth.js';
 import { requireSuperAdmin } from '../middleware/rbac.js';
 import { User } from '../models/User.js';
 import { Company } from '../models/Company.js';
-import { Campaign } from '../models/Campaign.js';
+// import { Campaign } from '../models/Campaign.js'; // removed: unused
 import {
   computeDashboardStats,
   computeSimulationAnalytics,
-  computeDepartmentRisk,
+  // computeDepartmentRisk, // removed: unused
 } from '../services/analyticsService.js';
 
 const superAdminRouter = Router();
@@ -29,7 +29,7 @@ superAdminRouter.put('/companies/:id',   updateCompany);
 superAdminRouter.delete('/companies/:id', deleteCompany);
 
 // ── Global Analytics — REAL DATA, no companyId filter ────────────────────────
-superAdminRouter.get('/analytics/global', async (req, res) => {
+superAdminRouter.get('/analytics/global', async (_req, res) => {
   try {
     // All computed with companyId = undefined → queries ALL companies
     const [dashboard, simulations, companies, monthlyGrowth, industryDist] = await Promise.all([
@@ -112,7 +112,7 @@ superAdminRouter.get('/analytics/global', async (req, res) => {
 });
 
 // ── Platform Users ────────────────────────────────────────────────────────────
-superAdminRouter.get('/users', async (req, res) => {
+superAdminRouter.get('/users', async (_req, res) => {
   try {
     const users = await User.find().select('-passwordHash').lean();
     res.json({ success: true, data: users });
@@ -122,7 +122,7 @@ superAdminRouter.get('/users', async (req, res) => {
 });
 
 // ── System Health ─────────────────────────────────────────────────────────────
-superAdminRouter.get('/system/health', async (req, res) => {
+superAdminRouter.get('/system/health', async (_req, res) => {
   res.json({
     success: true,
     data: {

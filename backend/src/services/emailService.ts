@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
-import crypto from 'crypto';
+// import crypto from 'crypto'; // removed: unused
 
 let transporter: nodemailer.Transporter | null = null;
 

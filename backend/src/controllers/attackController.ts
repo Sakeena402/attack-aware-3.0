@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { AuthRequest, ApiResponse } from '../types/index.js';
 import { Attack } from '../models/Attack.js';
 
-export const getAttacks = async (req: AuthRequest, res: Response<ApiResponse>) => {
+export const getAttacks = async (_req: AuthRequest, res: Response<ApiResponse>) => {
   try {
     const attacks = await Attack.find();
     res.json({ success: true, data: attacks });

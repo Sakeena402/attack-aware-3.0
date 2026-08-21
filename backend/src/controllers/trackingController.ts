@@ -78,7 +78,7 @@ export const handleCredentialSubmission = async (
       token,
       campaignId,
       userId,
-      { fields: formFields }
+      formFields
     );
 
     if (result.success) {
@@ -119,7 +119,7 @@ export const handlePhishingReport = async (
       return;
     }
 
-    const result = await recordPhishingReported(
+    await recordPhishingReported(
       token,
       campaignId,
       userId,

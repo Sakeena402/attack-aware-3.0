@@ -7,7 +7,7 @@ const router = express.Router();
 // GET settings
 router.get("/", authenticate, async (req, res) => {
   try {
-    const settings = await getSettings(req.user);  // ✅ passes req.user
+    const settings = await getSettings((req as any).user);  // ✅ passes req.user
     res.json(settings);
   } catch (err) {
     console.error(err);
@@ -18,7 +18,7 @@ router.get("/", authenticate, async (req, res) => {
 // UPDATE settings  
 router.put("/", authenticate, async (req, res) => {
   try {
-    const updated = await updateSettings(req.user, req.body);  // ✅ passes req.user + body
+    const updated = await updateSettings((req as any).user, req.body);  // ✅ passes req.user + body
     res.json(updated);
   } catch (err) {
     console.error(err);
@@ -28,16 +28,18 @@ router.put("/", authenticate, async (req, res) => {
 
 // TEAM MANAGEMENT (Admin + Super Admin)
 router.get("/team", authenticate, async (req, res) => {        // ✅ authMiddleware → authenticate
-  if (req.user.role !== "admin" && req.user.role !== "super_admin") {
-    return res.status(403).json({ message: "Access denied" });
+  if ((req as any).user.role !== "admin" && (req as any).user.role !== "super_admin") {
+    res.status(403).json({ message: "Access denied" });
+    return;
   }
   res.json({ message: "Team data for admin/super-admin" });
 });
 
 // SYSTEM CONTROLS (Super Admin only)
 router.get("/system", authenticate, async (req, res) => {      // ✅ authMiddleware → authenticate
-  if (req.user.role !== "super_admin") {
-    return res.status(403).json({ message: "Access denied" });
+  if ((req as any).user.role !== "super_admin") {
+    res.status(403).json({ message: "Access denied" });
+    return;
   }
   res.json({ message: "System controls data for super-admin" });
 });

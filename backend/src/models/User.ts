@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, Types } from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 import { IUser } from '../types/index.js';
 
 const userSchema = new Schema<IUser>(

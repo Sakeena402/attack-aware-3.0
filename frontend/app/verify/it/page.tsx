@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Monitor, Shield, AlertTriangle, CheckCircle, Lock, Server } from 'lucide-react';
 import { TRACKING_API_BASE } from '@/lib/trackingApi';
 
-export default function ITSupportVerificationPage() {
+function ITSupportVerificationPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get('token');
@@ -259,5 +259,17 @@ function CaughtPage({ onClose }: { onClose: () => void }) {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ITSupportVerificationPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-white">
+        Loading...
+      </div>
+    }>
+      <ITSupportVerificationPageInner />
+    </Suspense>
   );
 }

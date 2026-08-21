@@ -79,7 +79,7 @@ export const submitQuiz = async (req: AuthRequest, res: Response<ApiResponse>): 
     const pointsMap: Record<string, number> = { quiz_90: 30, quiz_75: 20, quiz_60: 15, quiz_40: 8, quiz_0: 3 };
     const pointsEarned = pointsMap[actionType];
 
-    const userQuiz = await UserQuiz.create({
+    await UserQuiz.create({
       userId,
       quizId,
       score,

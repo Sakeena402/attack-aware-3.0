@@ -2,7 +2,7 @@
 // frontend/app/verify/[pageType]/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -106,7 +106,7 @@ const pageConfigs: Record<string, {
 
 type PageState = 'form' | 'caught' | 'reported';
 
-export default function VerifyPage() {
+function VerifyPageContent() {
   const params       = useParams();
   const searchParams = useSearchParams();
 
@@ -275,5 +275,13 @@ export default function VerifyPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <VerifyPageContent />
+    </Suspense>
   );
 }

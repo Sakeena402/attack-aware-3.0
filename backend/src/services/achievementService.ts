@@ -61,9 +61,9 @@ async function checkQuizMaster(
 async function checkZeroClicks6Months(
   userObjectId: mongoose.Types.ObjectId,
 ): Promise<boolean> {
-  const existing = await User.findById(userObjectId)
-    .select('achievements')
-    .lean() as any;
+  // const existing = await User.findById(userObjectId)
+  //   .select('achievements')
+  //   .lean() as any;
   // Achievement is dynamic — re-evaluate even if already earned (could be lost)
   // We just skip pushing a duplicate thanks to $addToSet on the caller side.
 

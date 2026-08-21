@@ -1,6 +1,6 @@
 // backend/src/services/campaignAnalyticsService.ts
 import SimulationResult from '../models/SimulationResult.js';
-import { User }         from '../models/User.js';
+// import { User }         from '../models/User.js'; // removed: unused
 import { Campaign }     from '../models/Campaign.js';
 import mongoose         from 'mongoose';
 

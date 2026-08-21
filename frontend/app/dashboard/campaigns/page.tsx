@@ -46,7 +46,7 @@ import { Campaign, Employee } from '@/app/services/types';
 
 const fetcher = async (url: string) => {
   const response = await apiService.get(url);
-  const data = response.data;
+  const data = response.data as any;
 
   // Normalize response shape
   if (Array.isArray(data)) return data;
@@ -81,8 +81,7 @@ interface CampaignFormData {
   type: 'phishing' | 'smishing' | 'vishing';
   startDate: string;
   endDate: string;
-  //line below is added by hifza, the original line is commented out
-  targetEmployees: { _id: string; phone: string }[];  // string[] ki jagah
+  targetEmployees: { _id: string; phone?: string; email?: string }[];  // string[] ki jagah
  //(sakeenaa line is commented) targetEmployees: string[];
   targetDepartments: string[];
   emailTemplate: string;

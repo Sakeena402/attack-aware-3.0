@@ -1,14 +1,14 @@
 import { Response } from 'express';
 import { Campaign } from '../models/Campaign.js';
 import SimulationResult from '../models/SimulationResult.js';
-import { Company }      from '../models/Company.js';
+
 import { AppError }     from '../utils/errorHandler.js';
 import { AuthRequest, ApiResponse, CampaignStatus } from '../types/index.js';
 import { sendSms, generateTrackingToken as generateSmsToken, hashToken, smsTemplates } from '../services/twilioService.js';
-import { recordSmsSent } from '../services/trackingService.js';
+
 import { companyHasFeature } from '../services/planService.js';
 import { sendPhishingEmail, generateTrackingToken as generateEmailToken, emailTemplates } from '../services/emailService.js';
-import mongoose from 'mongoose';
+
 
 interface TargetEmployee {
   _id: string;
@@ -266,11 +266,12 @@ export const launchCampaign = async (
         emailResult.success ? results.sent++ : results.failed++;
       }
 
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
         data: { campaign, results },
         message: `Phishing campaign launched: ${results.sent} sent, ${results.failed} failed`,
       });
+      return;
     }
 
     if (campaign.type === 'smishing') {
@@ -318,11 +319,12 @@ export const launchCampaign = async (
         smsResult.success ? results.sent++ : results.failed++;
       }
 
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
         data: { campaign, results },
         message: `Smishing campaign launched: ${results.sent} sent, ${results.failed} failed`,
       });
+      return;
     }
 
     campaign.status = 'active';

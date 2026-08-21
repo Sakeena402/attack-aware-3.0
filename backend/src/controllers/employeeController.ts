@@ -4,7 +4,7 @@ import { Response } from 'express';
 import bcryptjs from 'bcryptjs';
 import { User } from '../models/User.js';
 import { Company } from '../models/Company.js';
-import { MembershipPlan } from '../models/MembershipPlan.js';
+
 import { AppError } from '../utils/errorHandler.js';
 import { AuthRequest, ApiResponse } from '../types/index.js';
 
@@ -255,7 +255,7 @@ export const createEmployee = async (
     await newEmployee.save();
 
     const employeeResponse = newEmployee.toObject();
-    delete (employeeResponse as Record<string, unknown>).passwordHash;
+    delete (employeeResponse as any).passwordHash;
 
     res.status(201).json({
       success: true,
@@ -315,7 +315,7 @@ export const updateEmployee = async (
     await employee.save();
 
     const employeeResponse = employee.toObject();
-    delete (employeeResponse as Record<string, unknown>).passwordHash;
+    delete (employeeResponse as any).passwordHash;
 
     res.json({
       success: true,

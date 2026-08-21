@@ -40,15 +40,13 @@ export const handleSmsStatus = async (
       MessageSid,
       MessageStatus,
       ErrorCode,
-      ErrorMessage,
     } = req.body;
 
-    await recordSmsStatus({
-      messageSid: MessageSid,
-      status: MessageStatus,
-      errorCode: ErrorCode,
-      errorMessage: ErrorMessage,
-    });
+    await recordSmsStatus(
+      MessageSid,
+      MessageStatus,
+      ErrorCode
+    );
 
     // Twilio expects a 200 response
     res.status(200).send('<Response></Response>');
@@ -68,15 +66,13 @@ export const handleCallStatus = async (
       CallSid,
       CallStatus,
       CallDuration,
-      AnsweredBy,
     } = req.body;
 
-    await recordCallStatus({
-      callSid: CallSid,
-      status: CallStatus,
-      duration: CallDuration ? parseInt(CallDuration, 10) : undefined,
-      answeredBy: AnsweredBy,
-    });
+    await recordCallStatus(
+      CallSid,
+      CallStatus,
+      CallDuration ? parseInt(CallDuration, 10) : undefined
+    );
 
     res.status(200).send('<Response></Response>');
   } catch (error) {
@@ -97,12 +93,12 @@ export const handleVoiceResponse = async (
     const result = await SimulationResult.findOne({ callSid: CallSid });
 
     if (result) {
-      const { responseType } = await recordVoiceResponse({
-        callSid: CallSid,
-        digitsPressed: Digits,
-        campaignId: result.campaignId.toString(),
-        userId: result.userId.toString(),
-      });
+      await recordVoiceResponse(
+        CallSid,
+        Digits,
+        result.campaignId.toString(),
+        result.userId.toString()
+      );
 
       // Generate appropriate TwiML response based on what they pressed
       let twimlResponse = '';

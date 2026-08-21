@@ -55,8 +55,8 @@ export const login = async (
     const isPasswordValid = await bcryptjs.compare(password, user.passwordHash);
     if (!isPasswordValid) throw new AppError('Invalid credentials', 401);
 
-    const accessToken = generateToken(user._id.toString(), user.email, user.role, user.companyId);
-    const refreshToken = generateRefreshToken(user._id.toString(), user.email, user.role, user.companyId);
+    const accessToken = generateToken(user._id.toString(), user.email, user.role, user.companyId?.toString());
+    const refreshToken = generateRefreshToken(user._id.toString(), user.email, user.role, user.companyId?.toString());
 
     res.cookie('accessToken', accessToken, COOKIE_OPTS_ACCESS);
     res.cookie('refreshToken', refreshToken, COOKIE_OPTS_REFRESH);
@@ -84,7 +84,7 @@ export const register = async (
   res: Response<ApiResponse>
 ): Promise<void> => {
   try {
-    const { name, email, password, role } = req.body as RegisterRequest;
+    const { name, email, password, role: _role } = req.body as RegisterRequest;
 
     const validation = validateRegisterRequest(name, email, password);
     if (!validation.valid) throw new AppError(validation.error || 'Validation failed', 400);
@@ -107,11 +107,18 @@ export const register = async (
     });
     await newUser.save();
 
-    const accessToken = generateToken(newUser._id.toString(), newUser.email, newUser.role, newUser.companyId);
-    const refreshToken = generateRefreshToken(newUser._id.toString(), newUser.email, newUser.role, newUser.companyId);
-
-    res.cookie('accessToken', accessToken, COOKIE_OPTS_ACCESS);
-    res.cookie('refreshToken', refreshToken, COOKIE_OPTS_REFRESH);
+    const newAccessToken = generateToken(
+      newUser._id.toString(), 
+      newUser.email,
+      newUser.role, // Now 'admin'
+      newUser.companyId?.toString() // Now newCompany._id
+    );const newRefreshToken = generateRefreshToken(
+      newUser._id.toString(), 
+      newUser.email,
+      newUser.role, // Now 'admin'
+      newUser.companyId?.toString() // Now newCompany._id
+    );res.cookie('accessToken', newAccessToken, COOKIE_OPTS_ACCESS);
+    res.cookie('refreshToken', newRefreshToken, COOKIE_OPTS_REFRESH);
 
     res.status(201).json({
       success: true,
@@ -165,8 +172,8 @@ export const refreshTokenHandler = async (
     const user = await User.findById(decoded.id).select('-passwordHash');
     if (!user) throw new AppError('User not found', 404);
 
-    const newAccessToken = generateToken(user._id.toString(), user.email, user.role, user.companyId);
-    const newRefreshToken = generateRefreshToken(user._id.toString(), user.email, user.role, user.companyId);
+    const newAccessToken = generateToken(user._id.toString(), user.email, user.role, user.companyId?.toString());
+    const newRefreshToken = generateRefreshToken(user._id.toString(), user.email, user.role, user.companyId?.toString());
 
     // Rotate both cookies
     res.cookie('accessToken', newAccessToken, COOKIE_OPTS_ACCESS);
@@ -183,7 +190,7 @@ export const refreshTokenHandler = async (
 };
 
 // ------------------- LOGOUT -------------------
-export const logout = (req: AuthRequest, res: Response<ApiResponse>) => {
+export const logout = (_req: AuthRequest, res: Response<ApiResponse>) => {
   res.clearCookie('accessToken', COOKIE_OPTS_ACCESS);
   res.clearCookie('refreshToken', COOKIE_OPTS_REFRESH);
   res.json({ success: true });

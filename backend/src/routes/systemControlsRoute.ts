@@ -7,8 +7,9 @@ const router = express.Router();
 // GET system-wide settings (super-admin only)
 router.get("/", authenticate, async (req, res) => {
   try {
-    if (req.user.role !== "super_admin") {
-      return res.status(403).json({ message: "Access denied" });
+    if ((req as any).user.role !== "super_admin") {
+      res.status(403).json({ message: "Access denied" });
+      return;
     }
     const settings = await Setting.find();
     res.json(settings);
@@ -20,8 +21,9 @@ router.get("/", authenticate, async (req, res) => {
 // UPDATE system-wide settings (super-admin only)
 router.put("/", authenticate, async (req, res) => {            // ✅ authMiddleware → authenticate
   try {
-    if (req.user.role !== "super_admin") {
-      return res.status(403).json({ message: "Access denied" });
+    if ((req as any).user.role !== "super_admin") {
+      res.status(403).json({ message: "Access denied" });
+      return;
     }
     const { data } = req.body;
     await Setting.updateOne({}, data, { upsert: true });

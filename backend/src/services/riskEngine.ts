@@ -308,7 +308,7 @@ export function calculateResponseAdjustment(sims: RawSimData[]): number {
     return 0;                            // reported but late
   });
 
-  const avg = perSimAdj.reduce((s, v) => s + v, 0) / perSimAdj.length;
+  const avg = perSimAdj.reduce<number>((s, v) => s + v, 0) / perSimAdj.length;
   return Math.min(3, Math.max(-3, Math.round(avg)));
 }
 

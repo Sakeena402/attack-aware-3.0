@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Mail, Lock, AlertTriangle, CheckCircle } from 'lucide-react';
 import { TRACKING_API_BASE } from '@/lib/trackingApi';
 
-export default function PasswordResetPage() {
+function PasswordResetPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get('token');
@@ -180,6 +180,14 @@ export default function PasswordResetPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function PasswordResetPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PasswordResetPageContent />
+    </Suspense>
   );
 }
 

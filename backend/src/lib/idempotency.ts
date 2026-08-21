@@ -1,13 +1,12 @@
 // backend/src/lib/idempotency.ts
-import { createClient } from 'redis';
+import { Redis } from 'ioredis';
 
-let redisClient: ReturnType<typeof createClient> | null = null;
+let redisClient: Redis | null = null;
 
 export async function getRedis() {
   if (!redisClient) {
-    redisClient = createClient({ url: process.env.REDIS_URL });
-    redisClient.on('error', (err) => console.error('[REDIS] Client error:', err));
-    await redisClient.connect();
+    redisClient = new Redis(process.env.REDIS_URL as string);
+    redisClient.on('error', (err: any) => console.error('[REDIS] Client error:', err));
   }
   return redisClient;
 }
@@ -39,7 +38,7 @@ export async function claimIdempotencyKey(
   const redis = await getRedis();
 
   // SET key "1" NX EX ttl — atomic, returns "OK" or null
-  const result = await redis.set(key, '1', { NX: true, EX: ttlSeconds });
+  const result = await redis.set(key, '1', 'EX', ttlSeconds, 'NX');
 
   if (result === 'OK') {
     return { acquired: true, alreadyProcessed: false };
@@ -81,12 +80,12 @@ export async function claimWithCrashRecovery(key: string): Promise<{
   }
 
   // Claim with short TTL
-  const result = await redis.set(key, 'processing', { NX: true, EX: 30 });
+  const result = await redis.set(key, 'processing', 'EX', 30, 'NX');
   return { acquired: result === 'OK', alreadyDone: false };
 }
 
 export async function markIdempotencyDone(key: string): Promise<void> {
   const redis = await getRedis();
   // XX = only set if key exists (we must own it)
-  await redis.set(key, 'done', { XX: true, EX: 172800 });
+  await redis.set(key, 'done', 'EX', 172800, 'XX');
 }

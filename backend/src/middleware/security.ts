@@ -61,7 +61,7 @@ export const helmetMiddleware = helmet({
 });
 
 // XSS protection middleware
-export const xssProtection = (req: Request, res: Response, next: NextFunction): void => {
+export const xssProtection = (req: Request, _res: Response, next: NextFunction): void => {
   // Sanitize request body
   if (req.body) {
     req.body = sanitizeObject(req.body);
@@ -209,7 +209,7 @@ export const simulationRateLimiter = rateLimit({
 const blockedIPs: Set<string> = new Set();
 const trustedIPs: Set<string> = new Set(['127.0.0.1', '::1']);
 
-export const ipFilterMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+export const ipFilterMiddleware = (req: Request, _res: Response, next: NextFunction): void => {
   const clientIP = req.ip || req.socket.remoteAddress || 'unknown';
   
   if (blockedIPs.has(clientIP)) {

@@ -4,12 +4,9 @@ import SimulationResult from '../models/SimulationResult.js';
 import { AppError } from '../utils/errorHandler.js';
 import { AuthRequest, ApiResponse } from '../types/index.js';
 import { sendSms, generateTrackingToken, hashToken, smsTemplates } from '../services/twilioService.js';
-import {
-  recordSmsStatus,
-} from '../services/trackingService.js';
 
 export const getSmsTemplates = async (
-  req: AuthRequest,
+  _req: AuthRequest,
   res: Response<ApiResponse>
 ): Promise<void> => {
   try {
@@ -108,7 +105,7 @@ export const sendCampaignSmishing = async (
       return;
     }
 
-    const targetEmployees = campaign.targetEmployees as Array<{ _id: string; phone?: string }>;
+    const targetEmployees = campaign.targetEmployees as unknown as Array<{ _id: any; phone?: string }>;
 
     if (!targetEmployees || targetEmployees.length === 0) {
       res.status(400).json({ success: false, error: 'No target employees for this campaign' });

@@ -1,5 +1,5 @@
 import { Document, Types } from 'mongoose';
-import { Request, Response, NextFunction } from 'express';
+import { Request } from 'express';
 
 
 export type UserRole = 'super_admin' | 'admin' | 'employee' | 'individual';
@@ -9,6 +9,8 @@ export type CampaignStatus = 'draft' | 'active' | 'completed' | 'paused';
 export type RiskLevel = 'very_low' | 'low' | 'medium' | 'high' | 'critical';
 export type Trend = 'improving' | 'stable' | 'declining' | 'insufficient_data';
 export type ConfidenceLabel = 'low' | 'medium' | 'high' | 'very_high';
+
+export type TargetEmployee = { _id: Types.ObjectId | string; phone?: string; email?: string };
 
 export interface RiskBreakdown {
   riskScore: number;
@@ -54,6 +56,7 @@ export interface IUser extends Document {
   passwordResetToken?: string;
   passwordResetExpires?: Date;
   bio?: string;
+  trainingProgress?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -70,6 +73,7 @@ export interface ICompany extends Document {
   contactPerson?: string;
   taxId?: string;
   subscriptionPlan?: Types.ObjectId;
+  riskScore?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -90,12 +94,13 @@ export interface ICampaign extends Document {
   completedCount: number;
 
   // Arrays
-  targetEmployees: Array<{ _id: Types.ObjectId; phone?: string; email?: string }>;
+  targetEmployees: TargetEmployee[];
   targetDepartments: string[];
 
   // Templates
   emailTemplate?: string;
   smsTemplate?: string;
+  difficulty?: string;
   customSmsMessage?: string;
   voiceScript?: string;
 
@@ -186,6 +191,7 @@ export interface ILeaderboard extends Document {
   department: string;
   score: number;
   rank: number;
+  badge?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -205,7 +211,7 @@ export interface AuthRequest extends Request {
   user?: { 
     id: string; 
     role: UserRole;
-    companyId: string;
+    companyId?: string;
     email: string; // ✅ add karo
   };
 }
@@ -246,6 +252,7 @@ export interface CreateContactBody {
   email: string;
   subject?: string;
   message: string;
+  company?: string;
 }
 
 // Login Request

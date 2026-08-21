@@ -5,11 +5,11 @@ export const validateEmail = (email: string): boolean => {
 };
 
 export const validatePassword = (password: string): boolean => {
-  return password && password.length >= 6;
+  return !!(password && password.length >= 6);
 };
 
 export const validateName = (name: string): boolean => {
-  return name && name.trim().length >= 2;
+  return !!(name && name.trim().length >= 2);
 };
 
 export const sanitizeEmail = (email: string): string => {

@@ -31,7 +31,7 @@ campaignCounterQueue.process(10, async (job) => {
   console.log(`[COUNTER WORKER] ✓ ${field}+=${increment} campaign=${campaignId}`);
 });
 
-campaignCounterQueue.on('failed', (job, err) => {
+campaignCounterQueue.on('failed', (_job, err) => {
   console.error(`[COUNTER WORKER] Failed:`, err.message);
 });
 

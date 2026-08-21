@@ -1,6 +1,12 @@
 import { User } from '../models/User.js';
 
-export const getSettings = async (user) => {
+interface SettingsUserPayload {
+  email: string;
+  role: string;
+  [key: string]: any;
+}
+
+export const getSettings = async (user: SettingsUserPayload) => {
   console.log("USER OBJECT:", user);
   
   // ✅ Find by email instead of id (more reliable)
@@ -19,7 +25,7 @@ export const getSettings = async (user) => {
   };
 };
 
-export const updateSettings = async (user, body) => {
+export const updateSettings = async (user: SettingsUserPayload, body: any) => {
   const { theme, notifications, twoFactorAuth, name, email, phoneNumber, department } = body;
   
   // ✅ Find by email instead of id

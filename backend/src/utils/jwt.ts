@@ -17,7 +17,7 @@ export const generateToken = (
   return jwt.sign(
     { id, email, role, companyId },
     JWT_SECRET,
-    { expiresIn: JWT_EXPIRY }
+    { expiresIn: JWT_EXPIRY as any }
   );
 };;
 
@@ -25,7 +25,7 @@ export const generateRefreshToken = (id: string, email: string, role: UserRole,c
   return jwt.sign(
     { id, email, role, companyId } as JwtPayload,
     REFRESH_SECRET,
-    { expiresIn: REFRESH_EXPIRY }
+    { expiresIn: REFRESH_EXPIRY as any }
   );
 };
 

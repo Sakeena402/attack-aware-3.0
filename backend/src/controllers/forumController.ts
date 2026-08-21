@@ -3,7 +3,7 @@ import { AuthRequest, ApiResponse } from '../types/index.js';
 import { ForumPost } from '../models/ForumPost.js';
 import { ForumComment } from '../models/ForumComment.js';
 
-export const getPosts = async (req: AuthRequest, res: Response<ApiResponse>) => {
+export const getPosts = async (_req: AuthRequest, res: Response<ApiResponse>) => {
   try {
     const posts = await ForumPost.find();
     res.json({ success: true, data: posts });

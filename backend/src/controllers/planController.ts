@@ -3,7 +3,7 @@ import { AuthRequest, ApiResponse } from '../types/index.js';
 import { MembershipPlan } from '../models/MembershipPlan.js';
 import { Company } from '../models/Company.js';
 
-export const getPlans = async (req: AuthRequest, res: Response<ApiResponse>) => {
+export const getPlans = async (_req: AuthRequest, res: Response<ApiResponse>) => {
   try {
     const plans = await MembershipPlan.find();
     res.json({ success: true, data: plans });

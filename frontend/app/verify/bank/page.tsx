@@ -2,12 +2,12 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Shield, AlertTriangle, Lock, CheckCircle } from 'lucide-react';
 import { TRACKING_API_BASE } from '@/lib/trackingApi';
 
-export default function BankVerificationPage() {
+function BankVerificationPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get('token');
@@ -274,5 +274,17 @@ function CaughtPage({ onClose }: { onClose: () => void }) {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BankVerificationPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-white">
+        Loading...
+      </div>
+    }>
+      <BankVerificationPageInner />
+    </Suspense>
   );
 }

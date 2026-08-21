@@ -56,10 +56,22 @@ export interface ISimulationResult extends Document {
   // Shared outcomes
   credentialsSubmitted?:   boolean;
   credentialsSubmittedAt?: Date;
+  submittedAt?:            Date;
   formFieldsSubmitted?:    string[];   // field NAMES only — never actual values
   reportedPhishing?:       boolean;
   reportedAt?:             Date;
   reportMethod?:           string;
+
+  // New fields
+  smsStatus?:              string;
+  smsFailed?:              boolean;
+  smsFailedAt?:            Date;
+  callStatusUpdatedAt?:    Date;
+  voiceResponse?:          string;
+  voiceResponseAt?:        Date;
+  smsClicked?:             boolean;
+  linkClicked?:            boolean;
+  linkClickedAt?:          Date;
 
   // Click metadata
   clickIpAddress?: string;
@@ -138,10 +150,22 @@ const simulationResultSchema = new Schema<ISimulationResult>(
     // Shared outcomes
     credentialsSubmitted:   { type: Boolean, default: false },
     credentialsSubmittedAt: Date,
+    submittedAt:            Date,
     formFieldsSubmitted:    [String],
     reportedPhishing:       { type: Boolean, default: false },
     reportedAt:             Date,
     reportMethod:           String,
+
+    // New fields
+    smsStatus:              String,
+    smsFailed:              { type: Boolean, default: false },
+    smsFailedAt:            Date,
+    callStatusUpdatedAt:    Date,
+    voiceResponse:          String,
+    voiceResponseAt:        Date,
+    smsClicked:             { type: Boolean, default: false },
+    linkClicked:            { type: Boolean, default: false },
+    linkClickedAt:          Date,
 
     // Click metadata
     clickIpAddress: String,

@@ -6,7 +6,7 @@ import { sendPhishingEmail, generateTrackingToken, emailTemplates } from '../ser
 import { hashToken } from '../services/twilioService.js';
 
 export const getEmailTemplates = async (
-  req: AuthRequest,
+  _req: AuthRequest,
   res: Response<ApiResponse>
 ): Promise<void> => {
   try {
