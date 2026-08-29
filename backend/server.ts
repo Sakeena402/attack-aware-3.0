@@ -95,8 +95,9 @@ const corsOptions = {
       process.env.CLIENT_URL || 'http://localhost:3000',
       'http://localhost:3000',
       'http://localhost:3001',
+      'https://attack-aware-30.vercel.app',
     ];
-    
+
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) {
       callback(null, true);
