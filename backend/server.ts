@@ -96,7 +96,11 @@ const corsOptions = {
       'http://localhost:3000',
       'http://localhost:3001',
       'https://attack-aware-30.vercel.app',
+      'https://attack-aware-30-git-main-sakeena-projects.vercel.app',
     ];
+
+    // Also allow any vercel preview deployments for this project
+    const isVercelPreview = origin?.includes('attack-aware') && origin?.endsWith('.vercel.app');
 
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) {
@@ -104,7 +108,7 @@ const corsOptions = {
       return;
     }
     
-    if (allowedOrigins.includes(origin) || !isProduction) {
+    if (allowedOrigins.includes(origin) || isVercelPreview || !isProduction) {
       callback(null, true);
     } else {
       logger.warn('CORS blocked', { origin });

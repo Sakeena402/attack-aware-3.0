@@ -9,15 +9,15 @@ import { AuthRequest, LoginRequest, RegisterRequest, ApiResponse } from '../type
 
 const COOKIE_OPTS_ACCESS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
-  maxAge: 60 * 60 * 1000, // 15 minutes
+  secure: true, // Required for SameSite=None
+  sameSite: 'none' as const, // Required for cross-origin (vercel.app → onrender.com)
+  maxAge: 60 * 60 * 1000, // 1 hour
 };
 
 const COOKIE_OPTS_REFRESH = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
+  secure: true, // Required for SameSite=None
+  sameSite: 'none' as const, // Required for cross-origin (vercel.app → onrender.com)
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 
