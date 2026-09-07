@@ -100,6 +100,7 @@ export interface ICampaign extends Document {
   // Templates
   emailTemplate?: string;
   smsTemplate?: string;
+  aiGeneratedTemplateId?: Types.ObjectId;
   difficulty?: string;
   customSmsMessage?: string;
   voiceScript?: string;

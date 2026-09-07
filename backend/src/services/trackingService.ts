@@ -1,6 +1,7 @@
 import SimulationResult from '../models/SimulationResult.js';
 import { Campaign } from '../models/Campaign.js';
 import { hashToken } from './twilioService.js';
+import { enqueueAdaptiveQuiz } from '../queues/trackingQueue.js';
 
 export const recordSmsClick = async (
   token: string,
@@ -37,6 +38,14 @@ export const recordSmsClick = async (
       campaignId,
       { $inc: { clickedCount: 1 } }
     );
+
+    enqueueAdaptiveQuiz({
+      employeeId: userId,
+      attackType: result.simulationType || 'smishing',
+      templateCategory: result.smsTemplate || 'smishing',
+      failureEventId: result._id.toString(),
+      eventType: 'linkClicked',
+    }).catch((err) => console.error('[QUEUE] Failed to enqueue adaptive quiz on SMS click:', err));
 
     return { success: true };
   } catch (error) {
@@ -242,6 +251,14 @@ export const recordCredentialsSubmitted = async (
     result.formFieldsSubmitted = formFieldsSubmitted;
 
     await result.save();
+
+    enqueueAdaptiveQuiz({
+      employeeId: userId,
+      attackType: result.simulationType || 'phishing',
+      templateCategory: result.emailTemplate || 'phishing',
+      failureEventId: result._id.toString(),
+      eventType: 'credentialsSubmitted',
+    }).catch((err) => console.error('[QUEUE] Failed to enqueue adaptive quiz on credentialsSubmitted:', err));
 
     return { success: true };
   } catch (error) {

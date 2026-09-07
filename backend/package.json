@@ -12,6 +12,7 @@
     "seed:games": "tsx scripts/seedGames.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.124.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/bull": "^3.15.9",
     "@types/cookie-parser": "^1.4.10",
@@ -39,6 +40,7 @@
     "mongoose": "^8.0.3",
     "morgan": "^1.10.0",
     "nodemailer": "^9.0.3",
+    "openai": "^7.10.0",
     "p-limit": "^7.3.0",
     "pdfkit": "^0.18.0",
     "twilio": "^4.23.0",

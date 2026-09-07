@@ -1,4 +1,13 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
+
+export interface IQuizTriggerContext {
+  employeeId: Types.ObjectId;
+  attackType: string;
+  templateCategory: string;
+  failureEventId: Types.ObjectId;
+  eventType?: 'credentialsSubmitted' | 'linkClicked';
+  generatedAt: Date;
+}
 
 export interface IQuiz extends Document {
   title: string;
@@ -10,11 +19,25 @@ export interface IQuiz extends Document {
   totalQuestions: number;
   timeLimit?: number;
   thumbnail?: string;
-  order: number;          // ← NEW — position in the original 2.0 unlock sequence
+  order: number;
   targetRoles: string[];
+  source: 'static' | 'ai_generated';
+  triggerContext?: IQuizTriggerContext;
   createdAt: Date;
   updatedAt: Date;
 }
+
+const triggerContextSchema = new Schema<IQuizTriggerContext>(
+  {
+    employeeId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    attackType: { type: String, required: true },
+    templateCategory: { type: String, required: true },
+    failureEventId: { type: Schema.Types.ObjectId, ref: 'SimulationResult', required: true },
+    eventType: { type: String, enum: ['credentialsSubmitted', 'linkClicked'] },
+    generatedAt: { type: Date, required: true },
+  },
+  { _id: false }
+);
 
 const quizSchema = new Schema<IQuiz>(
   {
@@ -27,8 +50,10 @@ const quizSchema = new Schema<IQuiz>(
     totalQuestions: { type: Number, default: 0 },
     timeLimit: { type: Number },
     thumbnail: { type: String },
-    order: { type: Number, required: true },
+    order: { type: Number, default: 0 },
     targetRoles: { type: [String], default: [] },
+    source: { type: String, enum: ['static', 'ai_generated'], default: 'static' },
+    triggerContext: { type: triggerContextSchema },
   },
   { timestamps: true }
 );
