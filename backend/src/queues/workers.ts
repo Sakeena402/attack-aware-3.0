@@ -10,9 +10,12 @@ import {
   RiskJob,
   CampaignCounterJob,
   AdaptiveQuizJobPayload,
+  AdminQuizJobPayload,
 } from './trackingQueue.js';
 import { recalculateUserRisk, updateUserPoints } from '../services/analyticsService.js';
 import { generateAdaptiveQuiz } from '../services/ai/adaptiveQuizService.js';
+import { generateAdminQuiz } from '../services/ai/adminQuizService.js';
+import { runMonthlyQuizGeneration } from '../services/ai/monthlyQuizService.js';
 import { Campaign } from '../models/Campaign.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -44,24 +47,46 @@ campaignCounterQueue.on('failed', (_job, err) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ADAPTIVE QUIZ WORKER — concurrency 3
+// QUIZ WORKER — concurrency 3
 // ─────────────────────────────────────────────────────────────────────────────
-adaptiveQuizQueue.process(3, async (job) => {
-  const payload = job.data as AdaptiveQuizJobPayload;
-  console.log(
-    `[ADAPTIVE QUIZ WORKER] Generating quiz for employeeId=${payload.employeeId} eventType=${payload.eventType}`
-  );
-  const result = await generateAdaptiveQuiz(payload);
-  console.log(
-    `[ADAPTIVE QUIZ WORKER] ✓ Quiz generated quizId=${result.quizId} for employeeId=${payload.employeeId}`
-  );
+adaptiveQuizQueue.process('*', 3, async (job) => {
+  if (job.name === 'admin-quiz-generation') {
+    const payload = job.data as AdminQuizJobPayload;
+    console.log(
+      `[ADMIN QUIZ WORKER] Generating quiz for employeeId=${payload.employeeId} topicMode=${payload.topicMode}`
+    );
+    const result = await generateAdminQuiz(payload);
+    console.log(
+      `[ADMIN QUIZ WORKER] ✓ Quiz generated quizId=${result.quizId} taskId=${result.taskId}`
+    );
+  } else if (job.name === 'monthly-scheduled-quiz-generation') {
+    console.log('[MONTHLY QUIZ WORKER] Running monthly scheduled quiz generation');
+    const summary = await runMonthlyQuizGeneration();
+    console.log(
+      `[MONTHLY QUIZ WORKER] ✓ Completed: ${summary.successfulCompanies} success, ${summary.failedCompanies} failed`
+    );
+  } else {
+    const payload = job.data as AdaptiveQuizJobPayload;
+    console.log(
+      `[ADAPTIVE QUIZ WORKER] Generating quiz for employeeId=${payload.employeeId} eventType=${payload.eventType}`
+    );
+    const result = await generateAdaptiveQuiz(payload);
+    console.log(
+      `[ADAPTIVE QUIZ WORKER] ✓ Quiz generated quizId=${result.quizId} for employeeId=${payload.employeeId}`
+    );
+  }
 });
 
 adaptiveQuizQueue.on('failed', (job, err) => {
   console.error(
-    `[ADAPTIVE QUIZ WORKER] Failed for employeeId=${job.data.employeeId}:`,
+    `[QUIZ WORKER] Failed job="${job.name}":`,
     err.message
   );
 });
 
-console.log('[WORKERS] Risk + Counter + Adaptive Quiz workers registered ✓');
+// Register repeatable monthly cron job (1st of every month at midnight)
+adaptiveQuizQueue
+  .add('monthly-scheduled-quiz-generation', {}, { repeat: { cron: '0 0 1 * *' } })
+  .catch((err) => console.error('[REPEATABLE JOB] Failed to register monthly quiz cron:', err.message));
+
+console.log('[WORKERS] Risk + Counter + Adaptive/Admin/Monthly Quiz workers registered ✓');

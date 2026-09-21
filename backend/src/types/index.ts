@@ -74,6 +74,8 @@ export interface ICompany extends Document {
   taxId?: string;
   subscriptionPlan?: Types.ObjectId;
   riskScore?: number;
+  lastMonthlyQuizTopic?: string;
+  lastMonthlyQuizGeneratedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -44,7 +44,7 @@ const quizQuestionZodSchema = z.object({
   explanation: z.string().min(5),
 });
 
-const quizPayloadZodSchema = z.object({
+export const quizPayloadZodSchema = z.object({
   title: z.string().min(3),
   description: z.string().min(5),
   category: z.string().min(1),
@@ -52,7 +52,7 @@ const quizPayloadZodSchema = z.object({
   questions: z.array(quizQuestionZodSchema).min(1).max(5),
 });
 
-const quizResponseSchema: Record<string, unknown> = {
+export const quizResponseSchema: Record<string, unknown> = {
   type: 'object',
   properties: {
     title: { type: 'string' },

@@ -143,6 +143,15 @@ export interface AdaptiveQuizJobPayload {
   eventType: 'credentialsSubmitted' | 'linkClicked';
 }
 
+export interface AdminQuizJobPayload {
+  companyId: string;
+  employeeId: string;
+  requestedBy: string;
+  topicMode: 'manual' | 'auto';
+  topic?: import('../services/ai/quizTopics.js').QuizTopic;
+  dueInDays?: number;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ENQUEUE HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -161,5 +170,11 @@ export async function enqueueCampaignCounter(job: CampaignCounterJob): Promise<v
 export async function enqueueAdaptiveQuiz(job: AdaptiveQuizJobPayload): Promise<void> {
   await adaptiveQuizQueue.add(job, {
     jobId: `quiz-${job.employeeId}-${job.failureEventId}-${job.eventType}`,
+  });
+}
+
+export async function enqueueAdminQuiz(job: AdminQuizJobPayload): Promise<void> {
+  await adaptiveQuizQueue.add('admin-quiz-generation', job, {
+    jobId: `admin-quiz-${job.employeeId}-${Date.now()}`,
   });
 }

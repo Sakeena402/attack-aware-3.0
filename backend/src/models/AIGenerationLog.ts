@@ -1,6 +1,10 @@
 import { Schema, model, Types } from 'mongoose';
 
-export type AIGenerationPurpose = 'scenario_generation' | 'adaptive_quiz_generation';
+export type AIGenerationPurpose =
+  | 'scenario_generation'
+  | 'adaptive_quiz_generation'
+  | 'admin_triggered_quiz_generation'
+  | 'monthly_quiz_generation';
 
 export interface IAIGenerationLog {
   _id?: Types.ObjectId;
@@ -23,7 +27,12 @@ const aiGenerationLogSchema = new Schema<IAIGenerationLog>(
     model: { type: String, required: true },
     purpose: {
       type: String,
-      enum: ['scenario_generation', 'adaptive_quiz_generation'],
+      enum: [
+        'scenario_generation',
+        'adaptive_quiz_generation',
+        'admin_triggered_quiz_generation',
+        'monthly_quiz_generation',
+      ],
       required: true,
     },
     inputTokens: { type: Number, default: 0 },

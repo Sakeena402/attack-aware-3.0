@@ -64,4 +64,19 @@ export const aiScenarioApi = {
     const res = await apiService.post<ApiResponseWrapper<AIScenario>>(`/ai/scenarios/${id}/reject`, {});
     return res.data.data;
   },
+
+  generateQuizForEmployee: async (payload: {
+    employeeId: string;
+    topicMode: 'manual' | 'auto';
+    topic?: string;
+    dueInDays?: number;
+  }): Promise<{ queued: boolean }> => {
+    const res = await apiService.post<ApiResponseWrapper<{ queued: boolean }>>('/ai/quizzes/generate-for-employee', payload);
+    return res.data.data;
+  },
+
+  triggerMonthlyQuizzes: async (): Promise<{ successfulCompanies: number; failedCompanies: number }> => {
+    const res = await apiService.post<ApiResponseWrapper<{ successfulCompanies: number; failedCompanies: number }>>('/ai/quizzes/trigger-monthly', {});
+    return res.data.data;
+  },
 };

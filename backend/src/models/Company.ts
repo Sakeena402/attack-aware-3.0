@@ -41,6 +41,12 @@ const companySchema = new Schema<ICompany>(
       type: Schema.Types.ObjectId,
       ref: 'MembershipPlan',
     },
+    lastMonthlyQuizTopic: {
+      type: String,
+    },
+    lastMonthlyQuizGeneratedAt: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );

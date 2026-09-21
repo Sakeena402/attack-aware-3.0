@@ -1,11 +1,14 @@
 import { Schema, model, Document, Types } from 'mongoose';
 
 export interface IQuizTriggerContext {
-  employeeId: Types.ObjectId;
-  attackType: string;
-  templateCategory: string;
-  failureEventId: Types.ObjectId;
-  eventType?: 'credentialsSubmitted' | 'linkClicked';
+  employeeId?: Types.ObjectId;
+  attackType?: string;
+  templateCategory?: string;
+  failureEventId?: Types.ObjectId;
+  eventType?: 'credentialsSubmitted' | 'linkClicked' | 'monthly_scheduled' | 'admin_manual';
+  topic?: string;
+  month?: string;
+  requestedBy?: Types.ObjectId;
   generatedAt: Date;
 }
 
@@ -29,11 +32,17 @@ export interface IQuiz extends Document {
 
 const triggerContextSchema = new Schema<IQuizTriggerContext>(
   {
-    employeeId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    attackType: { type: String, required: true },
-    templateCategory: { type: String, required: true },
-    failureEventId: { type: Schema.Types.ObjectId, ref: 'SimulationResult', required: true },
-    eventType: { type: String, enum: ['credentialsSubmitted', 'linkClicked'] },
+    employeeId: { type: Schema.Types.ObjectId, ref: 'User' },
+    attackType: { type: String },
+    templateCategory: { type: String },
+    failureEventId: { type: Schema.Types.ObjectId, ref: 'SimulationResult' },
+    eventType: {
+      type: String,
+      enum: ['credentialsSubmitted', 'linkClicked', 'monthly_scheduled', 'admin_manual'],
+    },
+    topic: { type: String },
+    month: { type: String },
+    requestedBy: { type: Schema.Types.ObjectId, ref: 'User' },
     generatedAt: { type: Date, required: true },
   },
   { _id: false }
