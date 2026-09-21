@@ -86,8 +86,8 @@ export const campaignCounterQueue = new Bull('campaign-counters', {
 export const adaptiveQuizQueue = new Bull('adaptive-quiz-generation', {
   ...redisOpts,
   defaultJobOptions: {
-    attempts:         2,
-    backoff:          { type: 'exponential', delay: 3000 },
+    attempts:         5,
+    backoff:          { type: 'exponential', delay: 12000 },
     removeOnComplete: 50,
     removeOnFail:     50,
   },

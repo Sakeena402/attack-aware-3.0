@@ -47,9 +47,9 @@ campaignCounterQueue.on('failed', (_job, err) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// QUIZ WORKER — concurrency 3
+// QUIZ WORKER — concurrency 1 (to respect Gemini Free Tier 5 RPM rate limits)
 // ─────────────────────────────────────────────────────────────────────────────
-adaptiveQuizQueue.process('*', 3, async (job) => {
+adaptiveQuizQueue.process('*', 1, async (job) => {
   if (job.name === 'admin-quiz-generation') {
     const payload = job.data as AdminQuizJobPayload;
     console.log(
