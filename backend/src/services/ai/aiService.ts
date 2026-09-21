@@ -13,14 +13,14 @@ export interface AIServiceOptions {
 
 class AIService {
   private getProvider(): AIProvider {
-    const providerName = (process.env.AI_PROVIDER || 'openai').toLowerCase();
+    const providerName = (process.env.AI_PROVIDER || 'gemini').toLowerCase();
     if (providerName === 'anthropic') {
       return new AnthropicProvider();
     }
-    if (providerName === 'gemini') {
-      return new GeminiProvider();
+    if (providerName === 'openai') {
+      return new OpenAIProvider();
     }
-    return new OpenAIProvider();
+    return new GeminiProvider();
   }
 
   public async generateStructured<T>(
