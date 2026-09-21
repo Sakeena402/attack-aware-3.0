@@ -15,7 +15,7 @@ export class GeminiProvider implements AIProvider {
 
     const ai = new GoogleGenAI({ apiKey });
     const startTime = Date.now();
-    const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    const modelName = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 
     console.log(`[GeminiProvider] 📡 Calling model="${modelName}" | maxOutputTokens=${request.maxTokens ?? 1000}`);
 

@@ -87,17 +87,16 @@ export default function TrainingPage() {
     { revalidateOnFocus: false }
   );
 
-  // Dummy employees list for modal (the modal is also on employees page, but here we pass empty)
-  // Employees page already has the full list; here we allow admins to open from Training too
-  const { data: employeesRaw = [] } = useSWR(
+  // Employees list for GenerateQuizModal
+  const { data: employeesRes } = useSWR(
     isAdmin ? 'training-employees-for-quiz' : null,
     async () => {
-      const { apiService } = await import('@/app/services/api');
-      const res = await apiService.get<{ _id: string; name: string; email: string; department?: string }[]>('/employees');
-      return res.data;
+      const { employeeApi } = await import('@/app/services/employeeApi');
+      return employeeApi.getAll();
     },
     { revalidateOnFocus: false }
   );
+  const employeesList = employeesRes?.employees ?? [];
 
   const isLoading =
     tab === 'videos' ? vLoading :
@@ -431,7 +430,7 @@ export default function TrainingPage() {
         <GenerateQuizModal
           isOpen={quizModalOpen}
           onClose={() => setQuizModalOpen(false)}
-          employees={employeesRaw}
+          employees={employeesList}
         />
       )}
     </div>

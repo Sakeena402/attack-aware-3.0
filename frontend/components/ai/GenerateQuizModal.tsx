@@ -45,15 +45,23 @@ export function GenerateQuizModal({ isOpen, onClose, employees, preselectedEmplo
   const [dueInDays, setDueInDays] = useState<number>(14);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
+  const safeEmployees = useMemo(() => {
+    if (Array.isArray(employees)) return employees;
+    if (employees && typeof employees === 'object' && Array.isArray((employees as { employees?: SimpleEmployee[] }).employees)) {
+      return (employees as { employees: SimpleEmployee[] }).employees;
+    }
+    return [];
+  }, [employees]);
+
   const filteredEmployees = useMemo(
     () =>
-      employees.filter(
+      safeEmployees.filter(
         (e) =>
           e.name.toLowerCase().includes(search.toLowerCase()) ||
           e.email.toLowerCase().includes(search.toLowerCase()) ||
           (e.department ?? '').toLowerCase().includes(search.toLowerCase())
       ),
-    [employees, search]
+    [safeEmployees, search]
   );
 
   const toggleEmployee = (id: string) => {
@@ -111,7 +119,7 @@ export function GenerateQuizModal({ isOpen, onClose, employees, preselectedEmplo
 
   const targetLabel =
     targetMode === 'all'
-      ? `All Employees (${employees.length})`
+      ? `All Employees (${safeEmployees.length})`
       : selectedIds.size === 0
       ? 'No employees selected'
       : `${selectedIds.size} employee${selectedIds.size !== 1 ? 's' : ''} selected`;
@@ -216,7 +224,7 @@ export function GenerateQuizModal({ isOpen, onClose, employees, preselectedEmplo
           {targetMode === 'all' && (
             <p className="text-xs text-muted-foreground px-1">
               One quiz will be generated and assigned to each of the{' '}
-              <span className="text-purple-300 font-medium">{employees.length}</span> employees in your company.
+              <span className="text-purple-300 font-medium">{safeEmployees.length}</span> employees in your company.
             </p>
           )}
         </div>
@@ -311,7 +319,7 @@ export function GenerateQuizModal({ isOpen, onClose, employees, preselectedEmplo
             type="submit"
             disabled={
               isSubmitting ||
-              employees.length === 0 ||
+              safeEmployees.length === 0 ||
               (targetMode === 'specific' && selectedIds.size === 0)
             }
             className="bg-gradient-to-r from-purple-500 to-blue-500 hover:shadow-lg hover:shadow-purple-500/30 flex items-center gap-2"
