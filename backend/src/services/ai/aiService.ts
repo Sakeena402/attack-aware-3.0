@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import { AIProvider, AIGenerationRequest, AIGenerationResult } from './aiProvider.interface.js';
 import { OpenAIProvider } from './providers/openaiProvider.js';
 import { AnthropicProvider } from './providers/anthropicProvider.js';
+import { GeminiProvider } from './providers/geminiProvider.js';
 import { AIGenerationLog, AIGenerationPurpose } from '../../models/AIGenerationLog.js';
 import { AIGenerationError } from './aiGenerationError.js';
 
@@ -15,6 +16,9 @@ class AIService {
     const providerName = (process.env.AI_PROVIDER || 'openai').toLowerCase();
     if (providerName === 'anthropic') {
       return new AnthropicProvider();
+    }
+    if (providerName === 'gemini') {
+      return new GeminiProvider();
     }
     return new OpenAIProvider();
   }
@@ -52,7 +56,7 @@ class AIService {
       // Async fire-and-forget failure log
       this.logCall({
         provider: providerName,
-        model: process.env.OPENAI_MODEL || process.env.ANTHROPIC_MODEL || 'unknown',
+        model: process.env.OPENAI_MODEL || process.env.ANTHROPIC_MODEL || process.env.GEMINI_MODEL || 'unknown',
         purpose: options.purpose,
         inputTokens: 0,
         outputTokens: 0,
