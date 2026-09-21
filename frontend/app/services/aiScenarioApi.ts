@@ -25,6 +25,38 @@ export interface AIScenario {
   updatedAt: string;
 }
 
+export interface AIQuizQuestion {
+  _id: string;
+  question: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correctOption: 'a' | 'b' | 'c' | 'd';
+  answer: string;
+  explanation?: string;
+}
+
+export interface AIQuiz {
+  _id: string;
+  title: string;
+  description?: string;
+  category: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  totalQuestions: number;
+  source: 'ai_generated';
+  triggerContext?: {
+    eventType?: string;
+    topic?: string;
+    month?: string;
+    attackType?: string;
+    employeeId?: string;
+    generatedAt?: string;
+  };
+  questions: AIQuizQuestion[];
+  createdAt: string;
+}
+
 interface ApiResponseWrapper<T> {
   success: boolean;
   data: T;
@@ -65,13 +97,27 @@ export const aiScenarioApi = {
     return res.data.data;
   },
 
-  generateQuizForEmployee: async (payload: {
-    employeeId: string;
+  /** Fetch all AI-generated quizzes with their questions (admin view). */
+  getAIQuizzes: async (): Promise<AIQuiz[]> => {
+    const res = await apiService.get<ApiResponseWrapper<AIQuiz[]>>('/ai/quizzes/list');
+    return res.data.data;
+  },
+
+  /**
+   * Enqueue quiz generation for one or more employees.
+   * Pass employeeIds as a string[] of specific IDs, or the string 'all' to target
+   * every employee in the admin's company.
+   */
+  generateQuizForEmployees: async (payload: {
+    employeeIds: string[] | 'all';
     topicMode: 'manual' | 'auto';
     topic?: string;
     dueInDays?: number;
-  }): Promise<{ queued: boolean }> => {
-    const res = await apiService.post<ApiResponseWrapper<{ queued: boolean }>>('/ai/quizzes/generate-for-employee', payload);
+  }): Promise<{ queued: boolean; count: number }> => {
+    const res = await apiService.post<ApiResponseWrapper<{ queued: boolean; count: number }>>(
+      '/ai/quizzes/generate-for-employee',
+      payload
+    );
     return res.data.data;
   },
 

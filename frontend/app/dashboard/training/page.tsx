@@ -4,18 +4,22 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useSWR from 'swr';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/app/context/authContext';
 import { Card } from '@/components/ui/card';
 import { getVideos, StaticVideo } from '@/app/data/videos.data';
 import { quizApi, QuizCategory } from '@/app/services/quizApi';
 import { gameApi, Game } from '@/app/services/gameApi';
+import { aiScenarioApi, AIQuiz } from '@/app/services/aiScenarioApi';
+import { GenerateQuizModal } from '@/components/ai/GenerateQuizModal';
 import {
   Play, HelpCircle, Gamepad2, Lock, CheckCircle,
-  Clock, Trophy, Globe, Shield, Bug, UserX,
+  Clock, Trophy, Globe, Shield, Bug, UserX, Sparkles,
+  ChevronDown, ChevronUp, Brain,
 } from 'lucide-react';
 
-type Tab = 'videos' | 'quizzes' | 'games';
+type Tab = 'videos' | 'quizzes' | 'games' | 'ai_quizzes';
 
-const TABS: { key: Tab; label: string; icon: any; desc: string }[] = [
+const BASE_TABS: { key: Tab; label: string; icon: React.ComponentType<{ className?: string }>; desc: string }[] = [
   { key: 'videos', label: 'Videos', icon: Play, desc: 'Watch security awareness videos' },
   { key: 'quizzes', label: 'Quizzes', icon: HelpCircle, desc: 'Test your knowledge' },
   { key: 'games', label: 'Games', icon: Gamepad2, desc: 'Learn through interactive games' },
@@ -43,30 +47,63 @@ const GAME_ICONS: Record<string, string> = {
 
 export default function TrainingPage() {
   const router = useRouter();
+  const { state: authState } = useAuth();
+  const user = authState?.user;
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+
   const [tab, setTab] = useState<Tab>('videos');
   const [lang, setLang] = useState<'en' | 'ur'>('en');
   const [category, setCategory] = useState('');
+  const [quizModalOpen, setQuizModalOpen] = useState(false);
   const isUrdu = lang === 'ur';
 
-  // ── Videos — static data, no API call needed ──────────────────────────
+  // Build tabs dynamically — AI Quizzes tab only for admins
+  const TABS = isAdmin
+    ? [...BASE_TABS, { key: 'ai_quizzes' as Tab, label: 'AI Quizzes', icon: Brain, desc: 'View AI-generated quizzes' }]
+    : BASE_TABS;
+
+  // ── Videos — static data ──────────────────────────
   const videos: StaticVideo[] = getVideos(lang, category || undefined);
   const vLoading = false;
 
-  // ── Quizzes — from API/DB ──────────────────────────────────────────────
+  // ── Quizzes — from API ──────────────────────────────
   const { data: quizzes = [], isLoading: qLoading } = useSWR<QuizCategory[]>(
     'training-quizzes',
     () => quizApi.getCategories(),
     { revalidateOnFocus: false }
   );
 
-  // ── Games — from API/DB ─────────────────────────────────────────────────
+  // ── Games — from API ─────────────────────────────────
   const { data: games = [], isLoading: gLoading } = useSWR<Game[]>(
     'training-games',
     () => gameApi.getAll(),
     { revalidateOnFocus: false }
   );
 
-  const isLoading = tab === 'videos' ? vLoading : tab === 'quizzes' ? qLoading : gLoading;
+  // ── AI Quizzes — admin only ──────────────────────────
+  const { data: aiQuizzes = [], isLoading: aiLoading } = useSWR<AIQuiz[]>(
+    isAdmin ? 'ai-quizzes-list' : null,
+    () => aiScenarioApi.getAIQuizzes(),
+    { revalidateOnFocus: false }
+  );
+
+  // Dummy employees list for modal (the modal is also on employees page, but here we pass empty)
+  // Employees page already has the full list; here we allow admins to open from Training too
+  const { data: employeesRaw = [] } = useSWR(
+    isAdmin ? 'training-employees-for-quiz' : null,
+    async () => {
+      const { apiService } = await import('@/app/services/api');
+      const res = await apiService.get<{ _id: string; name: string; email: string; department?: string }[]>('/employees');
+      return res.data;
+    },
+    { revalidateOnFocus: false }
+  );
+
+  const isLoading =
+    tab === 'videos' ? vLoading :
+    tab === 'quizzes' ? qLoading :
+    tab === 'ai_quizzes' ? aiLoading :
+    gLoading;
 
   return (
     <div className="space-y-6">
@@ -85,14 +122,26 @@ export default function TrainingPage() {
             </p>
           </div>
 
-          {/* Language toggle */}
-          <button
-            onClick={() => setLang(isUrdu ? 'en' : 'ur')}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted/50 border border-purple-500/20 text-sm font-medium text-muted-foreground hover:text-foreground transition"
-          >
-            <Globe className="w-4 h-4" />
-            {isUrdu ? 'Switch to English' : 'اردو میں دیکھیں'}
-          </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Admin: Generate AI Quiz button */}
+            {isAdmin && (
+              <button
+                onClick={() => setQuizModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 text-sm font-medium text-purple-300 hover:text-white hover:border-purple-500/60 transition"
+              >
+                <Sparkles className="w-4 h-4" />
+                Generate AI Quiz
+              </button>
+            )}
+            {/* Language toggle */}
+            <button
+              onClick={() => setLang(isUrdu ? 'en' : 'ur')}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted/50 border border-purple-500/20 text-sm font-medium text-muted-foreground hover:text-foreground transition"
+            >
+              <Globe className="w-4 h-4" />
+              {isUrdu ? 'Switch to English' : 'اردو میں دیکھیں'}
+            </button>
+          </div>
         </div>
       </motion.div>
 
@@ -356,9 +405,146 @@ export default function TrainingPage() {
               )
           )}
 
+          {/* ════ AI QUIZZES (admin only) ════ */}
+          {tab === 'ai_quizzes' && isAdmin && (
+            isLoading ? <GridSkeleton cols={2} /> :
+              aiQuizzes.length === 0 ? (
+                <EmptyState
+                  icon={Brain}
+                  text="No AI quizzes generated yet"
+                  sub="Use 'Generate AI Quiz' to create and assign personalized quizzes"
+                />
+              ) : (
+                <div className="space-y-4">
+                  {aiQuizzes.map((quiz, i) => (
+                    <AIQuizCard key={quiz._id} quiz={quiz} index={i} />
+                  ))}
+                </div>
+              )
+          )}
+
         </motion.div>
       </AnimatePresence>
+
+      {/* Generate AI Quiz Modal */}
+      {isAdmin && (
+        <GenerateQuizModal
+          isOpen={quizModalOpen}
+          onClose={() => setQuizModalOpen(false)}
+          employees={employeesRaw}
+        />
+      )}
     </div>
+  );
+}
+
+// ── AI Quiz Accordion Card ────────────────────────────────────────────────────
+function AIQuizCard({ quiz, index }: { quiz: AIQuiz; index: number }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const TRIGGER_LABELS: Record<string, string> = {
+    credentialsSubmitted: '🎣 Phishing Failure',
+    linkClicked: '🔗 Link Clicked',
+    monthly_scheduled: '🗓️ Monthly',
+    admin_manual: '👨‍💼 Admin Assigned',
+  };
+  const triggerLabel = quiz.triggerContext?.eventType
+    ? (TRIGGER_LABELS[quiz.triggerContext.eventType] ?? quiz.triggerContext.eventType)
+    : 'AI Generated';
+
+  const DIFF_COLORS: Record<string, string> = {
+    easy: 'bg-green-500/20 text-green-400 border-green-500/30',
+    medium: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    hard: 'bg-red-500/20 text-red-400 border-red-500/30',
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04 }}
+    >
+      <Card className="rounded-xl border border-purple-500/20 overflow-hidden">
+        {/* Header row */}
+        <div
+          className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition"
+          onClick={() => setExpanded((v) => !v)}
+        >
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/30 to-blue-500/30 flex items-center justify-center flex-shrink-0">
+              <Brain className="w-4 h-4 text-purple-400" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-semibold text-foreground text-sm leading-snug truncate">{quiz.title}</h3>
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <span className="text-xs text-muted-foreground">{quiz.category}</span>
+                <span className="text-xs text-purple-400">{triggerLabel}</span>
+                {quiz.triggerContext?.month && (
+                  <span className="text-xs text-slate-500">{quiz.triggerContext.month}</span>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 flex-shrink-0 ml-2">
+            <span className={`px-2 py-0.5 rounded-full text-xs font-medium border capitalize ${DIFF_COLORS[quiz.difficulty] ?? ''}`}>
+              {quiz.difficulty}
+            </span>
+            <span className="text-xs text-muted-foreground">{quiz.totalQuestions}Q</span>
+            {expanded
+              ? <ChevronUp className="w-4 h-4 text-muted-foreground" />
+              : <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            }
+          </div>
+        </div>
+
+        {/* Expanded questions */}
+        {expanded && (
+          <div className="border-t border-purple-500/10 divide-y divide-purple-500/10">
+            {quiz.description && (
+              <p className="px-4 py-3 text-xs text-muted-foreground italic">{quiz.description}</p>
+            )}
+            {quiz.questions.length === 0 ? (
+              <p className="px-4 py-4 text-xs text-muted-foreground">No questions loaded.</p>
+            ) : (
+              quiz.questions.map((q, qi) => (
+                <div key={q._id} className="px-4 py-3 space-y-2">
+                  <p className="text-sm font-medium text-foreground">
+                    <span className="text-purple-400 mr-2">Q{qi + 1}.</span>{q.question}
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {(['a', 'b', 'c', 'd'] as const).map((opt) => {
+                      const text = q[`option_${opt}` as keyof typeof q] as string;
+                      const isCorrect = q.correctOption === opt;
+                      return (
+                        <div
+                          key={opt}
+                          className={`flex items-start gap-2 px-3 py-1.5 rounded-lg text-xs ${
+                            isCorrect
+                              ? 'bg-green-500/10 border border-green-500/30 text-green-400'
+                              : 'bg-muted/30 border border-transparent text-muted-foreground'
+                          }`}
+                        >
+                          <span className={`font-bold uppercase flex-shrink-0 ${isCorrect ? 'text-green-400' : 'text-purple-400'}`}>
+                            {opt}.
+                          </span>
+                          <span>{text}</span>
+                          {isCorrect && <CheckCircle className="w-3.5 h-3.5 flex-shrink-0 ml-auto mt-0.5" />}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {q.explanation && (
+                    <p className="text-xs text-slate-500 pl-1">
+                      <span className="text-purple-400 font-medium">Explanation:</span> {q.explanation}
+                    </p>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </Card>
+    </motion.div>
   );
 }
 
@@ -373,7 +559,7 @@ function GridSkeleton({ cols = 3 }: { cols?: number }) {
   );
 }
 
-function EmptyState({ icon: Icon, text, sub }: { icon: any; text: string; sub?: string }) {
+function EmptyState({ icon: Icon, text, sub }: { icon: React.ComponentType<{ className?: string }>; text: string; sub?: string }) {
   return (
     <div className="text-center py-20 text-slate-400">
       <Icon className="w-12 h-12 mx-auto mb-3 text-slate-600" />
