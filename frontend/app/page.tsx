@@ -874,10 +874,14 @@ import { Button } from '@/components/ui/button';
 import {
   Shield, ArrowRight, CheckCircle2, Lock, AlertTriangle,
   BarChart3, Users, Zap, TrendingUp, Star,
+  Mail, Brain, Phone, PhoneCall, PlayCircle, Gamepad2
+  ,Video, HelpCircle
 } from 'lucide-react';
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
 import PricingPreview from '@/components/pricing/PricingPreview';
+import { useState } from 'react';
+import VideoModal from '@/components/ui/VideoModal';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -897,6 +901,8 @@ const itemVariants = {
 };
 
 export default function LandingPage() {
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+
   return (
     <div className="bg-background text-foreground overflow-hidden">
 
@@ -955,8 +961,8 @@ export default function LandingPage() {
                 variants={itemVariants}
                 className="text-lg text-muted-foreground mb-8 max-w-lg leading-relaxed"
               >
-                Train employees against phishing, smishing, and vishing attacks with interactive simulations and
-                real-time analytics. Reduce your organization's risk with proven security awareness training.
+                Train employees against phishing, smishing, and vishing simulations and
+                real-time analytics.
               </motion.p>
 
               <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4">
@@ -967,68 +973,143 @@ export default function LandingPage() {
                   </Button>
                 </Link>
                 <Button
+                  onClick={() => setIsVideoOpen(true)}
                   variant="outline"
                   className="border-border hover:bg-muted px-8 py-6 text-base rounded-lg text-foreground"
                 >
-                  Request Demo
+                  Watch a Demo
                 </Button>
               </motion.div>
 
-              <motion.div
-                variants={itemVariants}
-                className="mt-12 pt-8 border-t border-purple-500/10 grid grid-cols-3 gap-6"
-              >
-                {[
-                  { value: '500K+', label: 'Employees Trained' },
-                  { value: '90%', label: 'Phishing Reduction' },
-                  { value: '98%', label: 'Detection Improvement' },
-                ].map((metric, idx) => (
-                  <div key={idx}>
-                    <div className="text-2xl font-bold text-purple-500">{metric.value}</div>
-                    <div className="text-sm text-muted-foreground">{metric.label}</div>
-                  </div>
-                ))}
-              </motion.div>
+             
             </motion.div>
 
+            {/* ───────────── HERO RIGHT VISUAL (clean, no box background) ───────────── */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.3 }}
               className="relative"
             >
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl blur-2xl opacity-20 dark:opacity-30"
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 4, repeat: Infinity }}
-              />
-              <div className="relative bg-card soft-border rounded-2xl p-6 shadow-xl">
-                <div className="bg-muted/50 rounded-lg p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-semibold text-muted-foreground">Dashboard Overview</div>
-                    <div className="flex gap-2">
-                      <div className="w-3 h-3 rounded-full bg-red-500" />
-                      <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                      <div className="w-3 h-3 rounded-full bg-green-500" />
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    {[
-                      { label: 'Active Users', value: '2,482', color: 'from-purple-600 to-purple-400', w: 'w-full' },
-                      { label: 'Campaigns', value: '24', color: 'from-blue-600 to-blue-400', w: 'w-3/4' },
-                      { label: 'Avg. Click Rate', value: '28%', color: 'from-cyan-600 to-cyan-400', w: 'w-1/2' },
-                    ].map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">{item.label}</span>
-                        <div className="flex items-center gap-2">
-                          <div className={`${item.w} max-w-[80px] h-2 bg-gradient-to-r ${item.color} rounded-full`} />
-                          <span className="text-foreground font-semibold">{item.value}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <div className="relative w-full h-80 flex items-center justify-center">
+
+  {/* Outer rotating ring */}
+  <motion.div
+    className="absolute w-64 h-64 rounded-full border border-purple-500/25"
+    animate={{ rotate: 360 }}
+    transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+  >
+    {[0, 90, 180, 270].map((deg) => (
+      <div
+        key={deg}
+        className="absolute w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_2px_rgba(168,85,247,0.5)]"
+        style={{
+          top: '50%',
+          left: '50%',
+          transform: `rotate(${deg}deg) translateX(128px) translate(-50%, -50%)`,
+        }}
+      />
+    ))}
+  </motion.div>
+
+  {/* Middle rotating ring */}
+  <motion.div
+    className="absolute w-44 h-44 rounded-full border border-blue-500/25"
+    animate={{ rotate: -360 }}
+    transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+  >
+    {[45, 135, 225, 315].map((deg) => (
+      <div
+        key={deg}
+        className="absolute w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_6px_2px_rgba(96,165,250,0.5)]"
+        style={{
+          top: '50%',
+          left: '50%',
+          transform: `rotate(${deg}deg) translateX(88px) translate(-50%, -50%)`,
+        }}
+      />
+    ))}
+  </motion.div>
+
+  {/* Inner pulsing ring */}
+  <motion.div
+    className="absolute w-28 h-28 rounded-full border border-purple-500/40"
+    animate={{ scale: [1, 1.1, 1], opacity: [0.4, 0.8, 0.4] }}
+    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+  />
+
+  {/* Center Shield */}
+  <motion.div
+    className="relative z-10 w-24 h-24 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-500/30"
+    animate={{ scale: [1, 1.05, 1] }}
+    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+  >
+    <Shield className="w-11 h-11 text-white" />
+  </motion.div>
+
+  {/* Floating labels — close to the ring, clock positions */}
+
+  {/* 12 o'clock */}
+  <motion.div
+    className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-red-500/10 backdrop-blur-md border border-red-500/30 rounded-xl px-3 py-1.5 shadow-sm"
+    animate={{ y: [0, -6, 0], x: [0, 3, 0] }}
+    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+  >
+    <Mail className="w-3 h-3 text-red-400" />
+    <p className="text-xs text-red-300 font-medium">Phishing</p>
+  </motion.div>
+
+  {/* 2 o'clock */}
+  <motion.div
+    className="absolute top-16 right-4 flex items-center gap-1.5 bg-teal-500/10 backdrop-blur-md border border-teal-500/30 rounded-xl px-3 py-1.5 shadow-sm"
+    animate={{ x: [0, 4, 0], y: [0, -3, 0] }}
+    transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 1.4 }}
+  >
+    <HelpCircle className="w-3 h-3 text-teal-400" />
+    <p className="text-xs text-teal-300 font-medium">Quizzes</p>
+  </motion.div>
+
+  {/* 4 o'clock */}
+  <motion.div
+    className="absolute bottom-16 right-4 flex items-center gap-1.5 bg-blue-500/10 backdrop-blur-md border border-blue-500/30 rounded-xl px-3 py-1.5 shadow-sm"
+    animate={{ y: [0, 5, 0], x: [0, -3, 0] }}
+    transition={{ duration: 3.7, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
+  >
+    <Video className="w-3 h-3 text-blue-400" />
+    <p className="text-xs text-blue-300 font-medium">Videos</p>
+  </motion.div>
+
+  {/* 6 o'clock */}
+  <motion.div
+    className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-amber-500/10 backdrop-blur-md border border-amber-500/30 rounded-xl px-3 py-1.5 shadow-sm"
+    animate={{ y: [0, 6, 0], x: [0, -3, 0] }}
+    transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+  >
+    <Zap className="w-3 h-3 text-amber-400" />
+    <p className="text-xs text-amber-300 font-medium">Smishing</p>
+  </motion.div>
+
+  {/* 8 o'clock */}
+  <motion.div
+    className="absolute bottom-16 left-4 flex items-center gap-1.5 bg-purple-500/10 backdrop-blur-md border border-purple-500/30 rounded-xl px-3 py-1.5 shadow-sm"
+    animate={{ y: [0, -5, 0], x: [0, 3, 0] }}
+    transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+  >
+    <Gamepad2 className="w-3 h-3 text-purple-400" />
+    <p className="text-xs text-purple-300 font-medium">Games</p>
+  </motion.div>
+
+  {/* 10 o'clock */}
+  <motion.div
+    className="absolute top-16 left-4 flex items-center gap-1.5 bg-green-500/10 backdrop-blur-md border border-green-500/30 rounded-xl px-3 py-1.5 shadow-sm"
+    animate={{ x: [0, -4, 0], y: [0, 4, 0] }}
+    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+  >
+    <PhoneCall className="w-3 h-3 text-green-400" />
+    <p className="text-xs text-green-300 font-medium">Vishing</p>
+  </motion.div>
+
+</div>
             </motion.div>
           </div>
         </div>
@@ -1070,6 +1151,9 @@ export default function LandingPage() {
               { icon: AlertTriangle, title: 'Phishing Simulations', description: 'Realistic email-based attacks to test employee awareness and identify vulnerable users', color: 'from-red-500 to-red-400', bg: 'bg-red-50 dark:bg-red-950/30', border: 'border-red-200 dark:border-red-500/20' },
               { icon: Zap, title: 'Smishing Campaigns', description: 'SMS-based social engineering tests to train employees against text message threats', color: 'from-amber-500 to-yellow-400', bg: 'bg-amber-50 dark:bg-amber-950/30', border: 'border-amber-200 dark:border-amber-500/20' },
               { icon: Lock, title: 'Vishing Defense', description: 'Voice-based attack simulations to teach employees to identify phone-based threats', color: 'from-green-500 to-emerald-400', bg: 'bg-green-50 dark:bg-green-950/30', border: 'border-green-200 dark:border-green-500/20' },
+              { icon: PlayCircle, title: 'Video Training', description: 'Bite-sized, engaging video lessons that make security awareness easy to understand and remember', color: 'from-indigo-500 to-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-950/30', border: 'border-indigo-200 dark:border-indigo-500/20' },
+              { icon: Brain, title: 'Interactive Quizzes', description: 'Knowledge-check quizzes after every module to reinforce learning and track comprehension', color: 'from-pink-500 to-rose-400', bg: 'bg-pink-50 dark:bg-pink-950/30', border: 'border-pink-200 dark:border-pink-500/20' },
+              { icon: Gamepad2, title: 'Gamified Challenges', description: 'Fun, game-based scenarios that turn security training into a rewarding, hands-on experience', color: 'from-orange-500 to-amber-400', bg: 'bg-orange-50 dark:bg-orange-950/30', border: 'border-orange-200 dark:border-orange-500/20' },
               { icon: Users, title: 'Interactive Training', description: 'Personalized learning paths with instant feedback and microlearning modules', color: 'from-blue-500 to-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-500/20' },
               { icon: TrendingUp, title: 'Leaderboards', description: 'Gamified competitions to boost engagement and foster security culture', color: 'from-purple-500 to-purple-400', bg: 'bg-purple-50 dark:bg-purple-950/30', border: 'border-purple-200 dark:border-purple-500/20' },
               { icon: BarChart3, title: 'Analytics Dashboard', description: 'Real-time insights with detailed metrics and customizable security reports', color: 'from-cyan-500 to-cyan-400', bg: 'bg-cyan-50 dark:bg-cyan-950/30', border: 'border-cyan-200 dark:border-cyan-500/20' },
@@ -1142,7 +1226,7 @@ export default function LandingPage() {
       </section>
 
       {/* ───────────────── TESTIMONIALS ───────────────── */}
-      <section className="py-24 px-4 bg-muted/30">
+      {/* <section className="py-24 px-4 bg-muted/30">
         <div className="max-w-7xl mx-auto">
           <motion.div
             variants={containerVariants}
@@ -1193,7 +1277,7 @@ export default function LandingPage() {
             ))}
           </motion.div>
         </div>
-      </section>
+      </section> */}
 
       {/* ───────────────── PRICING ───────────────── */}
       <PricingPreview />
@@ -1236,10 +1320,11 @@ export default function LandingPage() {
               </Link>
 
               <Button
+                onClick={() => setIsVideoOpen(true)}
                 variant="outline"
                 className="border-purple-500/20 hover:border-purple-500/40 hover:bg-purple-500/5 px-8 py-6 text-base rounded-lg text-foreground"
               >
-                Schedule a Demo
+                Watch a Demo
               </Button>
             </motion.div>
           </motion.div>
@@ -1248,6 +1333,13 @@ export default function LandingPage() {
 
       {/* ───────────────── FOOTER ───────────────── */}
       <Footer />
+
+      {/* ───────────────── VIDEO MODAL ───────────────── */}
+      <VideoModal
+        isOpen={isVideoOpen}
+        onClose={() => setIsVideoOpen(false)}
+        videoSrc="/videos/Promotional-Video.mp4"
+      />
     </div>
   );
 }

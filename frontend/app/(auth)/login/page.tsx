@@ -120,22 +120,7 @@ export default function LoginPage() {
           </motion.div>
         </div>
 
-        {/* Footer */}
-        <motion.div
-          className="relative z-10 space-y-2"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-        >
-          <p className="text-sm text-purple-300">
-            Join thousands protecting their workforce
-          </p>
-          <div className="flex gap-4 text-sm text-purple-200">
-            <span>500K+ Users</span>
-            <span>98% Accuracy</span>
-            <span>24/7 Support</span>
-          </div>
-        </motion.div>
+        
       </motion.div>
 
       {/* Right Side - Login Form */}
