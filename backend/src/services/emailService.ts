@@ -166,10 +166,12 @@ export const emailTemplates = {
 
 interface SendEmailOptions {
   to: string;
-  templateKey: keyof typeof emailTemplates;
+  templateKey?: keyof typeof emailTemplates;
   trackingToken: string;
   campaignId: string;
   userId: string;
+  customSubject?: string;
+  customHtml?: string;
 }
 
 export const sendPhishingEmail = async (options: SendEmailOptions): Promise<{
@@ -178,7 +180,8 @@ export const sendPhishingEmail = async (options: SendEmailOptions): Promise<{
   error?: string;
   mocked?: boolean;
 }> => {
-  const template = emailTemplates[options.templateKey];
+  const templateKey = options.templateKey && emailTemplates[options.templateKey] ? options.templateKey : 'bank_phishing';
+  const template = emailTemplates[templateKey];
   const trackingUrl = generateEmailTrackingUrl(
     options.trackingToken,
     options.campaignId,
@@ -186,10 +189,16 @@ export const sendPhishingEmail = async (options: SendEmailOptions): Promise<{
   );
   const phishingPageUrl = generatePhishingPageUrl(
     options.trackingToken,
-    options.templateKey,
+    templateKey,
     options.campaignId,
     options.userId
   );
+
+  const subject = options.customSubject || template.subject;
+  const rawHtml = options.customHtml || template.htmlTemplate(trackingUrl, phishingPageUrl);
+  const htmlContent = rawHtml
+    .replace(/\{\{phishingUrl\}\}/g, phishingPageUrl)
+    .replace(/\{\{trackingUrl\}\}/g, trackingUrl);
 
   // ── MOCK MODE ──────────────────────────────────────────────────────────────
   if (process.env.MOCK_EMAIL === 'true' || process.env.NODE_ENV === 'test') {
@@ -197,8 +206,8 @@ export const sendPhishingEmail = async (options: SendEmailOptions): Promise<{
 
     console.log(`\n[MOCK EMAIL] ══════════════════════════════════`);
     console.log(`  To          : ${options.to}`);
-    console.log(`  Template    : ${options.templateKey}`);
-    console.log(`  Subject     : ${template.subject}`);
+    console.log(`  Template    : ${options.templateKey || 'AI_GENERATED'}`);
+    console.log(`  Subject     : ${subject}`);
     console.log(`  Mock ID     : ${mockId}`);
     console.log(`  ─────────────────────────────────────────────`);
     console.log(`  Click this to simulate employee clicking link:`);
@@ -210,13 +219,11 @@ export const sendPhishingEmail = async (options: SendEmailOptions): Promise<{
 
   // ── REAL EMAIL ─────────────────────────────────────────────────────────────
   try {
-    const htmlContent = template.htmlTemplate(trackingUrl, phishingPageUrl);
-
     const transporter = getTransporter();
     const info = await transporter.sendMail({
       from: process.env.EMAIL_FROM || 'security@company.com',
       to: options.to,
-      subject: template.subject,
+      subject,
       html: htmlContent,
       headers: {
         'X-Campaign-ID': options.campaignId,
