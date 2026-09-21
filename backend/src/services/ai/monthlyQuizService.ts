@@ -39,11 +39,20 @@ export const runMonthlyQuizGeneration = async (
 
   const currentMonth = new Date().toISOString().slice(0, 7); // e.g. "2026-09"
 
+  console.log(
+    `[MonthlyQuiz] 🗓️  Starting monthly quiz generation | month="${currentMonth}" | companyCount=${companies.length} | dueInDays=${dueInDays}`
+  );
+
   for (const company of companies) {
     const companyIdStr = company._id.toString();
 
+    console.log(`[MonthlyQuiz] 🏢 Processing company="${company.companyName}" (${companyIdStr})`);
+
     try {
       const topic = getNextQuizTopic(company.lastMonthlyQuizTopic);
+      console.log(
+        `[MonthlyQuiz] 📖 Topic selected="${topic}" | prevTopic="${company.lastMonthlyQuizTopic ?? 'none'}"`
+      );
 
       const systemPrompt = `You are an expert corporate cybersecurity training specialist.
 Generate a general monthly security awareness quiz on the topic "${topic}" suitable for all employees in a company (Industry: ${company.industry || 'General'}).
@@ -52,6 +61,7 @@ Output valid JSON matching the requested schema strictly.`;
 
       const userPrompt = `Create a monthly security awareness quiz on the topic "${topic}".`;
 
+      console.log(`[MonthlyQuiz] 🤖 Calling AI service for company="${company.companyName}"...`);
       const aiResult = await aiService.generateStructured<GeneratedQuizPayload>(
         {
           systemPrompt,
@@ -67,6 +77,9 @@ Output valid JSON matching the requested schema strictly.`;
       );
 
       const payload = aiResult.data;
+      console.log(
+        `[MonthlyQuiz] ✅ AI quiz received | title="${payload.title}" | questions=${payload.questions.length}`
+      );
 
       const createdQuiz = await Quiz.create({
         title: payload.title || `Monthly Security Quiz: ${topic}`,
@@ -84,6 +97,8 @@ Output valid JSON matching the requested schema strictly.`;
         },
       });
 
+      console.log(`[MonthlyQuiz] 💾 Quiz saved | quizId="${createdQuiz._id}"`);
+
       try {
         const questionDocs = payload.questions.map((q) => ({
           quizId: createdQuiz._id,
@@ -100,7 +115,9 @@ Output valid JSON matching the requested schema strictly.`;
         }));
 
         await QuizQuestion.insertMany(questionDocs);
+        console.log(`[MonthlyQuiz] ✅ ${questionDocs.length} questions inserted | quizId="${createdQuiz._id}"`);
       } catch (err) {
+        console.error(`[MonthlyQuiz] ❌ Question insertion failed, rolling back quiz "${createdQuiz._id}":`, err);
         await Quiz.findByIdAndDelete(createdQuiz._id);
         throw err;
       }
@@ -147,7 +164,7 @@ Output valid JSON matching the requested schema strictly.`;
       });
 
       console.log(
-        `[MONTHLY QUIZ] Successfully generated quiz topic="${topic}" for company="${company.companyName}" (${taskDocs.length} tasks assigned)`
+        `[MonthlyQuiz] ✅ Done for company="${company.companyName}" | topic="${topic}" | tasksCreated=${taskDocs.length} | quizId="${createdQuiz._id}"`
       );
     } catch (err: unknown) {
       summary.failedCompanies++;
@@ -159,11 +176,14 @@ Output valid JSON matching the requested schema strictly.`;
         error: errorMessage,
       });
       console.error(
-        `[MONTHLY QUIZ] Failed generation for company="${company.companyName}":`,
-        errorMessage
+        `[MonthlyQuiz] ❌ Failed for company="${company.companyName}": ${errorMessage}`
       );
     }
   }
+
+  console.log(
+    `[MonthlyQuiz] 🏁 Monthly run complete | succeeded=${summary.successfulCompanies} | failed=${summary.failedCompanies}`
+  );
 
   return summary;
 };

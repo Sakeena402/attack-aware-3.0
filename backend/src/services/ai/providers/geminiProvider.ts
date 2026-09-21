@@ -17,6 +17,8 @@ export class GeminiProvider implements AIProvider {
     const startTime = Date.now();
     const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
+    console.log(`[GeminiProvider] 📡 Calling model="${modelName}" | maxOutputTokens=${request.maxTokens ?? 1000}`);
+
     try {
       const response = await ai.models.generateContent({
         model: modelName,
@@ -32,14 +34,19 @@ export class GeminiProvider implements AIProvider {
       const latencyMs = Date.now() - startTime;
       const rawContent = response.text;
 
+      console.log(`[GeminiProvider] 📨 Raw response received | length=${rawContent?.length ?? 0} chars | latency=${latencyMs}ms`);
+
       if (!rawContent) {
+        console.error('[GeminiProvider] ❌ Empty response content from Gemini API');
         throw new AIGenerationError('Gemini response returned empty content.', this.name);
       }
 
       let parsed: unknown;
       try {
         parsed = JSON.parse(rawContent);
+        console.log('[GeminiProvider] ✅ JSON parsed successfully');
       } catch (parseError) {
+        console.error('[GeminiProvider] ❌ JSON parse failed:', parseError);
         throw new AIGenerationError(
           'Failed to parse JSON response from Gemini.',
           this.name,
@@ -51,6 +58,7 @@ export class GeminiProvider implements AIProvider {
       if (request.schema) {
         const result = request.schema.safeParse(parsed);
         if (!result.success) {
+          console.error('[GeminiProvider] ❌ Zod validation failed:', result.error.message);
           throw new AIGenerationError(
             `Gemini output failed Zod schema validation: ${result.error.message}`,
             this.name,
@@ -58,12 +66,17 @@ export class GeminiProvider implements AIProvider {
           );
         }
         validatedData = result.data;
+        console.log('[GeminiProvider] ✅ Zod schema validation passed');
       } else {
         validatedData = parsed as T;
       }
 
       const inputTokens = response.usageMetadata?.promptTokenCount ?? 0;
       const outputTokens = response.usageMetadata?.candidatesTokenCount ?? 0;
+
+      console.log(
+        `[GeminiProvider] 🏁 Done | inputTokens=${inputTokens} | outputTokens=${outputTokens} | latency=${latencyMs}ms | model="${modelName}"`
+      );
 
       return {
         data: validatedData,
@@ -78,6 +91,7 @@ export class GeminiProvider implements AIProvider {
         throw error;
       }
       const message = error instanceof Error ? error.message : 'Unknown Gemini generation error';
+      console.error(`[GeminiProvider] ❌ Unexpected error: ${message}`);
       throw new AIGenerationError(message, this.name, error);
     }
   }

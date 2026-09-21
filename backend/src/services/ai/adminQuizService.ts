@@ -30,10 +30,16 @@ export const generateAdminQuiz = async (
   const requestedByObjectId = new Types.ObjectId(payload.requestedBy);
   const companyObjectId = new Types.ObjectId(payload.companyId);
 
+  console.log(
+    `[AdminQuiz] 🚦 Job started | employeeId="${payload.employeeId}" | requestedBy="${payload.requestedBy}" | topicMode="${payload.topicMode}" | topic="${payload.topic ?? 'auto'}"`
+  );
+
   const employee = await User.findById(employeeObjectId);
   if (!employee) {
     throw new AppError('Assigned employee not found', 404);
   }
+
+  console.log(`[AdminQuiz] 👤 Employee resolved: "${employee.name}" (${employee.department ?? 'no dept'})`);
 
   const dueInDays = payload.dueInDays && payload.dueInDays > 0 ? payload.dueInDays : 14;
 
@@ -49,6 +55,7 @@ Generate 4 multiple-choice questions testing practical awareness, threat identif
 Output valid JSON matching the requested schema strictly.`;
 
     userPrompt = `Create a quiz on topic "${topicName}" for employee ${employee.name}.`;
+    console.log(`[AdminQuiz] 📝 Manual topic mode | topic="${topicName}"`);
   } else {
     // topicMode === 'auto': infer weak areas from recent quiz history
     const recentQuizzes = await UserQuiz.find({ userId: employeeObjectId })
@@ -66,6 +73,10 @@ Output valid JSON matching the requested schema strictly.`;
       avgScore = Math.round(sumPct / totalQuizzesPlayed);
     }
 
+    console.log(
+      `[AdminQuiz] 🤖 Auto topic mode | pastQuizzes=${totalQuizzesPlayed} | avgScore=${avgScore}% for "${employee.name}"`
+    );
+
     systemPrompt = `You are an AI cybersecurity training instructor.
 Generate a personalized adaptive quiz for employee "${employee.name}" (Department: ${employee.department || 'General'}).
 Employee Performance Context: ${totalQuizzesPlayed} past quizzes completed, average score: ${avgScore}%.
@@ -76,6 +87,7 @@ Output valid JSON matching the requested schema strictly.`;
   }
 
   try {
+    console.log(`[AdminQuiz] 🤖 Calling AI service | employee="${employee.name}" | topic="${topicName}"...`);
     const aiResult = await aiService.generateStructured<GeneratedQuizPayload>(
       {
         systemPrompt,
@@ -91,6 +103,9 @@ Output valid JSON matching the requested schema strictly.`;
     );
 
     const generated = aiResult.data;
+    console.log(
+      `[AdminQuiz] ✅ AI quiz received | title="${generated.title}" | questions=${generated.questions.length} | difficulty="${generated.difficulty}"`
+    );
 
     const createdQuiz = await Quiz.create({
       title: generated.title || `Assigned Quiz: ${topicName}`,
@@ -109,6 +124,8 @@ Output valid JSON matching the requested schema strictly.`;
       },
     });
 
+    console.log(`[AdminQuiz] 💾 Quiz saved | quizId="${createdQuiz._id}"`);
+
     try {
       const questionDocs = generated.questions.map((q) => ({
         quizId: createdQuiz._id,
@@ -125,7 +142,9 @@ Output valid JSON matching the requested schema strictly.`;
       }));
 
       await QuizQuestion.insertMany(questionDocs);
+      console.log(`[AdminQuiz] ✅ ${questionDocs.length} questions inserted | quizId="${createdQuiz._id}"`);
     } catch (err) {
+      console.error(`[AdminQuiz] ❌ Question insertion failed, rolling back quiz "${createdQuiz._id}":`, err);
       await Quiz.findByIdAndDelete(createdQuiz._id);
       throw err;
     }
@@ -146,6 +165,8 @@ Output valid JSON matching the requested schema strictly.`;
       points: 15,
     });
 
+    console.log(`[AdminQuiz] 📋 Task created | taskId="${createdTask._id}" | dueDate="${dueDate.toISOString()}"`);
+
     // Notify requesting admin via Message model
     await Message.create({
       senderId: requestedByObjectId,
@@ -155,12 +176,17 @@ Output valid JSON matching the requested schema strictly.`;
       isRead: false,
     });
 
+    console.log(
+      `[AdminQuiz] 🔔 Success notification sent to requestedBy="${payload.requestedBy}" | quizId="${createdQuiz._id}" | taskId="${createdTask._id}"`
+    );
+
     return {
       quizId: createdQuiz._id.toString(),
       taskId: createdTask._id.toString(),
     };
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown generation failure';
+    console.error(`[AdminQuiz] ❌ Generation failed for employee="${employee.name}": ${errorMessage}`);
     // Notify requesting admin of failure
     try {
       await Message.create({
@@ -170,8 +196,9 @@ Output valid JSON matching the requested schema strictly.`;
         content: `Quiz Generation Failed for ${employee.name} (Topic: ${topicName}): ${errorMessage}`,
         isRead: false,
       });
+      console.log(`[AdminQuiz] 🔔 Failure notification sent to requestedBy="${payload.requestedBy}"`);
     } catch (msgErr) {
-      console.error('[ADMIN QUIZ] Failed to send failure notification message:', msgErr);
+      console.error('[AdminQuiz] Failed to send failure notification message:', msgErr);
     }
     throw err;
   }

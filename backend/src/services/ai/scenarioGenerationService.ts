@@ -38,6 +38,10 @@ const scenarioZodSchema = z.object({
 export const generateScenario = async (
   params: GenerateScenarioParams
 ): Promise<IAIGeneratedTemplate> => {
+  console.log(
+    `[ScenarioGen] 🎣 Starting scenario generation | attackType="${params.attackType}" | difficulty="${params.difficulty}" | companyId="${params.companyId}"`
+  );
+
   const company = await Company.findById(params.companyId);
   if (!company) {
     throw new AppError('Company not found', 404);
@@ -48,6 +52,7 @@ export const generateScenario = async (
     const employee = await User.findById(params.targetEmployeeId);
     if (employee) {
       employeeInfo = `Target Employee: ${employee.name}, Department: ${employee.department}, Role: ${employee.role}`;
+      console.log(`[ScenarioGen] 👤 Targeting employee: ${employee.name} (${employee.department})`);
     }
   }
 
@@ -62,6 +67,7 @@ Maintain professional safety framing and output strictly formatted JSON matching
 
   const userPrompt = `Generate a realistic ${params.difficulty} level ${params.attackType} security awareness simulation template.`;
 
+  console.log(`[ScenarioGen] 🤖 Calling AI service for scenario...`);
   const aiResult = await aiService.generateStructured<IAIGeneratedTemplateContent>(
     {
       systemPrompt,
@@ -76,6 +82,9 @@ Maintain professional safety framing and output strictly formatted JSON matching
   );
 
   const generatedContent = aiResult.data;
+  console.log(
+    `[ScenarioGen] ✅ AI scenario received | category="${generatedContent.category}" | senderPersona="${generatedContent.senderPersona}"`
+  );
 
   const template = await AIGeneratedTemplate.create({
     companyId: params.companyId,
@@ -87,6 +96,8 @@ Maintain professional safety framing and output strictly formatted JSON matching
     generatedContent,
     createdBy: params.createdBy,
   });
+
+  console.log(`[ScenarioGen] 💾 Template saved to DB | templateId="${template._id}" | attackType="${params.attackType}"`);
 
   return template;
 };

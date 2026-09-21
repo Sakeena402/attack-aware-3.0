@@ -92,6 +92,10 @@ export const quizResponseSchema: Record<string, unknown> = {
 export const generateAdaptiveQuiz = async (
   params: AdaptiveQuizParams
 ): Promise<{ quizId: string }> => {
+  console.log(
+    `[AdaptiveQuiz] 🔔 Triggered | employeeId="${params.employeeId}" | attackType="${params.attackType}" | eventType="${params.eventType}" | category="${params.templateCategory}"`
+  );
+
   const userObjectId = new Types.ObjectId(params.employeeId);
 
   const recentQuizzes = await UserQuiz.find({ userId: userObjectId })
@@ -109,6 +113,10 @@ export const generateAdaptiveQuiz = async (
     avgScore = Math.round(sumPct / totalQuizzesPlayed);
   }
 
+  console.log(
+    `[AdaptiveQuiz] 📊 Employee quiz history | pastQuizzes=${totalQuizzesPlayed} | avgScore=${avgScore}%`
+  );
+
   const systemPrompt = `You are an expert security awareness instructor.
 Generate a targeted adaptive quiz for an employee who recently fell for a ${params.attackType} simulation (Category: ${params.templateCategory}, Event: ${params.eventType}).
 Employee Quiz Performance Context: ${totalQuizzesPlayed} past quizzes completed, average score: ${avgScore}%.
@@ -117,6 +125,7 @@ Output valid JSON matching the requested schema strictly.`;
 
   const userPrompt = `Create an adaptive quiz for an employee after a ${params.eventType} event in a ${params.attackType} scenario.`;
 
+  console.log(`[AdaptiveQuiz] 🤖 Calling AI service for adaptive quiz...`);
   const aiResult = await aiService.generateStructured<GeneratedQuizPayload>(
     {
       systemPrompt,
@@ -131,6 +140,9 @@ Output valid JSON matching the requested schema strictly.`;
   );
 
   const payload = aiResult.data;
+  console.log(
+    `[AdaptiveQuiz] ✅ AI quiz received | title="${payload.title}" | questions=${payload.questions.length} | difficulty="${payload.difficulty}"`
+  );
 
   // Use a transaction or single block so no broken quiz is left if question creation fails
   const createdQuiz = await Quiz.create({
@@ -151,6 +163,8 @@ Output valid JSON matching the requested schema strictly.`;
     },
   });
 
+  console.log(`[AdaptiveQuiz] 💾 Quiz document created | quizId="${createdQuiz._id}"`);
+
   try {
     const questionDocs = payload.questions.map((q) => ({
       quizId: createdQuiz._id,
@@ -167,11 +181,14 @@ Output valid JSON matching the requested schema strictly.`;
     }));
 
     await QuizQuestion.insertMany(questionDocs);
+    console.log(`[AdaptiveQuiz] ✅ ${questionDocs.length} questions inserted | quizId="${createdQuiz._id}"`);
   } catch (err) {
     // Cleanup created quiz if question insertion failed
+    console.error(`[AdaptiveQuiz] ❌ Question insertion failed, rolling back quiz "${createdQuiz._id}":`, err);
     await Quiz.findByIdAndDelete(createdQuiz._id);
     throw new AppError(`Failed to create quiz questions: ${err instanceof Error ? err.message : 'Unknown error'}`, 500);
   }
 
+  console.log(`[AdaptiveQuiz] 🏁 Complete | quizId="${createdQuiz._id}" | employeeId="${params.employeeId}"`);
   return { quizId: createdQuiz._id.toString() };
 };

@@ -14,6 +14,7 @@ export interface AIServiceOptions {
 class AIService {
   private getProvider(): AIProvider {
     const providerName = (process.env.AI_PROVIDER || 'gemini').toLowerCase();
+    console.log(`[AIService] 🔧 Provider selected: "${providerName}"`);
     if (providerName === 'anthropic') {
       return new AnthropicProvider();
     }
@@ -30,8 +31,16 @@ class AIService {
     const provider = this.getProvider();
     const startTime = Date.now();
 
+    console.log(
+      `[AIService] 🚀 Starting generation — purpose="${options.purpose}" | provider="${provider.name}" | maxTokens=${request.maxTokens ?? 'default'}`
+    );
+
     try {
       const result = await provider.generateStructured<T>(request);
+
+      console.log(
+        `[AIService] ✅ Generation complete — purpose="${options.purpose}" | latency=${result.latencyMs}ms | inputTokens=${result.inputTokens} | outputTokens=${result.outputTokens} | model="${result.model}"`
+      );
 
       // Async fire-and-forget log
       this.logCall({
@@ -52,6 +61,10 @@ class AIService {
       const latencyMs = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Generation error';
       const providerName = error instanceof AIGenerationError && error.provider ? error.provider : provider.name;
+
+      console.error(
+        `[AIService] ❌ Generation FAILED — purpose="${options.purpose}" | provider="${providerName}" | latency=${latencyMs}ms | error: ${errorMessage}`
+      );
 
       // Async fire-and-forget failure log
       this.logCall({
