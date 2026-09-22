@@ -56,7 +56,7 @@ export const runMonthlyQuizGeneration = async (
 
       const systemPrompt = `You are an expert corporate cybersecurity training specialist.
 Generate a general monthly security awareness quiz on the topic "${topic}" suitable for all employees in a company (Industry: ${company.industry || 'General'}).
-Generate 4 multiple-choice questions focusing on practical awareness, best practices, and threat detection for "${topic}".
+Generate 15 multiple-choice questions focusing on practical awareness, best practices, and threat detection for "${topic}".
 Output valid JSON matching the requested schema strictly.`;
 
       const userPrompt = `Create a monthly security awareness quiz on the topic "${topic}".`;
@@ -68,7 +68,7 @@ Output valid JSON matching the requested schema strictly.`;
           userPrompt,
           responseSchema: quizResponseSchema,
           schema: quizPayloadZodSchema,
-          maxTokens: 1600,
+          maxTokens: 4000,
         },
         {
           purpose: 'monthly_quiz_generation',
@@ -89,6 +89,8 @@ Output valid JSON matching the requested schema strictly.`;
         totalQuestions: payload.questions.length,
         order: 999,
         source: 'ai_generated',
+        companyId: company._id,
+        status: 'published',
         triggerContext: {
           eventType: 'monthly_scheduled',
           topic,

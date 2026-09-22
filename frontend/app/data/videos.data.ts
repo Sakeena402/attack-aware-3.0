@@ -279,13 +279,15 @@ export const STATIC_VIDEOS: StaticVideo[] = [
 ];
 
 // Helper to filter by language and category
-export function getVideos(language?: 'en' | 'ur', category?: string): StaticVideo[] {
-  let result = STATIC_VIDEOS;
+export function getVideos(language?: 'en' | 'ur', category?: string, isUnlockedAll: boolean = false): StaticVideo[] {
+  let result = isUnlockedAll ? STATIC_VIDEOS.map(v => ({ ...v, isLocked: false })) : STATIC_VIDEOS;
   if (language)            result = result.filter(v => v.language === language);
   if (category && category !== 'All') result = result.filter(v => v.category === category);
   return result;
 }
 
-export function getVideoById(id: string): StaticVideo | undefined {
-  return STATIC_VIDEOS.find(v => v._id === id);
+export function getVideoById(id: string, isUnlockedAll: boolean = false): StaticVideo | undefined {
+  const found = STATIC_VIDEOS.find(v => v._id === id);
+  if (!found) return undefined;
+  return isUnlockedAll ? { ...found, isLocked: false } : found;
 }

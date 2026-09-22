@@ -9,7 +9,7 @@ import {
   LayoutDashboard, BarChart3, Trophy, Zap, Settings,
   Users, FileText, Shield, LogOut, Building2, Activity,
   TrendingUp, BookOpen, MessageCircle, CheckSquare,
-  ChevronDown, PlayCircle, Brain, Gamepad2, Bell, User,
+  ChevronDown, PlayCircle, Brain, Gamepad2, Bell, User, Sparkles,
 } from 'lucide-react';
 import { useAuth } from '@/app/context/authContext';
 
@@ -39,6 +39,7 @@ const getMenuConfig = (role: string | undefined): MenuGroup[] => {
       { type: 'link', icon: LayoutDashboard, label: 'Dashboard',           href: '/dashboard' },
       { type: 'link', icon: Building2,       label: 'Companies',           href: '/dashboard/companies' },
       { type: 'link', icon: BarChart3,       label: 'Global Analytics',    href: '/dashboard/analytics' },
+      { type: 'link', icon: Sparkles,        label: 'AI Scenarios',        href: '/dashboard/ai-scenarios' },
       { type: 'link', icon: Activity,        label: 'User Activity',       href: '/dashboard/user-activity' },
       { type: 'link', icon: Shield,          label: 'Attacks Catalog',     href: '/dashboard/attacks' },
       { type: 'link', icon: Building2,       label: 'Enterprise Requests', href: '/dashboard/enterprise-requests' },
@@ -50,6 +51,7 @@ const getMenuConfig = (role: string | undefined): MenuGroup[] => {
     return [
       { type: 'link',  icon: LayoutDashboard, label: 'Dashboard',     href: '/dashboard' },
       { type: 'link',  icon: Zap,             label: 'Campaigns',     href: '/dashboard/campaigns', badge: 'NEW' },
+      { type: 'link',  icon: Sparkles,        label: 'AI Scenarios',  href: '/dashboard/ai-scenarios' },
       { type: 'link',  icon: Trophy,          label: 'Leaderboard',   href: '/dashboard/leaderboard' },
       { type: 'link',  icon: Users,           label: 'Employees',     href: '/dashboard/employees' },
       { type: 'link',  icon: BarChart3,       label: 'Analytics',     href: '/dashboard/analytics' },

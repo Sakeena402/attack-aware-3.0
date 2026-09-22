@@ -12,15 +12,16 @@ export interface AIScenario {
   _id: string;
   companyId: string;
   attackType: 'phishing' | 'smishing';
-  targetEmployeeId?: string;
+  targetEmployeeId?: string | { _id: string; name: string; department?: string; role?: string; email?: string };
   targetDepartment?: string;
   difficulty: string;
   status: 'draft' | 'approved' | 'rejected';
   generatedContent: AIGeneratedContent;
   editedContent?: AIGeneratedContent;
-  createdBy: string;
-  reviewedBy?: string;
+  createdBy: string | { _id: string; name: string; email: string };
+  reviewedBy?: string | { _id: string; name: string; email: string };
   reviewedAt?: string;
+  usedInCampaign?: { _id: string; campaignName: string; status: string } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -68,6 +69,7 @@ export const aiScenarioApi = {
     targetEmployeeId?: string;
     targetDepartment?: string;
     difficulty?: string;
+    category?: string;
   }): Promise<AIScenario> => {
     const res = await apiService.post<ApiResponseWrapper<AIScenario>>('/ai/scenarios/generate', payload);
     return res.data.data;

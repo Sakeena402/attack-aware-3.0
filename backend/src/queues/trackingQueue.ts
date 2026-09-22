@@ -88,6 +88,7 @@ export const adaptiveQuizQueue = new Bull('adaptive-quiz-generation', {
   defaultJobOptions: {
     attempts:         5,
     backoff:          { type: 'exponential', delay: 12000 },
+    timeout:          180_000, // 3 minutes — headroom for 4000-token generation
     removeOnComplete: 50,
     removeOnFail:     50,
   },

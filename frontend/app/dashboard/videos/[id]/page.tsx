@@ -8,6 +8,8 @@ import { getVideoById, getVideos, StaticVideo } from '@/app/data/videos.data';
 import { ArrowLeft, CheckCircle, SkipBack, SkipForward, Play, Pause } from 'lucide-react';
 import { videoApi } from '@/app/services/videoApi';
 
+import { useAuth } from '@/app/context/authContext';
+
 const COMPLETED_KEY = 'completedVideos';
 
 function getCompletedIds(): string[] {
@@ -30,6 +32,10 @@ function markCompletedLocally(id: string) {
 export default function VideoWatchPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { state: authState } = useAuth();
+  const user = authState?.user;
+  const isPremium = user?.role === 'admin' || user?.role === 'super_admin' || user?.companyId != null;
+
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const [completed, setCompleted] = useState(false);
@@ -37,8 +43,8 @@ export default function VideoWatchPage() {
   const [isPlaying, setIsPlaying] = useState(false);
 
   // Static data — instant, synchronous
-  const video: StaticVideo | undefined = getVideoById(id);
-  const allVideos: StaticVideo[] = video ? getVideos(video.language) : [];
+  const video: StaticVideo | undefined = getVideoById(id, isPremium);
+  const allVideos: StaticVideo[] = video ? getVideos(video.language, undefined, isPremium) : [];
 
   // Check localStorage for completion status on mount
   useEffect(() => {

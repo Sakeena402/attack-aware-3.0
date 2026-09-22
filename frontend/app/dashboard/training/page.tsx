@@ -63,7 +63,8 @@ export default function TrainingPage() {
     : BASE_TABS;
 
   // ── Videos — static data ──────────────────────────
-  const videos: StaticVideo[] = getVideos(lang, category || undefined);
+  const isPremium = isAdmin || user?.companyId != null;
+  const videos: StaticVideo[] = getVideos(lang, category || undefined, isPremium);
   const vLoading = false;
 
   // ── Quizzes — from API ──────────────────────────────

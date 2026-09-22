@@ -31,10 +31,12 @@ import {
   CheckCircle,
   Clock,
   BarChart3,
+  Sparkles,
 } from 'lucide-react';
 import { apiService } from '@/app/services/api';
 import { campaignApi } from '@/app/services/campaignApi';
 import { aiScenarioApi, AIScenario, AIGeneratedContent } from '@/app/services/aiScenarioApi';
+import { AIScenarioReviewModal } from '@/components/ai/AIScenarioReviewModal';
 
 import { employeeApi } from '@/app/services/employeeApi';
 import { Campaign, Employee } from '@/app/services/types';
@@ -142,53 +144,30 @@ export default function CampaignsPage() {
     description: '',
   });
 
+  // Fetch approved AI Scenarios for template picker
+  const approvedScenariosUrl = state.user?.companyId
+    ? `/ai/scenarios?status=approved&companyId=${state.user.companyId}`
+    : '/ai/scenarios?status=approved';
+  const { data: approvedScenariosData, mutate: mutateApprovedScenarios } = useSWR<AIScenario[]>(
+    approvedScenariosUrl,
+    fetcher,
+    { revalidateOnFocus: false }
+  );
+  const approvedScenarios = Array.isArray(approvedScenariosData) ? approvedScenariosData : [];
+
   const handleGenerateAiScenario = async () => {
     try {
       setIsGeneratingAi(true);
       const attackType = formData.type === 'vishing' ? 'phishing' : formData.type;
       const scenario = await aiScenarioApi.generateScenario({ attackType, difficulty: 'medium' });
       setCurrentAiScenario(scenario);
-      setAiFormFields(scenario.generatedContent);
       setIsAiModalOpen(true);
-      success('AI Scenario generated in draft mode! Please review and approve.');
+      success('AI Scenario generated!', 'Review and edit the draft scenario below.');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to generate AI scenario';
       showError(msg);
     } finally {
       setIsGeneratingAi(false);
-    }
-  };
-
-  const handleApproveAiScenario = async () => {
-    if (!currentAiScenario) return;
-    try {
-      if (Object.keys(aiFormFields).length > 0) {
-        await aiScenarioApi.updateContent(currentAiScenario._id, aiFormFields);
-      }
-      const approved = await aiScenarioApi.approveScenario(currentAiScenario._id);
-      setFormData((prev) => ({
-        ...prev,
-        aiGeneratedTemplateId: approved._id,
-        emailTemplate: '',
-        smsTemplate: '',
-      }));
-      setIsAiModalOpen(false);
-      success('AI Scenario approved and attached to campaign! Static template unselected.');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to approve scenario';
-      showError(msg);
-    }
-  };
-
-  const handleRejectAiScenario = async () => {
-    if (!currentAiScenario) return;
-    try {
-      await aiScenarioApi.rejectScenario(currentAiScenario._id);
-      setIsAiModalOpen(false);
-      success('AI Scenario rejected.');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to reject scenario';
-      showError(msg);
     }
   };
 
@@ -283,16 +262,24 @@ const employees = Array.isArray(data) ? data : [];
     e.preventDefault();
     setIsSubmitting(true);
 
+    const cleanedPayload = {
+      ...formData,
+      emailTemplate: formData.aiGeneratedTemplateId ? '' : (formData.type === 'phishing' ? formData.emailTemplate : ''),
+      smsTemplate: formData.aiGeneratedTemplateId ? '' : (formData.type === 'smishing' ? formData.smsTemplate : ''),
+      voiceScript: formData.aiGeneratedTemplateId ? '' : (formData.type === 'vishing' ? formData.voiceScript : ''),
+      aiGeneratedTemplateId: formData.aiGeneratedTemplateId || undefined,
+    };
+
     try {
       if (selectedCampaign) {
         await campaignApi.update(selectedCampaign._id, {
-          ...formData,
+          ...cleanedPayload,
           companyId: state.user?.companyId,
         });
         success('Campaign Updated', `${formData.campaignName} has been updated`);
       } else {
         await campaignApi.create({
-          ...formData,
+          ...cleanedPayload,
           companyId: state.user?.companyId,
           createdBy: state.user?.id,
           status: 'draft',
@@ -435,13 +422,21 @@ const selectAllEmployees = () => {
           <h1 className="text-3xl font-bold font-poppins text-foreground">Campaigns</h1>
           <p className="text-muted-foreground mt-1">Manage your security awareness campaigns</p>
         </div>
-        <Button 
-          className="bg-gradient-to-r from-purple-500 to-blue-500 hover:shadow-lg hover:shadow-purple-500/30 flex items-center gap-2"
-          onClick={() => openModal()}
-        >
-          <Plus className="w-4 h-4" />
-          New Campaign
-        </Button>
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard/ai-scenarios">
+            <Button variant="outline" className="border-purple-500/30 text-purple-300 hover:bg-purple-500/10">
+              <Sparkles className="w-4 h-4 mr-2 text-purple-400" />
+              AI Scenarios Library
+            </Button>
+          </Link>
+          <Button 
+            className="bg-gradient-to-r from-purple-500 to-blue-500 hover:shadow-lg hover:shadow-purple-500/30 flex items-center gap-2"
+            onClick={() => openModal()}
+          >
+            <Plus className="w-4 h-4" />
+            New Campaign
+          </Button>
+        </div>
       </motion.div>
 
       {/* Stats Cards */}
@@ -840,23 +835,74 @@ onChange={() => toggleEmployee(employee)}  // poora employee object pass karo
     {/* ROW 4 - CONDITIONAL TEMPLATES */}
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-      {/* SMS */}
+      {/* SMS TEMPLATE PICKER */}
       {formData.type === 'smishing' && (
-        <div>
-          <label className="text-sm font-medium mb-2 block">SMS Template</label>
-          <div className="grid grid-cols-2 gap-2">
-            {smsTemplates.map((t) => (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => setFormData({ ...formData, smsTemplate: t.key })}
-                className={`p-2 border rounded-lg text-left ${
-                  formData.smsTemplate === t.key ? 'bg-yellow-500/20' : ''
-                }`}
-              >
-                {t.name}
-              </button>
-            ))}
+        <div className="space-y-3">
+          <label className="text-sm font-medium block">Choose SMS Template (Static or Approved AI Scenario)</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Static SMS Templates */}
+            {smsTemplates.map((t) => {
+              const isSelected = formData.smsTemplate === t.key && !formData.aiGeneratedTemplateId;
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() =>
+                    setFormData({
+                      ...formData,
+                      smsTemplate: t.key,
+                      aiGeneratedTemplateId: undefined,
+                    })
+                  }
+                  className={`p-3 border rounded-xl text-left transition-all ${
+                    isSelected
+                      ? 'bg-yellow-500/20 border-yellow-500/50 ring-2 ring-yellow-500/30'
+                      : 'bg-muted/40 border-purple-500/20 hover:border-purple-500/40'
+                  }`}
+                >
+                  <p className="font-semibold text-sm text-foreground">{t.name}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
+                </button>
+              );
+            })}
+
+            {/* Approved AI Smishing Scenarios */}
+            {approvedScenarios
+              .filter((s) => s.attackType === 'smishing')
+              .map((s) => {
+                const content = s.editedContent || s.generatedContent || {};
+                const isSelected = formData.aiGeneratedTemplateId === s._id;
+                return (
+                  <button
+                    key={s._id}
+                    type="button"
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        aiGeneratedTemplateId: s._id,
+                        smsTemplate: '',
+                        emailTemplate: '',
+                      })
+                    }
+                    className={`p-3 border rounded-xl text-left transition-all relative ${
+                      isSelected
+                        ? 'bg-purple-500/30 border-purple-500 ring-2 ring-purple-500/40'
+                        : 'bg-purple-500/10 border-purple-500/30 hover:border-purple-500/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-purple-300 flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5 text-purple-400" /> AI: {content.category}
+                      </span>
+                      <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-green-500/20 text-green-300 border border-green-500/30">
+                        Approved
+                      </span>
+                    </div>
+                    <p className="font-medium text-xs text-foreground line-clamp-2">"{content.smsText}"</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">Persona: {content.senderPersona}</p>
+                  </button>
+                );
+              })}
           </div>
         </div>
       )}
@@ -889,7 +935,7 @@ onChange={() => toggleEmployee(employee)}  // poora employee object pass karo
       <div className="p-4 rounded-xl border border-purple-500/30 bg-purple-500/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h4 className="font-semibold text-sm text-purple-300 flex items-center gap-2">
-            <span>✨</span> Generate AI Scenario
+            <span>✨</span> Generate New AI Scenario
           </h4>
           <p className="text-xs text-muted-foreground">
             {formData.aiGeneratedTemplateId
@@ -908,24 +954,74 @@ onChange={() => toggleEmployee(employee)}  // poora employee object pass karo
       </div>
     )}
 
-    {/* EMAIL TEMPLATE */}
+    {/* EMAIL TEMPLATE PICKER */}
     {formData.type === 'phishing' && (
-      <div>
-        <label className="text-sm font-medium mb-2 block">Email Template</label>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-          {emailTemplates.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setFormData({ ...formData, emailTemplate: t.key, aiGeneratedTemplateId: undefined })}
-              className={`p-3 border rounded-lg text-left ${
-                formData.emailTemplate === t.key && !formData.aiGeneratedTemplateId ? 'bg-red-500/20 border-red-500/30' : ''
-              }`}
-            >
-              <p className="font-medium text-sm">{t.name}</p>
-              <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
-            </button>
-          ))}
+      <div className="space-y-3">
+        <label className="text-sm font-medium block">Choose Email Template (Static or Approved AI Scenario)</label>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {/* Static Email Templates */}
+          {emailTemplates.map((t) => {
+            const isSelected = formData.emailTemplate === t.key && !formData.aiGeneratedTemplateId;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() =>
+                  setFormData({
+                    ...formData,
+                    emailTemplate: t.key,
+                    aiGeneratedTemplateId: undefined,
+                  })
+                }
+                className={`p-3 border rounded-xl text-left transition-all ${
+                  isSelected
+                    ? 'bg-red-500/20 border-red-500/50 ring-2 ring-red-500/30'
+                    : 'bg-muted/40 border-purple-500/20 hover:border-purple-500/40'
+                }`}
+              >
+                <p className="font-semibold text-sm text-foreground">{t.name}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
+              </button>
+            );
+          })}
+
+          {/* Approved AI Phishing Scenarios */}
+          {approvedScenarios
+            .filter((s) => s.attackType === 'phishing')
+            .map((s) => {
+              const content = s.editedContent || s.generatedContent || {};
+              const isSelected = formData.aiGeneratedTemplateId === s._id;
+              return (
+                <button
+                  key={s._id}
+                  type="button"
+                  onClick={() =>
+                    setFormData({
+                      ...formData,
+                      aiGeneratedTemplateId: s._id,
+                      emailTemplate: '',
+                      smsTemplate: '',
+                    })
+                  }
+                  className={`p-3 border rounded-xl text-left transition-all relative ${
+                    isSelected
+                      ? 'bg-purple-500/30 border-purple-500 ring-2 ring-purple-500/40'
+                      : 'bg-purple-500/10 border-purple-500/30 hover:border-purple-500/50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-purple-300 flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5 text-purple-400" /> AI: {content.category}
+                    </span>
+                    <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-green-500/20 text-green-300 border border-green-500/30">
+                      Approved
+                    </span>
+                  </div>
+                  <p className="font-semibold text-xs text-foreground line-clamp-1">{content.subject || 'Phishing Subject'}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">From: {content.senderPersona}</p>
+                </button>
+              );
+            })}
         </div>
       </div>
     )}
@@ -953,100 +1049,22 @@ onChange={() => toggleEmployee(employee)}  // poora employee object pass karo
 </Modal>
 
 {/* AI Scenario Review Modal */}
-<Modal
+<AIScenarioReviewModal
   isOpen={isAiModalOpen}
   onClose={() => setIsAiModalOpen(false)}
-  title="AI Scenario Review & Approval"
-  description="Review and edit the AI-generated scenario before approving it for campaign launch."
-  size="xl"
->
-  {currentAiScenario && (
-    <div className="space-y-4 text-sm">
-      <div className="flex items-center justify-between p-3 bg-muted/40 rounded-lg">
-        <span className="text-xs font-semibold uppercase tracking-wider text-purple-400">
-          Status: {currentAiScenario.status}
-        </span>
-        <span className="text-xs text-muted-foreground capitalize">
-          Attack Type: {currentAiScenario.attackType} ({currentAiScenario.difficulty})
-        </span>
-      </div>
-
-      <div>
-        <label className="block text-xs font-medium mb-1">Sender Persona</label>
-        <input
-          type="text"
-          value={aiFormFields.senderPersona || ''}
-          onChange={(e) => setAiFormFields({ ...aiFormFields, senderPersona: e.target.value })}
-          className="w-full px-3 py-2 bg-muted/50 border rounded-lg text-sm"
-        />
-      </div>
-
-      {currentAiScenario.attackType === 'phishing' && (
-        <>
-          <div>
-            <label className="block text-xs font-medium mb-1">Email Subject</label>
-            <input
-              type="text"
-              value={aiFormFields.subject || ''}
-              onChange={(e) => setAiFormFields({ ...aiFormFields, subject: e.target.value })}
-              className="w-full px-3 py-2 bg-muted/50 border rounded-lg text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1">Body HTML Content</label>
-            <textarea
-              rows={6}
-              value={aiFormFields.bodyHtml || ''}
-              onChange={(e) => setAiFormFields({ ...aiFormFields, bodyHtml: e.target.value })}
-              className="w-full px-3 py-2 bg-muted/50 border rounded-lg text-xs font-mono"
-            />
-          </div>
-        </>
-      )}
-
-      {currentAiScenario.attackType === 'smishing' && (
-        <div>
-          <label className="block text-xs font-medium mb-1">SMS Text</label>
-          <textarea
-            rows={3}
-            value={aiFormFields.smsText || ''}
-            onChange={(e) => setAiFormFields({ ...aiFormFields, smsText: e.target.value })}
-            className="w-full px-3 py-2 bg-muted/50 border rounded-lg text-sm"
-          />
-        </div>
-      )}
-
-      <div className="flex justify-between items-center pt-4 border-t border-purple-500/20">
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleGenerateAiScenario}
-            disabled={isGeneratingAi}
-            className="text-xs"
-          >
-            Regenerate
-          </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={handleRejectAiScenario}
-            className="text-xs"
-          >
-            Reject
-          </Button>
-        </div>
-        <Button
-          type="button"
-          onClick={handleApproveAiScenario}
-          className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-4 py-2"
-        >
-          Approve & Use in Campaign
-        </Button>
-      </div>
-    </div>
-  )}
-</Modal>
+  scenario={currentAiScenario}
+  onUpdated={() => mutateApprovedScenarios()}
+  onApproved={(approvedScenario) => {
+    setFormData((prev) => ({
+      ...prev,
+      aiGeneratedTemplateId: approvedScenario._id,
+      emailTemplate: '',
+      smsTemplate: '',
+    }));
+    mutateApprovedScenarios();
+  }}
+  onRegenerateRequest={handleGenerateAiScenario}
+/>
 
       {/* View Campaign Modal */}
       <Modal
