@@ -62,6 +62,8 @@ import plansRoute from './src/routes/plansRoute.js';
 import tasksRoute from './src/routes/tasksRoute.js';
 import messagesRoute from './src/routes/messagesRoute.js';
 import progressRoute from './src/routes/progressRoute.js';
+import aiScenariosRouter from './src/routes/aiScenarios.routes.js';
+import { aiQuizzesRouter } from './src/routes/aiQuizzes.routes.js';
 
 import './src/queues/workers.js';
 // Handle uncaught exceptions
@@ -241,6 +243,8 @@ app.use('/api/plans', apiRateLimiter, plansRoute);
 app.use('/api/tasks', apiRateLimiter, tasksRoute);
 app.use('/api/messages', apiRateLimiter, messagesRoute);
 app.use('/api/progress', apiRateLimiter, progressRoute);
+app.use('/api/ai/scenarios', apiRateLimiter, aiScenariosRouter);
+app.use('/api/ai/quizzes', apiRateLimiter, aiQuizzesRouter);
 
 // ============================================
 // 404 Handler
