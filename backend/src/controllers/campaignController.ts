@@ -44,8 +44,23 @@ export const createCampaign = async (
     const companyId = req.user.companyId;
     if (!companyId) throw new AppError('Company ID not found on user', 400);
 
-    const hasStatic = Boolean(emailTemplate || smsTemplate || voiceScript);
-    const hasAI = Boolean(aiGeneratedTemplateId);
+    let finalEmail = emailTemplate || '';
+    let finalSms = smsTemplate || '';
+    let finalVoice = voiceScript || '';
+    let finalAi = aiGeneratedTemplateId || undefined;
+
+    if (finalAi) {
+      finalEmail = '';
+      finalSms = '';
+      finalVoice = '';
+    } else {
+      if (type === 'phishing') { finalSms = ''; finalVoice = ''; }
+      else if (type === 'smishing') { finalEmail = ''; finalVoice = ''; }
+      else if (type === 'vishing') { finalEmail = ''; finalSms = ''; }
+    }
+
+    const hasStatic = Boolean(finalEmail || finalSms || finalVoice);
+    const hasAI = Boolean(finalAi);
     if (!hasStatic && !hasAI) {
       throw new AppError('Campaign must have exactly one template source: either a static template key or aiGeneratedTemplateId', 400);
     }
@@ -64,10 +79,10 @@ export const createCampaign = async (
       endDate: endDate ? new Date(endDate) : null,
       targetEmployees: targetEmployees || [],
       targetDepartments: targetDepartments || [],
-      emailTemplate: emailTemplate || '',
-      smsTemplate: smsTemplate || '',
-      aiGeneratedTemplateId: aiGeneratedTemplateId || undefined,
-      voiceScript: voiceScript || '',
+      emailTemplate: finalEmail,
+      smsTemplate: finalSms,
+      aiGeneratedTemplateId: finalAi,
+      voiceScript: finalVoice,
       clickRate: 0,
       reportRate: 0,
     });
@@ -153,10 +168,21 @@ export const updateCampaign = async (
     const existingCampaign = await Campaign.findOne({ _id: id, ...companyFilter });
     if (!existingCampaign) throw new AppError('Campaign not found', 404);
 
-    const nextEmail = emailTemplate !== undefined ? emailTemplate : existingCampaign.emailTemplate;
-    const nextSms = smsTemplate !== undefined ? smsTemplate : existingCampaign.smsTemplate;
-    const nextVoice = voiceScript !== undefined ? voiceScript : existingCampaign.voiceScript;
-    const nextAi = aiGeneratedTemplateId !== undefined ? aiGeneratedTemplateId : existingCampaign.aiGeneratedTemplateId;
+    let nextEmail = emailTemplate !== undefined ? emailTemplate : existingCampaign.emailTemplate;
+    let nextSms = smsTemplate !== undefined ? smsTemplate : existingCampaign.smsTemplate;
+    let nextVoice = voiceScript !== undefined ? voiceScript : existingCampaign.voiceScript;
+    let nextAi = aiGeneratedTemplateId !== undefined ? aiGeneratedTemplateId : existingCampaign.aiGeneratedTemplateId;
+
+    if (nextAi) {
+      nextEmail = '';
+      nextSms = '';
+      nextVoice = '';
+    } else {
+      const currentType = type || existingCampaign.type;
+      if (currentType === 'phishing') { nextSms = ''; nextVoice = ''; }
+      else if (currentType === 'smishing') { nextEmail = ''; nextVoice = ''; }
+      else if (currentType === 'vishing') { nextEmail = ''; nextSms = ''; }
+    }
 
     const hasStatic = Boolean(nextEmail || nextSms || nextVoice);
     const hasAI = Boolean(nextAi);
@@ -168,7 +194,12 @@ export const updateCampaign = async (
       throw new AppError('Campaign cannot have both a static template key and an aiGeneratedTemplateId set', 400);
     }
 
-    const update: Record<string, unknown> = {};
+    const update: Record<string, unknown> = {
+      emailTemplate: nextEmail,
+      smsTemplate: nextSms,
+      voiceScript: nextVoice,
+      aiGeneratedTemplateId: nextAi || null,
+    };
     if (campaignName !== undefined)          update.campaignName = campaignName;
     if (type !== undefined)                  update.type = type;
     if (description !== undefined)           update.description = description;
@@ -177,10 +208,6 @@ export const updateCampaign = async (
     if (endDate !== undefined)               update.endDate = new Date(endDate);
     if (targetEmployees !== undefined)       update.targetEmployees = targetEmployees;
     if (targetDepartments !== undefined)     update.targetDepartments = targetDepartments;
-    if (emailTemplate !== undefined)         update.emailTemplate = emailTemplate;
-    if (smsTemplate !== undefined)           update.smsTemplate = smsTemplate;
-    if (aiGeneratedTemplateId !== undefined) update.aiGeneratedTemplateId = aiGeneratedTemplateId;
-    if (voiceScript !== undefined)           update.voiceScript = voiceScript;
 
     const campaign = await Campaign.findOneAndUpdate(
       { _id: id, ...companyFilter },

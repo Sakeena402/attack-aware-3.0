@@ -49,7 +49,7 @@ export const quizPayloadZodSchema = z.object({
   description: z.string().min(5),
   category: z.string().min(1),
   difficulty: z.enum(['easy', 'medium', 'hard']),
-  questions: z.array(quizQuestionZodSchema).min(1).max(5),
+  questions: z.array(quizQuestionZodSchema).min(15).max(25),
 });
 
 export const quizResponseSchema: Record<string, unknown> = {
@@ -84,6 +84,8 @@ export const quizResponseSchema: Record<string, unknown> = {
           'explanation',
         ],
       },
+      minItems: 15,
+      maxItems: 25,
     },
   },
   required: ['title', 'description', 'category', 'difficulty', 'questions'],
@@ -120,7 +122,7 @@ export const generateAdaptiveQuiz = async (
   const systemPrompt = `You are an expert security awareness instructor.
 Generate a targeted adaptive quiz for an employee who recently fell for a ${params.attackType} simulation (Category: ${params.templateCategory}, Event: ${params.eventType}).
 Employee Quiz Performance Context: ${totalQuizzesPlayed} past quizzes completed, average score: ${avgScore}%.
-Generate 3 to 4 multiple-choice questions focusing on identifying signals of ${params.attackType} and ${params.templateCategory} scams.
+Generate 15 multiple-choice questions focusing on identifying signals of ${params.attackType} and ${params.templateCategory} scams.
 Output valid JSON matching the requested schema strictly.`;
 
   const userPrompt = `Create an adaptive quiz for an employee after a ${params.eventType} event in a ${params.attackType} scenario.`;
@@ -132,7 +134,7 @@ Output valid JSON matching the requested schema strictly.`;
       userPrompt,
       responseSchema: quizResponseSchema,
       schema: quizPayloadZodSchema,
-      maxTokens: 1500,
+      maxTokens: 4000,
     },
     {
       purpose: 'adaptive_quiz_generation',
@@ -153,6 +155,8 @@ Output valid JSON matching the requested schema strictly.`;
     totalQuestions: payload.questions.length,
     order: 999,
     source: 'ai_generated',
+    companyId: user.companyId,
+    status: 'published',
     triggerContext: {
       employeeId: userObjectId,
       attackType: params.attackType,

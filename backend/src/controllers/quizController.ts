@@ -7,19 +7,24 @@ import { updateUserPoints } from '../services/analyticsService.js';
 import { completeLinkedTasks } from '../services/taskService.js';
 import { AppError } from '../utils/errorHandler.js';
 
+import { Company } from '../models/Company.js';
+
 export const getQuizzes = async (req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
   try {
     const quizzes = await Quiz.find().sort({ order: 1 });
 
-    let unlockedCount = 5;
+    let isUnlocked = req.user?.role === 'super_admin' || req.user?.role === 'admin';
 
-    if (req.user?.role === 'super_admin') {
-      unlockedCount = quizzes.length;
+    if (!isUnlocked && req.user?.companyId) {
+      const company = await Company.findById(req.user.companyId).populate('subscriptionPlan');
+      if (company?.subscriptionPlan && company.approvalStatus === 'approved') {
+        isUnlocked = true;
+      }
     }
 
     const withLockStatus = quizzes.map((q, index) => ({
       ...q.toObject(),
-      isLocked: index >= unlockedCount,
+      isLocked: isUnlocked ? false : index >= 5,
     }));
 
     res.json({ success: true, data: withLockStatus });

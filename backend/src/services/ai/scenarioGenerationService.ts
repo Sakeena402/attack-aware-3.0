@@ -12,6 +12,7 @@ export interface GenerateScenarioParams {
   targetEmployeeId?: string | Types.ObjectId;
   targetDepartment?: string;
   difficulty: string;
+  category?: string;
   createdBy: string | Types.ObjectId;
 }
 
@@ -47,25 +48,46 @@ export const generateScenario = async (
     throw new AppError('Company not found', 404);
   }
 
-  let employeeInfo = '';
+  let jobTitle = 'Staff Member';
+  let department = params.targetDepartment || 'General Department';
+
   if (params.targetEmployeeId) {
     const employee = await User.findById(params.targetEmployeeId);
     if (employee) {
-      employeeInfo = `Target Employee: ${employee.name}, Department: ${employee.department}, Role: ${employee.role}`;
-      console.log(`[ScenarioGen] 👤 Targeting employee: ${employee.name} (${employee.department})`);
+      if (employee.role) jobTitle = employee.role;
+      if (employee.department) department = employee.department;
+      console.log(`[ScenarioGen] 👤 Targeting employee: ${employee.name} (${department} - ${jobTitle})`);
     }
   }
 
-  const departmentInfo = params.targetDepartment ? `Target Department: ${params.targetDepartment}` : '';
+  const categoryText = params.category || 'auto-selected contextually (e.g. credential harvesting, invoice/payment fraud, IT support impersonation, HR/benefits pretext, package delivery pretext)';
 
-  const systemPrompt = `You are an AI assistant generating realistic, department-aware social engineering training content for an AUTHORIZED internal security awareness exercise at ${company.companyName}.
-Generate a scenario for an attack type of '${params.attackType}' with difficulty '${params.difficulty}'.
-Context: ${departmentInfo} ${employeeInfo}.
-For phishing (email), provide subject, senderPersona, bodyHtml (with a clear link placeholder like {{phishingUrl}}), and category.
-For smishing (SMS), provide senderPersona, smsText (concise text with {{phishingUrl}} placeholder), and category.
-Maintain professional safety framing and output strictly formatted JSON matching the required schema.`;
+  const systemPrompt = `You are generating simulated phishing/smishing content for an authorized internal cybersecurity awareness training exercise. This content is shown only to employees enrolled in their company's security training program and is never used for actual fraud or sent outside this controlled exercise.
 
-  const userPrompt = `Generate a realistic ${params.difficulty} level ${params.attackType} security awareness simulation template.`;
+Generate content that is realistic enough to meaningfully test an employee's awareness, calibrated to the specified difficulty level. Do not include real third-party company names, real phone numbers, or anything that could be mistaken for genuine external communication — use plausible but clearly fictional or generic branding (e.g. "your IT department", "your benefits provider") rather than naming real companies.
+
+Return ONLY valid JSON matching the provided schema. No preamble, no markdown formatting, no explanation — the response must be parseable JSON and nothing else.`;
+
+  const schemaString = JSON.stringify(scenarioResponseSchema, null, 2);
+
+  const userPrompt = `Generate a ${params.attackType} scenario with the following parameters:
+
+- Target role: ${jobTitle} in ${department}
+- Difficulty: ${params.difficulty}
+  - easy: obvious red flags (generic greeting, urgent threatening tone, suspicious sender address pattern)
+  - medium: some red flags present but content is contextually plausible
+  - hard: minimal red flags, highly contextual to the role, mimics legitimate internal communication patterns
+- Attack category: ${categoryText}
+  (e.g. credential harvesting, invoice/payment fraud, IT support impersonation, HR/benefits pretext, package delivery pretext)
+
+The scenario must feel specific to someone in this role — reference plausible tools, processes, or concerns relevant to ${department}, not generic language that could apply to any employee.
+
+For phishing (email): include subject line, sender display name persona, and HTML body. Use the placeholder {{trackingUrl}} wherever a link should appear — do not generate a real URL.
+
+For smishing (SMS): keep the message under 160 characters, include the {{trackingUrl}} placeholder, and match the terse, urgent tone typical of real SMS phishing.
+
+Respond with JSON matching this schema:
+${schemaString}`;
 
   console.log(`[ScenarioGen] 🤖 Calling AI service for scenario...`);
   const aiResult = await aiService.generateStructured<IAIGeneratedTemplateContent>(

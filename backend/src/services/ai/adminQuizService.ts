@@ -51,7 +51,7 @@ export const generateAdminQuiz = async (
     topicName = payload.topic;
     systemPrompt = `You are an expert corporate security awareness trainer.
 Generate a targeted security awareness quiz for employee "${employee.name}" on the explicit topic "${topicName}".
-Generate 4 multiple-choice questions testing practical awareness, threat identification, and defensive response for "${topicName}".
+Generate 15 multiple-choice questions testing practical awareness, threat identification, and defensive response for "${topicName}".
 Output valid JSON matching the requested schema strictly.`;
 
     userPrompt = `Create a quiz on topic "${topicName}" for employee ${employee.name}.`;
@@ -80,7 +80,7 @@ Output valid JSON matching the requested schema strictly.`;
     systemPrompt = `You are an AI cybersecurity training instructor.
 Generate a personalized adaptive quiz for employee "${employee.name}" (Department: ${employee.department || 'General'}).
 Employee Performance Context: ${totalQuizzesPlayed} past quizzes completed, average score: ${avgScore}%.
-Analyze typical cybersecurity risk areas and generate 4 multiple-choice questions addressing key weak areas or core security hygiene.
+Analyze typical cybersecurity risk areas and generate 15 multiple-choice questions addressing key weak areas or core security hygiene.
 Output valid JSON matching the requested schema strictly.`;
 
     userPrompt = `Create an AI-decided adaptive quiz for employee ${employee.name}.`;
@@ -94,7 +94,7 @@ Output valid JSON matching the requested schema strictly.`;
         userPrompt,
         responseSchema: quizResponseSchema,
         schema: quizPayloadZodSchema,
-        maxTokens: 1600,
+        maxTokens: 4000,
       },
       {
         purpose: 'admin_triggered_quiz_generation',
@@ -115,6 +115,8 @@ Output valid JSON matching the requested schema strictly.`;
       totalQuestions: generated.questions.length,
       order: 999,
       source: 'ai_generated',
+      companyId: employee.companyId || (payload.companyId ? new mongoose.Types.ObjectId(payload.companyId) : undefined),
+      status: 'published',
       triggerContext: {
         eventType: 'admin_manual',
         topic: topicName,
