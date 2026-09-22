@@ -221,8 +221,13 @@ export function EnhancedSidebar() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
         >
-          <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-blue-500/20 cyber-glow">
-            <Shield className="w-5 h-5 text-purple-400" />
+          <div className="rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: 'transparent', width: '48px', height: '48px' }}>
+            <img
+              src="/Logo-bg.png"
+              alt="AttackAware"
+              className="w-full h-full object-contain"
+              style={{ filter: 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.9)) brightness(1.3)', transform: 'scale(1.4)' }}
+            />
           </div>
           <div className="flex-1">
             <h2 className="font-bold text-white font-poppins text-sm">Attack Aware</h2>

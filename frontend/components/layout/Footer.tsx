@@ -4,7 +4,8 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { Github, Linkedin, Twitter } from 'lucide-react';
-import logo from '@/app/Logo-bg.png';
+import logoWhite from '@/app/Logo-white.png';
+import logoDark from '@/app/Logo-dark.png';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -22,13 +23,22 @@ export default function Footer() {
         <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid md:grid-cols-5 gap-8 mb-12">
           <motion.div variants={itemVariants}>
             <div className="flex items-center gap-2 mb-4">
-                                          <div className="w-16 h-16 rounded-md overflow-hidden flex items-center justify-center">
+              <div className="w-16 h-16 rounded-md overflow-hidden flex items-center justify-center">
+                {/* Dark logo shows in light theme */}
                 <Image
-                  src={logo}
+                  src={logoDark}
                   alt="AttackAware Logo"
                   width={64}
                   height={64}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover block dark:hidden"
+                />
+                {/* White logo shows in dark theme */}
+                <Image
+                  src={logoWhite}
+                  alt="AttackAware Logo"
+                  width={64}
+                  height={64}
+                  className="w-full h-full object-cover hidden dark:block"
                 />
               </div>
               <span className="font-bold text-foreground">AttackAware</span>

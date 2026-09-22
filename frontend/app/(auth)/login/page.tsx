@@ -53,13 +53,18 @@ export default function LoginPage() {
         <div className="relative z-10">
          <Link href="/">
   <motion.div
-    className="flex items-center gap-3 cursor-pointer"
+    className="flex items-center gap-4 cursor-pointer"
     initial={{ opacity: 0, y: -20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay: 0.2 }}
   >
-    <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 cyber-glow">
-      <Shield className="w-6 h-6 text-white" />
+    <div className="rounded-xl overflow-hidden" style={{ background: 'transparent' }}>
+      <img
+  src="/Logo-white.png"
+  alt="AttackAware"
+  className="w-20 h-20 object-contain"
+  style={{ filter: 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.9)) brightness(1.3)' }}
+/>
     </div>
 
     <div>
