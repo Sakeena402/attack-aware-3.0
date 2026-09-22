@@ -939,12 +939,10 @@ export default function LandingPage() {
             <motion.div variants={containerVariants} initial="hidden" animate="visible">
               <motion.div
                 variants={itemVariants}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 mb-6"
+                
               >
-                <Zap className="w-4 h-4 text-purple-500" />
-                <span className="text-sm text-purple-600 dark:text-purple-300 font-medium">
-                  Transform Your Security Culture
-                </span>
+                
+                
               </motion.div>
 
               <motion.h1

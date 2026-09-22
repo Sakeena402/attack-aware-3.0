@@ -162,8 +162,13 @@ export function Sidebar({ isOpen, role }: SidebarProps) {
       <div className="p-6 border-b border-border">
         {isOpen ? (
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-white" />
+            <div className="rounded-lg overflow-hidden flex-shrink-0" style={{ background: 'transparent' }}>
+              <img
+                src="/Logo-bg.png"
+                alt="AttackAware"
+                className="w-10 h-10 object-contain"
+                style={{ filter: 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.9)) brightness(1.3)' }}
+              />
             </div>
             <div>
               <span className="font-bold text-foreground text-sm block">Attack Aware</span>
@@ -172,9 +177,12 @@ export function Sidebar({ isOpen, role }: SidebarProps) {
           </div>
         ) : (
           <div className="flex justify-center">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-white" />
-            </div>
+            <img
+              src="/Logo-bg.png"
+              alt="AttackAware"
+              className="w-10 h-10 object-contain"
+              style={{ filter: 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.9)) brightness(1.3)' }}
+            />
           </div>
         )}
       </div>
