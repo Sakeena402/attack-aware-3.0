@@ -9,7 +9,7 @@ import {
   LayoutDashboard, BarChart3, Trophy, Zap, Settings,
   Users, FileText, Shield, LogOut, Building2, Activity,
   TrendingUp, BookOpen, MessageCircle, CheckSquare,
-  ChevronDown, PlayCircle, Brain, Gamepad2, Bell, User, Sparkles,
+  ChevronDown, PlayCircle, Brain, Gamepad2, Bell, User,
 } from 'lucide-react';
 import { useAuth } from '@/app/context/authContext';
 
@@ -39,7 +39,6 @@ const getMenuConfig = (role: string | undefined): MenuGroup[] => {
       { type: 'link', icon: LayoutDashboard, label: 'Dashboard',           href: '/dashboard' },
       { type: 'link', icon: Building2,       label: 'Companies',           href: '/dashboard/companies' },
       { type: 'link', icon: BarChart3,       label: 'Global Analytics',    href: '/dashboard/analytics' },
-      { type: 'link', icon: Sparkles,        label: 'AI Scenarios',        href: '/dashboard/ai-scenarios' },
       { type: 'link', icon: Activity,        label: 'User Activity',       href: '/dashboard/user-activity' },
       { type: 'link', icon: Shield,          label: 'Attacks Catalog',     href: '/dashboard/attacks' },
       { type: 'link', icon: Building2,       label: 'Enterprise Requests', href: '/dashboard/enterprise-requests' },
@@ -51,7 +50,6 @@ const getMenuConfig = (role: string | undefined): MenuGroup[] => {
     return [
       { type: 'link',  icon: LayoutDashboard, label: 'Dashboard',     href: '/dashboard' },
       { type: 'link',  icon: Zap,             label: 'Campaigns',     href: '/dashboard/campaigns', badge: 'NEW' },
-      { type: 'link',  icon: Sparkles,        label: 'AI Scenarios',  href: '/dashboard/ai-scenarios' },
       { type: 'link',  icon: Trophy,          label: 'Leaderboard',   href: '/dashboard/leaderboard' },
       { type: 'link',  icon: Users,           label: 'Employees',     href: '/dashboard/employees' },
       { type: 'link',  icon: BarChart3,       label: 'Analytics',     href: '/dashboard/analytics' },
@@ -224,15 +222,23 @@ export function EnhancedSidebar() {
           transition={{ delay: 0.1 }}
         >
           <div className="rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: 'transparent', width: '48px', height: '48px' }}>
+            {/* Dark logo shows in light theme */}
             <img
-              src="/Logo-bg.png"
+              src="/Logo-dark.png"
               alt="AttackAware"
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain block dark:hidden"
+              style={{ transform: 'scale(1.4)' }}
+            />
+            {/* White logo shows in dark theme */}
+            <img
+              src="/Logo-white.png"
+              alt="AttackAware"
+              className="w-full h-full object-contain hidden dark:block"
               style={{ filter: 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.9)) brightness(1.3)', transform: 'scale(1.4)' }}
             />
           </div>
           <div className="flex-1">
-            <h2 className="font-bold text-white font-poppins text-sm">Attack Aware</h2>
+            <h2 className="font-bold text-foreground font-poppins text-sm">Attack Aware</h2>
             <p className="text-xs text-muted-foreground">v3.0</p>
           </div>
         </motion.div>
