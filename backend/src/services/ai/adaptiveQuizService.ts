@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import { z } from 'zod';
 import { Quiz } from '../../models/Quiz.js';
 import { QuizQuestion } from '../../models/QuizQuestion.js';
+import { User } from '../../models/User.js';
 import { UserQuiz } from '../../models/UserQuiz.js';
 import { aiService } from './aiService.js';
 import { AppError } from '../../utils/errorHandler.js';
@@ -99,7 +100,7 @@ export const generateAdaptiveQuiz = async (
   );
 
   const userObjectId = new Types.ObjectId(params.employeeId);
-
+  const user = await User.findById(userObjectId).lean();
   const recentQuizzes = await UserQuiz.find({ userId: userObjectId })
     .sort({ completedAt: -1 })
     .limit(5)
@@ -155,7 +156,7 @@ Output valid JSON matching the requested schema strictly.`;
     totalQuestions: payload.questions.length,
     order: 999,
     source: 'ai_generated',
-    companyId: user.companyId,
+    companyId: user?.companyId,
     status: 'published',
     triggerContext: {
       employeeId: userObjectId,
