@@ -15,8 +15,9 @@ import { StatCardSkeleton } from '@/components/ui/skeleton-loader';
 import {
   Plus, Search, Edit2, Trash2, Shield, AlertTriangle,
   CheckCircle, Download, Mail, Users, UserPlus,
-  TrendingUp, Award, ClipboardList,
+  TrendingUp, Award, ClipboardList, Sparkles,
 } from 'lucide-react';
+import { GenerateQuizModal } from '@/components/ai/GenerateQuizModal';
 
 const riskLevelColors = {
   critical: { bg: 'bg-red-900/40',    text: 'text-red-400',    border: 'border-red-900/50',    icon: AlertTriangle },
@@ -65,6 +66,9 @@ export default function EmployeesPage() {
   const [taskContentType, setTaskContentType] = useState<TaskContentType>('quiz');
   const [taskContentId,   setTaskContentId]   = useState('');
   const [taskPoints,      setTaskPoints]      = useState(10);
+
+  const [isGenerateQuizOpen, setIsGenerateQuizOpen] = useState(false);
+  const [quizTargetEmployeeId, setQuizTargetEmployeeId] = useState<string | undefined>(undefined);
 
   const [formData, setFormData] = useState<EmployeeFormData>({
     name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low', phoneNumber: '',
@@ -257,10 +261,22 @@ export default function EmployeesPage() {
           <h1 className="text-3xl font-bold font-poppins text-foreground">Employees</h1>
           <p className="text-muted-foreground mt-1">Manage employees and track their training progress</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" className="flex items-center gap-2" onClick={handleExport}>
             <Download className="w-4 h-4" /> Export
           </Button>
+          {(state.user?.role === 'admin' || state.user?.role === 'super_admin') && (
+            <Button
+              variant="outline"
+              className="border-purple-500/40 text-purple-300 hover:bg-purple-500/20 flex items-center gap-2"
+              onClick={() => {
+                setQuizTargetEmployeeId(undefined);
+                setIsGenerateQuizOpen(true);
+              }}
+            >
+              <Sparkles className="w-4 h-4 text-purple-400" /> Generate AI Quiz
+            </Button>
+          )}
           <Button
             className="bg-gradient-to-r from-purple-500 to-blue-500 hover:shadow-lg hover:shadow-purple-500/30 flex items-center gap-2"
             onClick={() => openModal()}
@@ -721,6 +737,13 @@ export default function EmployeesPage() {
         confirmText="Remove"
         variant="danger"
         loading={isSubmitting}
+      />
+
+      <GenerateQuizModal
+        isOpen={isGenerateQuizOpen}
+        onClose={() => setIsGenerateQuizOpen(false)}
+        employees={employees}
+        preselectedEmployeeId={quizTargetEmployeeId}
       />
     </div>
   );

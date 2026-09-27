@@ -6,10 +6,27 @@ import { updateUserPoints } from '../services/analyticsService.js';
 import { completeLinkedTasks } from '../services/taskService.js';
 import { AppError } from '../utils/errorHandler.js';
 
-export const getGames = async (_req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
+import { Company } from '../models/Company.js';
+
+export const getGames = async (req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
   try {
     const games = await Game.find();
-    res.json({ success: true, data: games });
+
+    let isUnlocked = req.user?.role === 'super_admin' || req.user?.role === 'admin';
+
+    if (!isUnlocked && req.user?.companyId) {
+      const company = await Company.findById(req.user.companyId).populate('subscriptionPlan');
+      if (company?.subscriptionPlan && company.approvalStatus === 'approved') {
+        isUnlocked = true;
+      }
+    }
+
+    const withLockStatus = games.map((g, index) => ({
+      ...g.toObject(),
+      isLocked: isUnlocked ? false : index >= 3,
+    }));
+
+    res.json({ success: true, data: withLockStatus });
   } catch (e: any) {
     res.status(500).json({ success: false, error: e.message });
   }

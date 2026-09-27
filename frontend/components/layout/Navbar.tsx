@@ -2,11 +2,14 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { Shield, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
+import logoWhite from '@/app/Logo-white.png';
+import logoDark from '@/app/Logo-dark.png';
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -39,10 +42,27 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <motion.div className="flex items-center gap-3" whileHover={{ scale: 1.05 }}>
           <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 via-purple-600 to-blue-600 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-white" />
+            <div className="w-20 h-20 flex items-center justify-center shrink-0">
+              {/* Dark logo shows in light theme */}
+              <Image
+                src={logoDark}
+                alt="AttackAware Logo"
+                width={80}
+                height={80}
+                className="w-full h-full object-contain block dark:hidden"
+                priority
+              />
+              {/* White logo shows in dark theme */}
+              <Image
+                src={logoWhite}
+                alt="AttackAware Logo"
+                width={80}
+                height={80}
+                className="w-full h-full object-contain hidden dark:block"
+                priority
+              />
             </div>
-            <span className="text-xl font-bold font-poppins bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">
+            <span className="text-xl font-bold font-poppins text-foreground">
               AttackAware
             </span>
           </Link>

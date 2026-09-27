@@ -33,6 +33,7 @@ export const createCampaign = async (
       targetDepartments,
       emailTemplate,
       smsTemplate,
+      aiGeneratedTemplateId,
       voiceScript,
     } = req.body;
 
@@ -43,24 +44,29 @@ export const createCampaign = async (
     const companyId = req.user.companyId;
     if (!companyId) throw new AppError('Company ID not found on user', 400);
 
-    // ── Plan enforcement: campaign count cap ────────────────────────────────
-    // super_admin is never capped. For other roles, if the plan lacks
-    // 'Unlimited campaigns', enforce a hard cap of 10.
-    // (Flag: placeholder cap of 10 — confirm final number with product team)
-    if (req.user.role !== 'super_admin') {
-      const hasUnlimited = await companyHasFeature(companyId, 'Unlimited campaigns');
-      if (!hasUnlimited) {
-        const CAMPAIGN_CAP = 10;
-        const existingCount = await Campaign.countDocuments({ companyId });
-        if (existingCount >= CAMPAIGN_CAP) {
-          throw new AppError(
-            `Campaign limit reached for your current plan (max ${CAMPAIGN_CAP}). Upgrade to a plan with 'Unlimited campaigns' to create more.`,
-            403
-          );
-        }
-      }
+    let finalEmail = emailTemplate || '';
+    let finalSms = smsTemplate || '';
+    let finalVoice = voiceScript || '';
+    let finalAi = aiGeneratedTemplateId || undefined;
+
+    if (finalAi) {
+      finalEmail = '';
+      finalSms = '';
+      finalVoice = '';
+    } else {
+      if (type === 'phishing') { finalSms = ''; finalVoice = ''; }
+      else if (type === 'smishing') { finalEmail = ''; finalVoice = ''; }
+      else if (type === 'vishing') { finalEmail = ''; finalSms = ''; }
     }
-    // ────────────────────────────────────────────────────────────────────────
+
+    const hasStatic = Boolean(finalEmail || finalSms || finalVoice);
+    const hasAI = Boolean(finalAi);
+    if (!hasStatic && !hasAI) {
+      throw new AppError('Campaign must have exactly one template source: either a static template key or aiGeneratedTemplateId', 400);
+    }
+    if (hasStatic && hasAI) {
+      throw new AppError('Campaign cannot have both a static template key and an aiGeneratedTemplateId set', 400);
+    }
 
     const newCampaign = new Campaign({
       campaignName,
@@ -73,9 +79,10 @@ export const createCampaign = async (
       endDate: endDate ? new Date(endDate) : null,
       targetEmployees: targetEmployees || [],
       targetDepartments: targetDepartments || [],
-      emailTemplate: emailTemplate || '',
-      smsTemplate: smsTemplate || '',
-      voiceScript: voiceScript || '',
+      emailTemplate: finalEmail,
+      smsTemplate: finalSms,
+      aiGeneratedTemplateId: finalAi,
+      voiceScript: finalVoice,
       clickRate: 0,
       reportRate: 0,
     });
@@ -88,7 +95,7 @@ export const createCampaign = async (
     if (error instanceof AppError)
       res.status(error.statusCode).json({ success: false, error: error.message });
     else
-      res.status(500).json({ success: false, error: 'Failed to create campaign' });
+      res.status(500).json({ success: false, error: (error as Error).message || 'Failed to create campaign' });
   }
 };
 
@@ -99,10 +106,11 @@ export const getCampaigns = async (
   try {
     if (!req.user) throw new AppError('User not authenticated', 401);
 
-    const companyFilter = (req as any).companyFilter || {};
+    const companyFilter = (req as unknown as Record<string, unknown>).companyFilter || {};
 
     const campaigns = await Campaign.find(companyFilter)
       .populate('createdBy', 'name email')
+      .populate('aiGeneratedTemplateId')
       .sort({ createdAt: -1 });
 
     res.json({ success: true, data: campaigns });
@@ -117,10 +125,11 @@ export const getCampaignById = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const companyFilter = (req as any).companyFilter || {};
+    const companyFilter = (req as unknown as Record<string, unknown>).companyFilter || {};
 
     const campaign = await Campaign.findOne({ _id: id, ...companyFilter })
-      .populate('createdBy', 'name email');
+      .populate('createdBy', 'name email')
+      .populate('aiGeneratedTemplateId');
 
     if (!campaign) throw new AppError('Campaign not found', 404);
 
@@ -139,7 +148,7 @@ export const updateCampaign = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const companyFilter = (req as any).companyFilter || {};
+    const companyFilter = (req as unknown as Record<string, unknown>).companyFilter || {};
 
     const {
       campaignName,
@@ -152,21 +161,53 @@ export const updateCampaign = async (
       targetDepartments,
       emailTemplate,
       smsTemplate,
+      aiGeneratedTemplateId,
       voiceScript,
     } = req.body;
 
-    const update: Record<string, unknown> = {};
-    if (campaignName !== undefined)       update.campaignName = campaignName;
-    if (type !== undefined)               update.type = type;
-    if (description !== undefined)        update.description = description;
-    if (status !== undefined)             update.status = status as CampaignStatus;
-    if (startDate !== undefined)          update.startDate = new Date(startDate);
-    if (endDate !== undefined)            update.endDate = new Date(endDate);
-    if (targetEmployees !== undefined)    update.targetEmployees = targetEmployees;
-    if (targetDepartments !== undefined)  update.targetDepartments = targetDepartments;
-    if (emailTemplate !== undefined)      update.emailTemplate = emailTemplate;
-    if (smsTemplate !== undefined)        update.smsTemplate = smsTemplate;
-    if (voiceScript !== undefined)        update.voiceScript = voiceScript;
+    const existingCampaign = await Campaign.findOne({ _id: id, ...companyFilter });
+    if (!existingCampaign) throw new AppError('Campaign not found', 404);
+
+    let nextEmail = emailTemplate !== undefined ? emailTemplate : existingCampaign.emailTemplate;
+    let nextSms = smsTemplate !== undefined ? smsTemplate : existingCampaign.smsTemplate;
+    let nextVoice = voiceScript !== undefined ? voiceScript : existingCampaign.voiceScript;
+    let nextAi = aiGeneratedTemplateId !== undefined ? aiGeneratedTemplateId : existingCampaign.aiGeneratedTemplateId;
+
+    if (nextAi) {
+      nextEmail = '';
+      nextSms = '';
+      nextVoice = '';
+    } else {
+      const currentType = type || existingCampaign.type;
+      if (currentType === 'phishing') { nextSms = ''; nextVoice = ''; }
+      else if (currentType === 'smishing') { nextEmail = ''; nextVoice = ''; }
+      else if (currentType === 'vishing') { nextEmail = ''; nextSms = ''; }
+    }
+
+    const hasStatic = Boolean(nextEmail || nextSms || nextVoice);
+    const hasAI = Boolean(nextAi);
+
+    if (!hasStatic && !hasAI) {
+      throw new AppError('Campaign must have exactly one template source: either a static template key or aiGeneratedTemplateId', 400);
+    }
+    if (hasStatic && hasAI) {
+      throw new AppError('Campaign cannot have both a static template key and an aiGeneratedTemplateId set', 400);
+    }
+
+    const update: Record<string, unknown> = {
+      emailTemplate: nextEmail,
+      smsTemplate: nextSms,
+      voiceScript: nextVoice,
+      aiGeneratedTemplateId: nextAi || null,
+    };
+    if (campaignName !== undefined)          update.campaignName = campaignName;
+    if (type !== undefined)                  update.type = type;
+    if (description !== undefined)           update.description = description;
+    if (status !== undefined)                update.status = status as CampaignStatus;
+    if (startDate !== undefined)             update.startDate = new Date(startDate);
+    if (endDate !== undefined)               update.endDate = new Date(endDate);
+    if (targetEmployees !== undefined)       update.targetEmployees = targetEmployees;
+    if (targetDepartments !== undefined)     update.targetDepartments = targetDepartments;
 
     const campaign = await Campaign.findOneAndUpdate(
       { _id: id, ...companyFilter },
@@ -174,14 +215,12 @@ export const updateCampaign = async (
       { new: true, runValidators: true }
     );
 
-    if (!campaign) throw new AppError('Campaign not found', 404);
-
     res.json({ success: true, data: campaign });
   } catch (error) {
     if (error instanceof AppError)
       res.status(error.statusCode).json({ success: false, error: error.message });
     else
-      res.status(500).json({ success: false, error: 'Failed to update campaign' });
+      res.status(500).json({ success: false, error: (error as Error).message || 'Failed to update campaign' });
   }
 };
 
@@ -191,7 +230,7 @@ export const deleteCampaign = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const companyFilter = (req as any).companyFilter || {};
+    const companyFilter = (req as unknown as Record<string, unknown>).companyFilter || {};
 
     const campaign = await Campaign.findOneAndDelete({ _id: id, ...companyFilter });
     if (!campaign) throw new AppError('Campaign not found', 404);
@@ -211,17 +250,29 @@ export const launchCampaign = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const companyFilter = (req as any).companyFilter || {};
+    const companyFilter = (req as unknown as Record<string, unknown>).companyFilter || {};
 
     const campaign = await Campaign.findOne({ _id: id, ...companyFilter });
     if (!campaign) throw new AppError('Campaign not found', 404);
     if (campaign.status === 'active') throw new AppError('Campaign is already active', 400);
 
+    let aiTemplateDoc: InstanceType<typeof import('../models/AIGeneratedTemplate.js').AIGeneratedTemplate> | null = null;
+    if (campaign.aiGeneratedTemplateId) {
+      const { AIGeneratedTemplate } = await import('../models/AIGeneratedTemplate.js');
+      aiTemplateDoc = await AIGeneratedTemplate.findById(campaign.aiGeneratedTemplateId);
+      if (!aiTemplateDoc) {
+        throw new AppError('Referenced AI scenario template not found', 404);
+      }
+      if (aiTemplateDoc.status !== 'approved') {
+        throw new AppError(
+          `AI scenario template must be approved before launching campaign (current status: ${aiTemplateDoc.status})`,
+          400
+        );
+      }
+    }
+
     if (campaign.type === 'phishing') {
-      console.log('🔍 PHISHING CAMPAIGN DETECTED', campaign._id);  // ← ADD THIS
       const targets = campaign.targetEmployees as TargetEmployee[];
-      console.log('📧 TARGET EMAILS:', targets);  // ← ADD THIS
-     
 
       if (!targets || targets.length === 0) {
         throw new AppError('No target employees found on this campaign. Add employees before launching.', 400);
@@ -233,6 +284,7 @@ export const launchCampaign = async (
 
       const results = { total: targets.length, sent: 0, failed: 0 };
       const templateKey = (campaign.emailTemplate || 'bank_phishing') as keyof typeof emailTemplates;
+      const aiContent = aiTemplateDoc ? (aiTemplateDoc.editedContent || aiTemplateDoc.generatedContent) : undefined;
 
       for (const target of targets) {
         const email = target.email;
@@ -245,7 +297,9 @@ export const launchCampaign = async (
 
         const emailResult = await sendPhishingEmail({
           to: email,
-          templateKey,
+          templateKey: campaign.emailTemplate ? templateKey : undefined,
+          customSubject: aiContent?.subject,
+          customHtml: aiContent?.bodyHtml,
           trackingToken: rawToken,
           campaignId: campaign._id.toString(),
           userId,
@@ -258,7 +312,7 @@ export const launchCampaign = async (
           trackingToken: hashedToken,
           emailSent: emailResult.success,
           emailSentAt: new Date(),
-          emailTemplate: templateKey,
+          emailTemplate: campaign.emailTemplate || 'ai_generated',
           messageId: emailResult.messageId,
           emailAddress: email,
         });
@@ -286,6 +340,7 @@ export const launchCampaign = async (
       await campaign.save();
 
       const results = { total: targets.length, sent: 0, failed: 0 };
+      const aiContent = aiTemplateDoc ? (aiTemplateDoc.editedContent || aiTemplateDoc.generatedContent) : undefined;
 
       for (const target of targets) {
         const phone = target.phone;
@@ -299,6 +354,7 @@ export const launchCampaign = async (
         const smsResult = await sendSms({
           to: phone,
           templateKey: (campaign.smsTemplate as keyof typeof smsTemplates) || 'bank_alert',
+          customMessage: aiContent?.smsText,
           trackingToken: rawToken,
           campaignId: campaign._id.toString(),
           userId,
@@ -311,7 +367,7 @@ export const launchCampaign = async (
           trackingToken: hashedToken,
           smsSent: smsResult.success,
           smsSentAt: new Date(),
-          smsTemplate: campaign.smsTemplate || 'bank_alert',
+          smsTemplate: campaign.smsTemplate || 'ai_generated',
           messageSid: smsResult.messageSid,
           phoneNumber: phone,
         });
@@ -332,7 +388,7 @@ export const launchCampaign = async (
     await campaign.save();
 
     res.json({ success: true, data: campaign, message: 'Campaign launched successfully' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof AppError) {
       res.status(error.statusCode).json({ success: false, error: error.message });
     } else {
@@ -348,7 +404,7 @@ export const pauseCampaign = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const companyFilter = (req as any).companyFilter || {};
+    const companyFilter = (req as unknown as Record<string, unknown>).companyFilter || {};
 
     const campaign = await Campaign.findOne({ _id: id, ...companyFilter });
     if (!campaign) throw new AppError('Campaign not found', 404);

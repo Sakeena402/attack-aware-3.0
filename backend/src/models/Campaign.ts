@@ -60,9 +60,6 @@ const campaignSchema = new Schema<ICampaign>(
     },
 
     // Target employees: array of { _id: ObjectId, phone: string, email: string }
-    // Phone/email are stored here so launchCampaign can send SMS/email without
-    // an extra User lookup. Phone/email are also on the User document;
-    // if they diverge, re-save the campaign to refresh.
     targetEmployees: {
       type: [
         {
@@ -88,6 +85,12 @@ const campaignSchema = new Schema<ICampaign>(
     emailTemplate: {
       type:    String,
       default: '',
+    },
+
+    // AI Generated Template reference
+    aiGeneratedTemplateId: {
+      type: Schema.Types.ObjectId,
+      ref:  'AIGeneratedTemplate',
     },
 
     // Voice / Vishing
@@ -139,6 +142,28 @@ const campaignSchema = new Schema<ICampaign>(
   },
   { timestamps: true }
 );
+
+// Schema-level mutual exclusivity validation
+campaignSchema.pre('validate', function (next) {
+  const hasStatic = Boolean(this.emailTemplate || this.smsTemplate || this.voiceScript);
+  const hasAI = Boolean(this.aiGeneratedTemplateId);
+
+  if (!hasStatic && !hasAI) {
+    return next(
+      new Error(
+        'Campaign must have exactly one template source: either a static template key or aiGeneratedTemplateId.'
+      )
+    );
+  }
+  if (hasStatic && hasAI) {
+    return next(
+      new Error(
+        'Campaign cannot have both a static template key and an aiGeneratedTemplateId set.'
+      )
+    );
+  }
+  next();
+});
 
 campaignSchema.index({ companyId: 1 });
 campaignSchema.index({ createdBy: 1 });

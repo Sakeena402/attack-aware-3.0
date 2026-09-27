@@ -53,13 +53,18 @@ export default function LoginPage() {
         <div className="relative z-10">
          <Link href="/">
   <motion.div
-    className="flex items-center gap-3 cursor-pointer"
+    className="flex items-center gap-4 cursor-pointer"
     initial={{ opacity: 0, y: -20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay: 0.2 }}
   >
-    <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 cyber-glow">
-      <Shield className="w-6 h-6 text-white" />
+    <div className="rounded-xl overflow-hidden" style={{ background: 'transparent' }}>
+      <img
+  src="/Logo-white.png"
+  alt="AttackAware"
+  className="w-20 h-20 object-contain"
+  style={{ filter: 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.9)) brightness(1.3)' }}
+/>
     </div>
 
     <div>
@@ -120,22 +125,7 @@ export default function LoginPage() {
           </motion.div>
         </div>
 
-        {/* Footer */}
-        <motion.div
-          className="relative z-10 space-y-2"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-        >
-          <p className="text-sm text-purple-300">
-            Join thousands protecting their workforce
-          </p>
-          <div className="flex gap-4 text-sm text-purple-200">
-            <span>500K+ Users</span>
-            <span>98% Accuracy</span>
-            <span>24/7 Support</span>
-          </div>
-        </motion.div>
+        
       </motion.div>
 
       {/* Right Side - Login Form */}

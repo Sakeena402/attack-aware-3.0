@@ -74,6 +74,8 @@ export interface ICompany extends Document {
   taxId?: string;
   subscriptionPlan?: Types.ObjectId;
   riskScore?: number;
+  lastMonthlyQuizTopic?: string;
+  lastMonthlyQuizGeneratedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -100,6 +102,7 @@ export interface ICampaign extends Document {
   // Templates
   emailTemplate?: string;
   smsTemplate?: string;
+  aiGeneratedTemplateId?: Types.ObjectId;
   difficulty?: string;
   customSmsMessage?: string;
   voiceScript?: string;

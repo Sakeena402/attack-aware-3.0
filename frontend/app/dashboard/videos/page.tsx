@@ -9,6 +9,8 @@ import { getVideos, StaticVideo } from '@/app/data/videos.data';
 import { videoApi } from '@/app/services/videoApi';
 import { Play, Lock, CheckCircle, Globe } from 'lucide-react';
 
+import { useAuth } from '@/app/context/authContext';
+
 const CATEGORIES = [
   'All',
   'Phishing Awareness',
@@ -21,11 +23,15 @@ const CATEGORIES = [
 
 export default function VideosPage() {
   const router = useRouter();
+  const { state: authState } = useAuth();
+  const user = authState?.user;
+  const isPremium = user?.role === 'admin' || user?.role === 'super_admin' || user?.companyId != null;
+
   const [lang, setLang]         = useState<'en' | 'ur'>('en');
   const [category, setCategory] = useState('');
 
   // Static data — instant, no loading state, no backend call
-  const videos: StaticVideo[] = getVideos(lang, category || undefined);
+  const videos: StaticVideo[] = getVideos(lang, category || undefined, isPremium);
 
   // Real completion status from backend
   const { data: watched = [] } = useSWR('watched-videos', () => videoApi.getMyWatched(), {

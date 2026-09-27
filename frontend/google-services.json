@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "630578076156",
+    "project_id": "alkhidmat-volunteer-app-1ea51",
+    "storage_bucket": "alkhidmat-volunteer-app-1ea51.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:630578076156:android:791e35a0dca4f1efb8ba79",
+        "android_client_info": {
+          "package_name": "com.alkhidmat.volunteerapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD31CZWnZdQriQBxw_De7k_k_4ExzfYpkA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

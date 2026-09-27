@@ -83,6 +83,17 @@ export const campaignCounterQueue = new Bull('campaign-counters', {
   },
 });
 
+export const adaptiveQuizQueue = new Bull('adaptive-quiz-generation', {
+  ...redisOpts,
+  defaultJobOptions: {
+    attempts:         5,
+    backoff:          { type: 'exponential', delay: 12000 },
+    timeout:          180_000, // 3 minutes — headroom for 4000-token generation
+    removeOnComplete: 50,
+    removeOnFail:     50,
+  },
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CONNECTION HEALTH CHECK
 // ─────────────────────────────────────────────────────────────────────────────
@@ -94,12 +105,20 @@ campaignCounterQueue.on('error', (err) => {
   console.error('[QUEUE campaignCounterQueue] Error:', err.message);
 });
 
+adaptiveQuizQueue.on('error', (err) => {
+  console.error('[QUEUE adaptiveQuizQueue] Error:', err.message);
+});
+
 riskQueue.on('ready', () => {
   console.log('[QUEUE] riskQueue connected to Redis ✓');
 });
 
 campaignCounterQueue.on('ready', () => {
   console.log('[QUEUE] campaignCounterQueue connected to Redis ✓');
+});
+
+adaptiveQuizQueue.on('ready', () => {
+  console.log('[QUEUE] adaptiveQuizQueue connected to Redis ✓');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -117,6 +136,23 @@ export interface CampaignCounterJob {
   increment:  number;
 }
 
+export interface AdaptiveQuizJobPayload {
+  employeeId: string;
+  attackType: string;
+  templateCategory: string;
+  failureEventId: string;
+  eventType: 'credentialsSubmitted' | 'linkClicked';
+}
+
+export interface AdminQuizJobPayload {
+  companyId: string;
+  employeeId: string;
+  requestedBy: string;
+  topicMode: 'manual' | 'auto';
+  topic?: import('../services/ai/quizTopics.js').QuizTopic;
+  dueInDays?: number;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ENQUEUE HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -129,5 +165,17 @@ export async function enqueueRiskUpdate(job: RiskJob): Promise<void> {
 export async function enqueueCampaignCounter(job: CampaignCounterJob): Promise<void> {
   await campaignCounterQueue.add(job, {
     jobId: `counter-${job.campaignId}-${job.field}-${Date.now()}`,
+  });
+}
+
+export async function enqueueAdaptiveQuiz(job: AdaptiveQuizJobPayload): Promise<void> {
+  await adaptiveQuizQueue.add(job, {
+    jobId: `quiz-${job.employeeId}-${job.failureEventId}-${job.eventType}`,
+  });
+}
+
+export async function enqueueAdminQuiz(job: AdminQuizJobPayload): Promise<void> {
+  await adaptiveQuizQueue.add('admin-quiz-generation', job, {
+    jobId: `admin-quiz-${job.employeeId}-${Date.now()}`,
   });
 }

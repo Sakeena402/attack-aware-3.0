@@ -17,7 +17,8 @@ export function EnhancedHeader() {
 
   return (
     <motion.header
-      className="sticky top-0 z-40 w-full glassmorphism border-b border-purple-500/20"
+      className="sticky top-0 w-full glassmorphism border-b border-purple-500/20"
+      style={{ zIndex: 60 }}
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
     >
@@ -67,33 +68,42 @@ export function EnhancedHeader() {
 
             <AnimatePresence>
               {isDropdownOpen && (
-                <motion.div
-                  className="absolute right-0 mt-2 w-48 bg-card border border-purple-500/20 rounded-lg shadow-xl overflow-hidden z-50"
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                >
-                  <div className="px-4 py-3 border-b border-purple-500/10">
-                    <p className="text-sm font-semibold text-foreground">{state.user?.name}</p>
-                    <p className="text-xs text-muted-foreground">{state.user?.email}</p>
-                    <p className="text-xs text-purple-400 mt-1 font-semibold capitalize">
-                      {state.user?.role?.replace('_', ' ')}
-                    </p>
-                  </div>
-                  <div className="py-2">
-                    <a href="/dashboard/settings" className="px-4 py-2 text-sm text-foreground hover:bg-muted/50 flex items-center gap-2">
-                      <User className="w-4 h-4" /> Profile
-                    </a>
-                    <a href="/dashboard/settings" className="px-4 py-2 text-sm text-foreground hover:bg-muted/50 flex items-center gap-2">
-                      <Settings className="w-4 h-4" /> Settings
-                    </a>
-                  </div>
-                  <div className="border-t border-purple-500/10 py-2">
-                    <button onClick={logout} className="w-full px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2">
-                      <LogOut className="w-4 h-4" /> Logout
-                    </button>
-                  </div>
-                </motion.div>
+                <>
+                  {/* Click-outside overlay to close the dropdown */}
+                  <div
+                    className="fixed inset-0"
+                    style={{ zIndex: 9998 }}
+                    onClick={() => setIsDropdownOpen(false)}
+                  />
+                  <motion.div
+                    className="absolute right-0 mt-2 w-56 bg-slate-900 border border-purple-500/30 rounded-lg shadow-2xl overflow-hidden"
+                    style={{ zIndex: 9999, backgroundColor: '#0f172a' }}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                  >
+                    <div className="px-4 py-3 border-b border-purple-500/10 bg-slate-900">
+                      <p className="text-sm font-semibold text-foreground">{state.user?.name}</p>
+                      <p className="text-xs text-muted-foreground">{state.user?.email}</p>
+                      <p className="text-xs text-purple-400 mt-1 font-semibold capitalize">
+                        {state.user?.role?.replace('_', ' ')}
+                      </p>
+                    </div>
+                    <div className="py-2 bg-slate-900">
+                      <a href="/dashboard/settings" className="px-4 py-2 text-sm text-foreground hover:bg-muted/50 flex items-center gap-2">
+                        <User className="w-4 h-4" /> Profile
+                      </a>
+                      <a href="/dashboard/settings" className="px-4 py-2 text-sm text-foreground hover:bg-muted/50 flex items-center gap-2">
+                        <Settings className="w-4 h-4" /> Settings
+                      </a>
+                    </div>
+                    <div className="border-t border-purple-500/10 py-2 bg-slate-900">
+                      <button onClick={logout} className="w-full px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2">
+                        <LogOut className="w-4 h-4" /> Logout
+                      </button>
+                    </div>
+                  </motion.div>
+                </>
               )}
             </AnimatePresence>
           </div>
