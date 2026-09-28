@@ -14,7 +14,6 @@ const userSchema = new Schema<IUser>(
       unique: true,
       lowercase: true,
       trim: true,
-    
     },
     passwordHash: {
       type: String,
@@ -115,6 +114,33 @@ const userSchema = new Schema<IUser>(
     bio: {
       type: String,
     },
+
+    // --- Employee setup-password flow (separate from forgot-password reset fields) ---
+    isPasswordSet: {
+      type: Boolean,
+      default: true, // false only for employees created by an admin, until they set their own
+    },
+    passwordSetupToken: {
+      type: String,
+      default: null,
+    },
+    passwordSetupTokenExpires: {
+      type: Date,
+      default: null,
+    },
+    createdByAdmin: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    // Real inbox of the employee — the setup link is sent here (the company
+    // email is only their login id and usually has no mailbox behind it)
+    personalEmail: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      default: null,
+    },
   },
   { timestamps: true }
 );
@@ -122,6 +148,4 @@ const userSchema = new Schema<IUser>(
 userSchema.index({ companyId: 1 });
 userSchema.index({ riskLevel: 1 });
 
-// At the bottom of User.ts
 export const User = mongoose.model<IUser>('User', userSchema);
-// ^^^^^^ named export — this is what authController expects

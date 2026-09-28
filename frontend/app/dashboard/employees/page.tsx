@@ -9,6 +9,7 @@ import { Modal, ConfirmDialog } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast-notification';
 import { useAuth } from '@/app/context/authContext';
 import { employeeApi } from '@/app/services/employeeApi';
+import type { BulkCreateResult } from '@/app/services/employeeApi';
 import { apiService } from '@/app/services/api';
 import type { Employee } from '@/app/services/types';
 import { StatCardSkeleton } from '@/components/ui/skeleton-loader';
@@ -16,6 +17,7 @@ import {
   Plus, Search, Edit2, Trash2, Shield, AlertTriangle,
   CheckCircle, Download, Mail, Users, UserPlus,
   TrendingUp, Award, ClipboardList, Sparkles,
+  Upload, FileSpreadsheet, X as XIcon,
 } from 'lucide-react';
 import { GenerateQuizModal } from '@/components/ai/GenerateQuizModal';
 
@@ -29,15 +31,17 @@ const riskLevelColors = {
 
 interface EmployeeFormData {
   name: string;
-  email: string;
-  password: string;
+  email: string;      // only shown/used in edit mode — auto-generated on create
+  password: string;   // only shown/used in edit mode — admin resetting an existing employee's password
   department: string;
   role: string;
   riskLevel: 'very_low' | 'low' | 'moderate' | 'high' | 'critical';
   phoneNumber: string;
+  personalEmail: string;  // employee's real inbox — only used when creating
 }
 
 type TaskContentType = 'video' | 'quiz' | 'game';
+type CreateTab = 'manual' | 'bulk';
 
 interface ContentOption {
   _id: string;
@@ -70,8 +74,14 @@ export default function EmployeesPage() {
   const [isGenerateQuizOpen, setIsGenerateQuizOpen] = useState(false);
   const [quizTargetEmployeeId, setQuizTargetEmployeeId] = useState<string | undefined>(undefined);
 
-  const [formData, setFormData] = useState<EmployeeFormData>({
-    name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low', phoneNumber: '',
+  // Create-modal tab state (manual entry vs bulk Excel upload)
+  const [createTab,      setCreateTab]      = useState<CreateTab>('manual');
+  const [bulkFile,       setBulkFile]       = useState<File | null>(null);
+  const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
+  const [bulkResult,     setBulkResult]     = useState<BulkCreateResult | null>(null);
+
+    const [formData, setFormData] = useState<EmployeeFormData>({
+    name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low', phoneNumber: '', personalEmail: '',
   });
 
   const { data: employeesResponse, isLoading } = useSWR(
@@ -112,21 +122,25 @@ export default function EmployeesPage() {
     return matchesSearch && matchesDepartment && matchesRisk;
   });
 
-  const openModal = useCallback((employee?: Employee) => {
+    const openModal = useCallback((employee?: Employee) => {
+    setCreateTab('manual');
+    setBulkFile(null);
+    setBulkResult(null);
     if (employee) {
       setSelectedEmployee(employee);
       setFormData({
-        name:        employee.name,
-        email:       employee.email,
-        password:    '',
-        department:  employee.department ?? '',
-        role:        employee.role ?? 'employee',
-        riskLevel:   (employee.riskLevel as 'very_low' | 'low' | 'moderate' | 'high' | 'critical') ?? 'low',
-        phoneNumber: employee.phoneNumber ?? '',
+        name:          employee.name,
+        email:         employee.email,
+        password:      '',
+        department:    employee.department ?? '',
+        role:          employee.role ?? 'employee',
+        riskLevel:     (employee.riskLevel as 'very_low' | 'low' | 'moderate' | 'high' | 'critical') ?? 'low',
+        phoneNumber:   employee.phoneNumber ?? '',
+        personalEmail: '',
       });
     } else {
       setSelectedEmployee(null);
-      setFormData({ name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low', phoneNumber: '' });
+      setFormData({ name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low', phoneNumber: '', personalEmail: '' });
     }
     setIsModalOpen(true);
   }, []);
@@ -134,7 +148,10 @@ export default function EmployeesPage() {
   const closeModal = useCallback(() => {
     setIsModalOpen(false);
     setSelectedEmployee(null);
-    setFormData({ name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low', phoneNumber: '' });
+    setFormData({ name: '', email: '', password: '', department: '', role: 'employee', riskLevel: 'low', phoneNumber: '', personalEmail: '' });
+    setCreateTab('manual');
+    setBulkFile(null);
+    setBulkResult(null);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -154,25 +171,17 @@ export default function EmployeesPage() {
         await employeeApi.update(selectedEmployee._id, updateData);
         success('Employee Updated', `${formData.name} has been updated successfully`);
       } else {
-        if (!formData.password) {
-          showError('Error', 'Password is required for new employees');
-          setIsSubmitting(false);
-          return;
-        }
-        await employeeApi.create({
-          name:             formData.name,
-          email:            formData.email,
-          password:         formData.password,
-          phoneNumber:      formData.phoneNumber,
-          department:       formData.department,
-          role:             formData.role as Employee['role'],
-          riskLevel:        formData.riskLevel,
-          companyId:        state.user?.companyId,
-          points:           0,
-          badge:            'Rookie',
-          trainingProgress: 0,
+        // No email/password here — the backend auto-generates a company email
+        // and a placeholder password, then emails the employee a setup link.
+                await employeeApi.create({
+          name:          formData.name,
+          personalEmail: formData.personalEmail.trim(),
+          phoneNumber:   formData.phoneNumber,
+          department:    formData.department,
+          role:          formData.role as Employee['role'],
+          companyId:     state.user?.companyId,
         });
-        success('Employee Added', `${formData.name} has been added successfully`);
+        success('Employee Added', `${formData.name} will receive an email to set up their password.`);
       }
       mutate(EMPLOYEES_KEY);
       closeModal();
@@ -180,6 +189,31 @@ export default function EmployeesPage() {
       showError('Error', err instanceof Error ? err.message : 'Failed to save employee');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleBulkFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setBulkFile(file);
+    setBulkResult(null);
+  };
+
+  const handleBulkSubmit = async () => {
+    if (!bulkFile) return;
+    setIsBulkSubmitting(true);
+    setBulkResult(null);
+    try {
+      const result = await employeeApi.createBulk(bulkFile, state.user?.companyId);
+      setBulkResult(result);
+      mutate(EMPLOYEES_KEY);
+      success(
+        'Bulk Upload Complete',
+        `${result.createdCount} employee(s) created${result.skippedCount ? `, ${result.skippedCount} skipped` : ''}`
+      );
+    } catch (err) {
+      showError('Error', err instanceof Error ? err.message : 'Failed to upload employees');
+    } finally {
+      setIsBulkSubmitting(false);
     }
   };
 
@@ -507,103 +541,237 @@ export default function EmployeesPage() {
         isOpen={isModalOpen}
         onClose={closeModal}
         title={selectedEmployee ? 'Edit Employee' : 'Add New Employee'}
-        description={selectedEmployee ? 'Update employee information' : 'Add a new employee to your organization'}
+        description={
+          selectedEmployee
+            ? 'Update employee information'
+            : 'Add one employee manually, or upload a spreadsheet to add many at once'
+        }
         size="md"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Full Name</label>
-            <input
-              type="text" required value={formData.name}
-              onChange={e => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
-              placeholder="John Doe"
-            />
+        {/* Tabs — only shown when creating, not editing */}
+        {!selectedEmployee && (
+          <div className="flex gap-2 mb-4 border-b border-purple-500/20">
+            <button
+              type="button"
+              onClick={() => setCreateTab('manual')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                createTab === 'manual'
+                  ? 'border-purple-500 text-purple-400'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Manual Entry
+            </button>
+            <button
+              type="button"
+              onClick={() => setCreateTab('bulk')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                createTab === 'bulk'
+                  ? 'border-purple-500 text-purple-400'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Bulk Upload (Excel)
+            </button>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Email Address</label>
-            <input
-              type="email" required value={formData.email}
-              onChange={e => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
-              placeholder="john@company.com"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Password{' '}
-              {selectedEmployee && <span className="text-muted-foreground font-normal">(leave blank to keep current)</span>}
-            </label>
-            <input
-              type="password" required={!selectedEmployee} value={formData.password}
-              onChange={e => setFormData({ ...formData, password: e.target.value })}
-              className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
-              placeholder={selectedEmployee ? '(unchanged)' : 'Create password'}
-              minLength={6}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Phone Number</label>
-            <input
-              type="tel"
-              value={formData.phoneNumber}
-              onChange={e => setFormData({ ...formData, phoneNumber: e.target.value })}
-              className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
-              placeholder="+92xxxxxxxxxx"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+        )}
+
+        {/* Manual entry form — shown for edit mode always, and for create mode when tab is 'manual' */}
+        {(selectedEmployee || createTab === 'manual') && (
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Department</label>
+              <label className="block text-sm font-medium text-foreground mb-2">Full Name</label>
               <input
-                type="text" value={formData.department}
-                onChange={e => setFormData({ ...formData, department: e.target.value })}
+                type="text" required value={formData.name}
+                onChange={e => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
-                placeholder="Engineering"
+                placeholder="John Doe"
               />
             </div>
+
+            {/* Email + password: edit mode only. On create, both are auto-generated by the backend. */}
+            {selectedEmployee && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">Email Address</label>
+                  <input
+                    type="email" required value={formData.email}
+                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
+                    placeholder="john@company.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Password <span className="text-muted-foreground font-normal">(leave blank to keep current)</span>
+                  </label>
+                  <input
+                    type="password" value={formData.password}
+                    onChange={e => setFormData({ ...formData, password: e.target.value })}
+                    className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
+                    placeholder="(unchanged)"
+                    minLength={6}
+                  />
+                </div>
+              </>
+            )}
+
+                                    {!selectedEmployee && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">Email</label>
+                  <input
+                    type="email" required value={formData.personalEmail}
+                    onChange={e => setFormData({ ...formData, personalEmail: e.target.value })}
+                    className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
+                    placeholder="john@gmail.com"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground bg-muted/30 border border-purple-500/10 rounded-lg px-3 py-2">
+                  A company login email will be generated automatically. The password-setup link is sent to this email.
+                </p>
+              </>
+            )}
+
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Role</label>
-              <select
-                value={formData.role}
-                onChange={e => setFormData({ ...formData, role: e.target.value })}
-                className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
-              >
-                <option value="employee">Employee</option>
-                <option value="manager">Manager</option>
-                <option value="admin">Admin</option>
-              </select>
+              <label className="block text-sm font-medium text-foreground mb-2">Phone Number</label>
+              <input
+                type="tel"
+                value={formData.phoneNumber}
+                onChange={e => setFormData({ ...formData, phoneNumber: e.target.value })}
+                className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
+                placeholder="+92xxxxxxxxxx"
+              />
             </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Risk Level</label>
-            <div className="flex gap-2">
-              {(['very_low', 'low', 'moderate', 'high', 'critical'] as const).map(level => (
-                <button
-                  key={level} type="button"
-                  onClick={() => setFormData({ ...formData, riskLevel: level })}
-                  className={`flex-1 px-1 py-2 rounded-lg border transition-all text-xs font-semibold capitalize ${
-                    formData.riskLevel === level
-                      ? level === 'very_low' ? 'bg-green-500/20 border-green-500/50 text-green-400'
-                      : level === 'low'      ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
-                      : level === 'moderate' ? 'bg-orange-500/20 border-orange-500/50 text-orange-400'
-                      : level === 'high'     ? 'bg-red-500/20 border-red-500/50 text-red-400'
-                                             : 'bg-red-900/40 border-red-900/50 text-red-400'
-                      : 'bg-muted/50 border-purple-500/20 text-muted-foreground hover:text-foreground'
-                  }`}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Department</label>
+                <input
+                  type="text" value={formData.department}
+                  onChange={e => setFormData({ ...formData, department: e.target.value })}
+                  className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
+                  placeholder="Engineering"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Role</label>
+                <select
+                  value={formData.role}
+                  onChange={e => setFormData({ ...formData, role: e.target.value })}
+                  className="w-full px-4 py-2 bg-muted/50 border border-purple-500/20 rounded-lg text-foreground focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
                 >
-                  {level.replace('_', ' ')}
+                  <option value="employee">Employee</option>
+                  <option value="manager">Manager</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            </div>
+            {selectedEmployee && (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Risk Level</label>
+                <div className="flex gap-2">
+                  {(['very_low', 'low', 'moderate', 'high', 'critical'] as const).map(level => (
+                    <button
+                      key={level} type="button"
+                      onClick={() => setFormData({ ...formData, riskLevel: level })}
+                      className={`flex-1 px-1 py-2 rounded-lg border transition-all text-xs font-semibold capitalize ${
+                        formData.riskLevel === level
+                          ? level === 'very_low' ? 'bg-green-500/20 border-green-500/50 text-green-400'
+                          : level === 'low'      ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
+                          : level === 'moderate' ? 'bg-orange-500/20 border-orange-500/50 text-orange-400'
+                          : level === 'high'     ? 'bg-red-500/20 border-red-500/50 text-red-400'
+                                                 : 'bg-red-900/40 border-red-900/50 text-red-400'
+                          : 'bg-muted/50 border-purple-500/20 text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {level.replace('_', ' ')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="flex justify-end gap-3 pt-4">
+              <Button type="button" variant="outline" onClick={closeModal} disabled={isSubmitting}>Cancel</Button>
+              <Button type="submit" disabled={isSubmitting} className="bg-gradient-to-r from-purple-500 to-blue-500">
+                {isSubmitting ? 'Saving...' : selectedEmployee ? 'Update Employee' : 'Add Employee'}
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {/* Bulk upload tab — create mode only */}
+        {!selectedEmployee && createTab === 'bulk' && (
+          <div className="space-y-4">
+            <div className="border-2 border-dashed border-purple-500/30 rounded-lg p-6 text-center">
+              <FileSpreadsheet className="w-10 h-10 mx-auto text-purple-400 mb-2" />
+              <p className="text-sm text-foreground mb-1">
+                {bulkFile ? bulkFile.name : 'Upload an Excel file (.xlsx or .xls)'}
+              </p>
+              <p className="text-xs text-muted-foreground mb-3">
+                Required columns: Name and Email (the employee's personal email). Department and Phone are optional.
+              </p>
+              <label className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg text-sm font-medium cursor-pointer transition-all">
+                <Upload className="w-4 h-4" />
+                {bulkFile ? 'Choose a different file' : 'Choose file'}
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                  onChange={handleBulkFileChange}
+                />
+              </label>
+              {bulkFile && (
+                <button
+                  type="button"
+                  onClick={() => { setBulkFile(null); setBulkResult(null); }}
+                  className="ml-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-red-400"
+                >
+                  <XIcon className="w-3 h-3" /> Remove
                 </button>
-              ))}
+              )}
+            </div>
+
+            {bulkResult && (
+              <div className="space-y-2 text-sm">
+                <p className="text-green-400 font-medium">
+                  ✓ {bulkResult.createdCount} employee(s) created successfully
+                </p>
+                {bulkResult.skippedCount > 0 && (
+                  <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                    <p className="text-red-400 font-medium mb-1">{bulkResult.skippedCount} row(s) skipped:</p>
+                    <ul className="text-xs text-muted-foreground space-y-1 max-h-24 overflow-y-auto">
+                      {bulkResult.skipped.map((s, i) => (
+                        <li key={i}>Row {s.row}: {s.reason}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {bulkResult.unmatchedColumns.length > 0 && (
+                  <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3">
+                    <p className="text-orange-400 font-medium mb-1">Columns not recognized (ignored):</p>
+                    <p className="text-xs text-muted-foreground">{bulkResult.unmatchedColumns.join(', ')}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-2">
+              <Button type="button" variant="outline" onClick={closeModal} disabled={isBulkSubmitting}>
+                {bulkResult ? 'Close' : 'Cancel'}
+              </Button>
+              {!bulkResult && (
+                <Button
+                  type="button"
+                  onClick={handleBulkSubmit}
+                  disabled={!bulkFile || isBulkSubmitting}
+                  className="bg-gradient-to-r from-purple-500 to-blue-500"
+                >
+                  {isBulkSubmitting ? 'Uploading...' : 'Upload & Create'}
+                </Button>
+              )}
             </div>
           </div>
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={closeModal} disabled={isSubmitting}>Cancel</Button>
-            <Button type="submit" disabled={isSubmitting} className="bg-gradient-to-r from-purple-500 to-blue-500">
-              {isSubmitting ? 'Saving...' : selectedEmployee ? 'Update Employee' : 'Add Employee'}
-            </Button>
-          </div>
-        </form>
+        )}
       </Modal>
 
       {/* Assign Task Modal */}

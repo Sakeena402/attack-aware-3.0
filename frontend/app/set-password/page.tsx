@@ -1,0 +1,281 @@
+'use client';
+
+import { useState, Suspense } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { apiService } from '@/app/services/api';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { AlertCircle, CheckCircle, Lock, Eye, EyeOff, ArrowRight, Shield, Zap, TrendingUp } from 'lucide-react';
+
+function SetPasswordForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token') ?? '';
+
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [localError, setLocalError] = useState('');
+  const [isDone, setIsDone] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLocalError('');
+
+    if (!token) {
+      setLocalError('This link is missing its setup token. Please use the link from your email.');
+      return;
+    }
+    if (password.length < 8) {
+      setLocalError('Password must be at least 8 characters.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setLocalError('Passwords do not match.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await apiService.post('/auth/set-password', { token, password });
+      setIsDone(true);
+      setTimeout(() => router.push('/login'), 2500);
+    } catch (err: any) {
+      setLocalError(err.message || 'Failed to set password. The link may have expired.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-background overflow-hidden">
+      {/* Left Side - Content */}
+      <motion.div
+        className="hidden md:flex flex-col justify-between p-12 bg-gradient-to-br from-slate-900 via-purple-900/50 to-slate-900 relative overflow-hidden"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+      >
+        <div className="absolute inset-0">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
+          <div className="absolute inset-0 cyber-grid opacity-20" />
+        </div>
+
+        <div className="relative z-10">
+          <Link href="/">
+            <motion.div
+              className="flex items-center gap-4 cursor-pointer"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="rounded-xl overflow-hidden" style={{ background: 'transparent' }}>
+                <img
+                  src="/Logo-white.png"
+                  alt="AttackAware"
+                  className="w-20 h-20 object-contain"
+                  style={{ filter: 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.9)) brightness(1.3)' }}
+                />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-white font-poppins">Attack Aware 3.0</h1>
+                <p className="text-sm text-purple-300">Enterprise Security Training</p>
+              </div>
+            </motion.div>
+          </Link>
+
+          <motion.div
+            className="mt-16 space-y-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            <div>
+              <h2 className="text-4xl font-bold text-white font-poppins leading-tight">
+                Welcome to the Team
+              </h2>
+              <p className="text-purple-200 mt-4 text-lg">
+                Set up your password to get started with your company's security training.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {[
+                { icon: Zap, title: 'Real-time Campaigns', desc: 'Launch simulations instantly' },
+                { icon: TrendingUp, title: 'Advanced Analytics', desc: 'Track employee behavior' },
+                { icon: Shield, title: 'Enterprise Grade', desc: 'Built for any scale' },
+              ].map((feature, idx) => {
+                const Icon = feature.icon;
+                return (
+                  <motion.div
+                    key={idx}
+                    className="flex gap-4"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 + idx * 0.1 }}
+                  >
+                    <div className="flex-shrink-0">
+                      <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-purple-500/30">
+                        <Icon className="h-6 w-6 text-purple-300" />
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-white">{feature.title}</h3>
+                      <p className="mt-1 text-sm text-purple-200">{feature.desc}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
+        </div>
+      </motion.div>
+
+      {/* Right Side - Set Password Form */}
+      <motion.div
+        className="flex flex-col justify-center items-center p-8 md:p-12 relative"
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 right-0 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl" />
+        </div>
+
+        <div className="relative z-10 w-full max-w-md space-y-8">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <h2 className="text-3xl font-bold font-poppins text-foreground">Set Your Password</h2>
+            <p className="text-muted-foreground mt-2">
+              Choose a password to activate your company account
+            </p>
+          </motion.div>
+
+          {isDone ? (
+            <motion.div
+              className="p-4 rounded-lg bg-green-500/20 border border-green-500/30 flex items-start gap-3"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+              <span className="text-sm text-green-300">
+                Password set successfully! Redirecting you to login...
+              </span>
+            </motion.div>
+          ) : (
+            <motion.form
+              onSubmit={handleSubmit}
+              className="space-y-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              {localError && (
+                <motion.div
+                  className="p-4 rounded-lg bg-red-500/20 border border-red-500/30 flex items-start gap-3"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-red-300">{localError}</span>
+                </motion.div>
+              )}
+
+              {!token && (
+                <motion.div
+                  className="p-4 rounded-lg bg-orange-500/10 border border-orange-500/20 text-sm text-orange-300"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  No setup token found in this link. Please open the link from your registration email directly.
+                </motion.div>
+              )}
+
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}>
+                <label className="block text-sm font-medium text-foreground mb-2">New Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-12 pr-12 py-3 bg-muted/50 border-purple-500/20 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="w-4 h-4 text-muted-foreground" />
+                    )}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">At least 8 characters</p>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
+                <label className="block text-sm font-medium text-foreground mb-2">Confirm Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-12 py-3 bg-muted/50 border-purple-500/20 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
+                <Button
+                  type="submit"
+                  disabled={isLoading || !token}
+                  className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:shadow-lg hover:shadow-purple-500/30 disabled:opacity-50 py-3 font-semibold flex items-center justify-center gap-2"
+                >
+                  {isLoading ? 'Setting password...' : (
+                    <>
+                      Set Password & Continue
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+            </motion.form>
+          )}
+
+          <motion.p
+            className="text-center text-muted-foreground text-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.55 }}
+          >
+            Already set your password?{' '}
+            <Link href="/login" className="text-purple-400 hover:text-purple-300 font-semibold transition">
+              Sign in
+            </Link>
+          </motion.p>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+export default function SetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <SetPasswordForm />
+    </Suspense>
+  );
+}

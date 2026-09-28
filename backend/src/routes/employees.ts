@@ -1,16 +1,17 @@
-
 // backend/src/routes/employees.ts
 import { Router } from 'express';
 import {
   getAllEmployees,
   getEmployeeById,
   createEmployee,
+  createEmployeesBulk,
   updateEmployee,
   deleteEmployee,
   getDepartments,
 } from '../controllers/employeeController.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireAdmin, isolateByCompany } from '../middleware/rbac.js';
+import { uploadExcel } from '../middleware/upload.js';
 
 const employeesRouter = Router();
 
@@ -18,6 +19,9 @@ employeesRouter.use(authenticate);
 
 // Static routes MUST come before param routes — otherwise /:id captures "departments"
 employeesRouter.get('/departments', isolateByCompany, getDepartments);
+
+// Bulk upload — must also come before /:id
+employeesRouter.post('/bulk', requireAdmin, isolateByCompany, uploadExcel, createEmployeesBulk);
 
 // Collection routes
 employeesRouter.get('/',    isolateByCompany, getAllEmployees);

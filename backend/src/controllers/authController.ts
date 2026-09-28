@@ -252,6 +252,39 @@ export const resetPassword = async (
   }
 };
 
+// ------------------- SET PASSWORD (employee onboarding) -------------------
+// Called when an admin-created employee clicks the "Set Your Password" link
+// from their setup email. Different from resetPassword: this is a one-time
+// onboarding action tied to passwordSetupToken, not the forgot-password flow.
+export const setPassword = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) throw new AppError('Please provide token and new password', 400);
+    if (password.length < 8) throw new AppError('Password must be at least 8 characters', 400);
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      passwordSetupToken: hashedToken,
+      passwordSetupTokenExpires: { $gt: new Date() },
+    });
+
+    if (!user) throw new AppError('This setup link is invalid or has expired', 400);
+
+    user.passwordHash = await bcryptjs.hash(password, 10);
+    user.isPasswordSet = true;
+    user.passwordSetupToken = null;
+    user.passwordSetupTokenExpires = null;
+    await user.save();
+
+    res.json({ success: true, message: 'Password set successfully! You can now log in.' });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: error.message || 'Error setting password' });
+  }
+};
+
 // ------------------- SEND CREDENTIALS -------------------
 export const sendCredentials = async (
   req: AuthRequest,

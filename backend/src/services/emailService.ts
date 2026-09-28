@@ -274,3 +274,59 @@ export const generatePhishingPageUrl = (
 export const generateTrackingToken = (): string => {
   return uuidv4();
 };
+
+// ─────────────────────────────────────────────────────────────────────────
+// Employee onboarding: "set your password" confirmation email
+// (unrelated to the phishing-simulation templates above — this is the real,
+// legitimate email sent when an admin creates a new employee account)
+// ─────────────────────────────────────────────────────────────────────────
+interface SendEmployeeSetupEmailParams {
+  to: string;          // employee's personal email (real inbox)
+  loginEmail: string;  // generated company email used to log in
+  name: string;
+  companyName: string;
+  rawToken: string;
+}
+
+export const sendEmployeeSetupEmail = async ({
+  to,
+  loginEmail,
+  name,
+  companyName,
+  rawToken,
+}: SendEmployeeSetupEmailParams): Promise<void> => {
+  const setupLink = `${process.env.FRONTEND_URL}/set-password?token=${rawToken}`;
+
+  if (process.env.MOCK_EMAIL === 'true' || process.env.NODE_ENV === 'test') {
+    console.log(`\n[MOCK EMAIL] ══════════════════════════════════`);
+    console.log(`  To          : ${to}`);
+    console.log(`  Login email : ${loginEmail}`);
+    console.log(`  Subject     : You've been registered under ${companyName}`);
+    console.log(`  Link        : ${setupLink}`);
+    console.log(`════════════════════════════════════════════════\n`);
+    return;
+  }
+
+  const transporter = getTransporter();
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM || `"${companyName} — AttackAware" <${process.env.GMAIL_USER}>`,
+    to,
+    subject: `You've been registered under ${companyName} on AttackAware`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
+        <h2>Welcome, ${name}!</h2>
+        <p>You've been registered as an employee under <strong>${companyName}</strong> on AttackAware.</p>
+        <p>Your company login email is: <strong>${loginEmail}</strong></p>
+        <p>Before you can log in, you must first set your own password:</p>
+        <p>
+          <a href="${setupLink}" style="background:#4f46e5;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;">
+            Set Your Password
+          </a>
+        </p>
+        <p>After setting your password, log in with <strong>${loginEmail}</strong> and the password you chose.</p>
+        <p>This link will expire in 48 hours.</p>
+        <p style="color:#888;font-size:12px;">If the button doesn't work, copy this link: ${setupLink}</p>
+      </div>
+    `,
+  });
+};

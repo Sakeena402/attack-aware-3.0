@@ -57,6 +57,14 @@ export interface IUser extends Document {
   passwordResetExpires?: Date;
   bio?: string;
   trainingProgress?: number;
+
+  // --- Employee setup-password flow ---
+  isPasswordSet?: boolean;
+  passwordSetupToken?: string | null;
+  passwordSetupTokenExpires?: Date | null;
+  createdByAdmin?: Types.ObjectId | null;
+  personalEmail?: string;
+
   createdAt: Date;
   updatedAt: Date;
 }

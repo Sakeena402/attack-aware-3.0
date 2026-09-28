@@ -156,6 +156,14 @@ const handleJWTExpiredError = (): AppError => {
   return AppError.tokenExpired();
 };
 
+const handleMulterError = (err: Error & { code?: string }): AppError => {
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return new AppError('File is too large. Maximum allowed size is 5MB.', 400, ErrorCodes.VALIDATION_ERROR);
+  }
+  // Covers our custom fileFilter rejection ("Only .xlsx or .xls files are allowed") and any other Multer error
+  return new AppError(err.message || 'File upload error', 400, ErrorCodes.VALIDATION_ERROR);
+};
+
 // Send error response in development
 const sendErrorDev = (err: AppError, req: Request, res: Response): void => {
   const response: ErrorResponse = {
@@ -231,6 +239,9 @@ export const globalErrorHandler = (
   }
   if (err.name === 'TokenExpiredError') {
     error = handleJWTExpiredError();
+  }
+  if (err.name === 'MulterError') {
+    error = handleMulterError(err as Error & { code?: string });
   }
 
   // Log error

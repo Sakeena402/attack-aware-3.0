@@ -223,8 +223,12 @@ export class ApiService {
   }
 
   private async executeRequest<T>(endpoint: string, options: RequestInit): Promise<ApiResponse<T>> {
+    // FormData must NOT get a manual Content-Type — the browser sets the
+    // multipart boundary itself. Only default to JSON when body isn't FormData.
+    const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(options.headers as Record<string, string> || {}),
     };
 
@@ -244,6 +248,10 @@ export class ApiService {
   }
   post<T>(endpoint: string, data?: unknown, config?: { retry?: boolean }) {
     return this.request<T>(endpoint, { method: 'POST', body: data ? JSON.stringify(data) : undefined }, config);
+  }
+  // Use this for file uploads (multipart/form-data) — pass a FormData instance directly, unstringified
+  postForm<T>(endpoint: string, formData: FormData, config?: { retry?: boolean }) {
+    return this.request<T>(endpoint, { method: 'POST', body: formData }, config);
   }
   put<T>(endpoint: string, data?: unknown, config?: { retry?: boolean }) {
     return this.request<T>(endpoint, { method: 'PUT', body: data ? JSON.stringify(data) : undefined }, config);
@@ -277,7 +285,3 @@ api.interceptors.request.use((config) => {
 
   return config;
 });
-
-
-
-
