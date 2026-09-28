@@ -89,7 +89,7 @@ export const onApiError = (handler: ErrorHandler) => {
 
 export function getErrorMessage(error: ApiError): string {
   if (!error.errorCode) return error.message || 'An unexpected error occurred';
-  
+
   switch (error.errorCode) {
     case ErrorCodes.INVALID_CREDENTIALS:
       return 'Invalid email or password.';
@@ -257,26 +257,3 @@ export class ApiService {
 }
 
 export const apiService = ApiService.getInstance();
-
-
-
-import axios from 'axios';
-
-export const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
-});
-
-// ✅ Add token dynamically (VERY IMPORTANT FIX)
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
-
-
-
-

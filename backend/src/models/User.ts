@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, Types } from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 import { IUser } from '../types/index.js';
 
 const userSchema = new Schema<IUser>(
@@ -111,6 +111,14 @@ const userSchema = new Schema<IUser>(
     },
     passwordResetExpires: {
       type: Date,
+    },
+    twoFactorEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerified: {
+      type: Boolean,
+      default: false,
     },
     bio: {
       type: String,

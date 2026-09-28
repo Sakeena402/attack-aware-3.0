@@ -1,7 +1,6 @@
-
 // frontend/app/dashboard/employee/page.tsx
 'use client';
-
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/authContext';
 import { motion } from 'framer-motion';
 import useSWR from 'swr';
@@ -11,7 +10,7 @@ import { StatCardSkeleton }            from '@/components/ui/skeleton-loader';
 import { Card }                        from '@/components/ui/card';
 import {
   Award, TrendingUp, Trophy, Medal, Shield,
-  AlertTriangle, CheckCircle, XCircle, Minus, Star, Clock,
+  AlertTriangle, CheckCircle, XCircle, Minus, Star, Clock, Phone,
 } from 'lucide-react';
 import { RadialBarChart, RadialBar, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts';
 import type { LeaderboardEntry } from '@/app/services/types';
@@ -48,6 +47,21 @@ const ACHIEVEMENT_CFG: Record<string, { icon: string; color: string; desc: strin
 
 export default function EmployeeDashboard() {
   const { state } = useAuth();
+  const router = useRouter();
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
+  // Only show the Vishing Awareness card when the admin has an active
+  // vishing campaign currently targeting this employee.
+  const { data: activeVishing } = useSWR<{ campaignId: string; campaignName: string } | null>(
+    state.user?.id ? 'myActiveVishing' : null,
+    async () => {
+      const res = await fetch(`${API_BASE}/campaigns/my-active-vishing`, { credentials: 'include' });
+      const json = await res.json();
+      return json.success ? json.data : null;
+    },
+    { revalidateOnFocus: false }
+  );
 
   if (state.user?.role !== 'employee') {
     return (
@@ -110,6 +124,33 @@ export default function EmployeeDashboard() {
         </h1>
         <p className="text-slate-400">Track progress and improve your cybersecurity awareness</p>
       </motion.div>
+
+      {/* ── Vishing Awareness CTA — only shown while an active vishing campaign targets this employee ── */}
+      {activeVishing && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+          <Card
+            onClick={() => router.push(`/dashboard/employee/vishing-awareness?campaignId=${activeVishing.campaignId}`)}
+            className="p-5 surface-1 rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-blue-500/5 cursor-pointer hover:border-purple-500/50 transition group"
+          >
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-purple-500/20 group-hover:bg-purple-500/30 transition">
+                  <Phone className="w-6 h-6 text-purple-400" />
+                </div>
+                <div>
+                  <p className="font-bold text-foreground">Vishing Awareness</p>
+                  <p className="text-sm text-slate-400">
+                    Learn how voice-phishing scams work, and test your knowledge with a quick quiz.
+                  </p>
+                </div>
+              </div>
+              <span className="px-4 py-2 rounded-lg bg-purple-500/20 text-purple-300 text-sm font-medium group-hover:bg-purple-500/30 transition shrink-0">
+                Start Learning →
+              </span>
+            </div>
+          </Card>
+        </motion.div>
+      )}
 
       {/* ── Top 4 Metrics ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

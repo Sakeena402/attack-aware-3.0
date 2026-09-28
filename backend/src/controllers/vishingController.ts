@@ -192,12 +192,13 @@ export const getCampaignVishingStats = async (
       details: results.map((r) => ({
         userId: r.userId,
         phoneNumber: r.phoneNumber,
+        callSid: r.callSid,               // ← added: needed so the simulator UI knows which call to target
         callInitiated: r.callInitiated,
         callInitiatedAt: r.callInitiatedAt,
         callAnswered: r.callAnswered,
         callAnsweredAt: r.callAnsweredAt,
         callStatus: r.callStatus,
-        voiceResponse: r.voiceResponse,
+        callResponse: r.callResponse,      // ← was voiceResponse (wrong field name) — matches schema now
         callDuration: r.callDuration,
       })),
     };
@@ -215,9 +216,86 @@ export const getCampaignVishingStats = async (
   }
 };
 
+// ── MOCK-MODE ONLY: Call Simulator ─────────────────────────────────────────
+// Lets an admin/tester simulate an employee answering the fake call and
+// pressing a key, without needing a real Twilio call or a public webhook
+// URL (ngrok). This is gated behind MOCK_SMS=true so it can never be used
+// to fabricate results once real calls are wired up.
+export const simulateVoiceResponse = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    if (process.env.MOCK_SMS !== 'true') {
+      res.status(403).json({
+        success: false,
+        error: 'Call simulation is only available in mock mode (MOCK_SMS=true).',
+      });
+      return;
+    }
+
+    const { campaignId, userId, digits } = req.body as {
+      campaignId?: string;
+      userId?: string;
+      digits?: string;
+    };
+
+    if (!campaignId || !userId || !digits) {
+      res.status(400).json({ success: false, error: 'campaignId, userId, and digits are required' });
+      return;
+    }
+
+    const result = await SimulationResult.findOne({
+      campaignId,
+      userId,
+      simulationType: 'vishing',
+    }).sort({ createdAt: -1 });
+
+    if (!result) {
+      res.status(404).json({ success: false, error: 'No vishing call found for this employee on this campaign' });
+      return;
+    }
+
+    // Simulate the full call lifecycle in one step: ring → answer → respond → complete.
+    if (!result.callAnswered) {
+      result.callAnswered = true;
+      result.callAnsweredAt = new Date();
+    }
+
+    result.callStatus = 'completed';
+    result.callStatusUpdatedAt = new Date();
+    result.callCompleted = true;
+    result.callCompletedAt = new Date();
+    result.callDuration = result.callDuration || 45; // simulated duration in seconds
+
+    result.callResponse = digits;
+    result.callResponseAt = new Date();
+
+    if (digits === '1' || digits === '2') {
+      result.voiceEngaged = true;
+      await Campaign.findByIdAndUpdate(campaignId, { $inc: { clickedCount: 1 } });
+    } else if (digits === '9') {
+      result.voiceReported = true;
+      await Campaign.findByIdAndUpdate(campaignId, { $inc: { reportedCount: 1 } });
+    } else {
+      result.voiceOtherResponse = digits;
+    }
+
+    await result.save();
+
+    console.info(`[VISHING SIM] Digits=${digits} recorded. campaignId=${campaignId} userId=${userId}`);
+
+    res.status(200).json({ success: true, message: 'Call response simulated successfully' });
+  } catch (error) {
+    console.error('simulateVoiceResponse error:', error);
+    res.status(500).json({ success: false, error: 'Failed to simulate call response' });
+  }
+};
+
 export default {
   getVoiceScripts,
   sendVishingSimulation,
   sendCampaignVishing,
   getCampaignVishingStats,
+  simulateVoiceResponse,
 };

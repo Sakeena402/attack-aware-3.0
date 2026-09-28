@@ -6,23 +6,86 @@ let transporter: nodemailer.Transporter | null = null;
 
 const getTransporter = (): nodemailer.Transporter => {
   if (!transporter) {
-    if (process.env.MOCK_EMAIL === 'true') {
+    if (process.env.MOCK_EMAIL === 'true' || process.env.NODE_ENV === 'test') {
       transporter = nodemailer.createTransport({
         host: 'localhost',
         port: 1025,
         secure: false,
       });
     } else {
-      transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.GMAIL_USER,
-          pass: process.env.GMAIL_APP_PASSWORD,
-        },
-      });
+      const host = process.env.MAILTRAP_HOST || process.env.SMTP_HOST || process.env.SMTP_Host;
+      const port = Number(
+        process.env.MAILTRAP_PORT || process.env.SMTP_PORT || process.env.SMTP_Port || 2525
+      );
+      const user = process.env.MAILTRAP_USER || process.env.SMTP_USER;
+      const pass = process.env.MAILTRAP_PASS || process.env.SMTP_PASS;
+
+      if (host && user && pass) {
+        transporter = nodemailer.createTransport({
+          host,
+          port,
+          secure: false,
+          auth: {
+            user,
+            pass,
+          },
+        });
+      } else if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+        transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.GMAIL_USER,
+            pass: process.env.GMAIL_APP_PASSWORD,
+          },
+        });
+      } else {
+        transporter = nodemailer.createTransport({
+          host: 'localhost',
+          port: 1025,
+          secure: false,
+        });
+      }
     }
   }
   return transporter;
+};
+
+export const sendOtpEmail = async ({
+  to,
+  code,
+  purpose,
+}: {
+  to: string;
+  code: string;
+  purpose: 'login_verification' | 'signup_verification';
+}): Promise<void> => {
+  if (process.env.MOCK_EMAIL === 'true' || process.env.NODE_ENV === 'test') {
+    // Mock mode: OTP still goes into the sandbox/DB via createOtpRecord — no
+    // need to also print it to the terminal.
+    return;
+  }
+
+  const isSignup = purpose === 'signup_verification';
+  const contextLine = isSignup
+    ? 'Use this code to verify your email address and complete sign-up.'
+    : 'Use this code to finish signing in.';
+
+  await getTransporter().sendMail({
+    from: process.env.EMAIL_FROM || 'security@attackaware-demo.com',
+    to,
+    subject: 'Your AttackAware verification code',
+    text: `Your verification code is ${code}. It expires in 5 minutes.`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 8px;">
+        <h2 style="color: #111827; margin-top: 0;">Your AttackAware verification code</h2>
+        <p style="color: #374151;">${contextLine} It expires in <strong>5 minutes</strong>.</p>
+        <div style="background: #f3f4f6; border-radius: 6px; padding: 16px 24px; margin: 24px 0; text-align: center;">
+          <span style="font-size: 36px; font-weight: 700; letter-spacing: 10px; color: #1d4ed8;">${code}</span>
+        </div>
+        <p style="color: #6b7280; font-size: 13px;">If you did not request this code, you can safely ignore this email.</p>
+      </div>
+    `,
+  });
 };
 
 // Maps an email template key to the fake-login-page "brand" it should render as.
@@ -195,15 +258,9 @@ export const sendPhishingEmail = async (options: SendEmailOptions): Promise<{
   if (process.env.MOCK_EMAIL === 'true' || process.env.NODE_ENV === 'test') {
     const mockId = `MOCK_EM_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-    console.log(`\n[MOCK EMAIL] ══════════════════════════════════`);
-    console.log(`  To          : ${options.to}`);
-    console.log(`  Template    : ${options.templateKey}`);
-    console.log(`  Subject     : ${template.subject}`);
-    console.log(`  Mock ID     : ${mockId}`);
-    console.log(`  ─────────────────────────────────────────────`);
-    console.log(`  Click this to simulate employee clicking link:`);
-    console.log(`  ${phishingPageUrl}`);
-    console.log(`════════════════════════════════════════════════\n`);
+    // Mock send is recorded in the DB by the caller (campaign/simulation
+    // record) — no need to also print recipient, mock ID, or the phishing
+    // link to the terminal.
 
     return { success: true, messageId: mockId, mocked: true };
   }
@@ -224,12 +281,9 @@ export const sendPhishingEmail = async (options: SendEmailOptions): Promise<{
       },
     });
 
-    console.log(`[EMAIL SENT] To: ${options.to} | MessageID: ${info.messageId}`);
-
     return { success: true, messageId: info.messageId };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to send email';
-    console.error('Email sending error:', errorMessage);
     return { success: false, error: errorMessage };
   }
 };

@@ -3,20 +3,26 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/app/context/authContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AlertCircle, Lock, Mail, Eye, EyeOff, ArrowRight, Shield, Zap, TrendingUp } from 'lucide-react';
+import { AlertCircle, Lock, Mail, Eye, EyeOff, ArrowRight, Shield, Zap, TrendingUp, KeyRound, ArrowLeft } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { state, login, verifyOtp, resendOtp, clearError } = useAuth();
   const [email, setEmail] = useState('admin1@company1.com');
   const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [localError, setLocalError] = useState('');
+
+  // ── OTP step state ──────────────────────────────────────────────────────────
+  const [otp, setOtp] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,13 +30,54 @@ export default function LoginPage() {
     setLocalError('');
 
     try {
-      await login(email, password);
-      router.push('/dashboard');
+      const requires2FA = await login(email, password);
+      if (!requires2FA) router.push('/dashboard');
     } catch (err: any) {
       setLocalError(err.message || 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsVerifying(true);
+    setLocalError('');
+
+    try {
+      if (!state.pendingToken) throw new Error('Verification session expired. Please log in again.');
+      await verifyOtp(state.pendingToken, otp);
+      router.push('/dashboard');
+    } catch (err: any) {
+      setLocalError(err.message || 'Verification failed. Please try again.');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setIsResending(true);
+    setLocalError('');
+    setResendMessage('');
+    try {
+      if (!state.pendingToken) throw new Error('Verification session expired. Please log in again.');
+      await resendOtp(state.pendingToken);
+      setResendMessage('A new code has been sent to your email.');
+    } catch (err: any) {
+      setLocalError(err.message || 'Failed to resend code.');
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const handleBackToCredentials = () => {
+    clearError();
+    setLocalError('');
+    setOtp('');
+    setResendMessage('');
+    // Reloading the credentials form is done by simply not being in the
+    // otpRequired state — easiest way back is a fresh login attempt.
+    window.location.reload();
   };
 
   return (
@@ -151,131 +198,218 @@ export default function LoginPage() {
         </div>
 
         <div className="relative z-10 w-full max-w-md space-y-8">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h2 className="text-3xl font-bold font-poppins text-foreground">Welcome Back</h2>
-            <p className="text-muted-foreground mt-2">Sign in to your Attack Aware dashboard</p>
-          </motion.div>
 
-          {/* Login Form */}
-          <motion.form
-            onSubmit={handleSubmit}
-            className="space-y-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            {localError && (
-              <motion.div
-                className="p-4 rounded-lg bg-red-500/20 border border-red-500/30 flex items-start gap-3"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                <span className="text-sm text-red-300">{localError}</span>
+          <AnimatePresence mode="wait">
+            {!state.otpRequired ? (
+              // ── STEP 1: EMAIL + PASSWORD ──────────────────────────────────────
+              <motion.div key="credentials" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8">
+                {/* Header */}
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <h2 className="text-3xl font-bold font-poppins text-foreground">Welcome Back</h2>
+                  <p className="text-muted-foreground mt-2">Sign in to your Attack Aware dashboard</p>
+                </motion.div>
+
+                {/* Login Form */}
+                <motion.form
+                  onSubmit={handleSubmit}
+                  className="space-y-6"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  {localError && (
+                    <motion.div
+                      className="p-4 rounded-lg bg-red-500/20 border border-red-500/30 flex items-start gap-3"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-red-300">{localError}</span>
+                    </motion.div>
+                  )}
+
+                  {/* Email Field */}
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}>
+                    <label className="block text-sm font-medium text-foreground mb-2">Email Address</label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-12 py-3 bg-muted/50 border-purple-500/20 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
+                        placeholder="you@company.com"
+                      />
+                    </div>
+                  </motion.div>
+
+                  {/* Password Field */}
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
+                    <label className="block text-sm font-medium text-foreground mb-2">Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-12 pr-12 py-3 bg-muted/50 border-purple-500/20 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-4 h-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </button>
+                    </div>
+                  </motion.div>
+
+                  {/* Remember Me and Forgot Password */}
+                  <motion.div
+                    className="flex items-center justify-between text-sm"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.45 }}
+                  >
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" className="w-4 h-4 rounded" defaultChecked />
+                      <span className="text-muted-foreground">Remember me</span>
+                    </label>
+                    <Link href="/forgot-password" className="text-purple-400 hover:text-purple-300 transition">
+                      Forgot password?
+                    </Link>
+                  </motion.div>
+
+                  {/* Login Button */}
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
+                    <Button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:shadow-lg hover:shadow-purple-500/30 disabled:opacity-50 py-3 font-semibold flex items-center justify-center gap-2"
+                    >
+                      {isLoading ? 'Signing in...' : (
+                        <>
+                          Sign In
+                          <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
+                    </Button>
+                  </motion.div>
+                </motion.form>
+
+                {/* Sign Up Link */}
+                <motion.p
+                  className="text-center text-muted-foreground text-sm"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.55 }}
+                >
+                  Don't have an account?{' '}
+                  <Link href="/register" className="text-purple-400 hover:text-purple-300 font-semibold transition">
+                    Sign up
+                  </Link>
+                </motion.p>
+
+                {/* Demo Info */}
+                <motion.div
+                  className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-sm text-blue-300"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                >
+                  Demo credentials pre-filled. Change them for your account.
+                </motion.div>
+              </motion.div>
+            ) : (
+              // ── STEP 2: OTP VERIFICATION ───────────────────────────────────────
+              <motion.div key="otp" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="space-y-8">
+                <button
+                  onClick={handleBackToCredentials}
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition"
+                >
+                  <ArrowLeft className="w-4 h-4" /> Back
+                </button>
+
+                <div>
+                  <div className="flex items-center gap-2 text-purple-400 text-sm font-medium mb-2">
+                    <KeyRound className="w-4 h-4" /> Two-Factor Verification
+                  </div>
+                  <h2 className="text-3xl font-bold font-poppins text-foreground">Check your email</h2>
+                  <p className="text-muted-foreground mt-2">
+                    We sent a 6-digit code to <span className="text-foreground font-medium">{state.pendingEmail}</span>.
+                    It expires in 10 minutes.
+                  </p>
+                </div>
+
+                <form onSubmit={handleVerifyOtp} className="space-y-6">
+                  {localError && (
+                    <motion.div
+                      className="p-4 rounded-lg bg-red-500/20 border border-red-500/30 flex items-start gap-3"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-red-300">{localError}</span>
+                    </motion.div>
+                  )}
+
+                  {resendMessage && !localError && (
+                    <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-sm text-green-300">
+                      {resendMessage}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">Verification Code</label>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                      className="py-3 text-center text-2xl tracking-[0.5em] font-bold bg-muted/50 border-purple-500/20 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
+                      placeholder="000000"
+                      autoFocus
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isVerifying || otp.length !== 6}
+                    className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:shadow-lg hover:shadow-purple-500/30 disabled:opacity-50 py-3 font-semibold flex items-center justify-center gap-2"
+                  >
+                    {isVerifying ? 'Verifying...' : (
+                      <>
+                        Verify & Sign In
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </Button>
+
+                  <p className="text-center text-sm text-muted-foreground">
+                    Didn't get a code?{' '}
+                    <button
+                      type="button"
+                      onClick={handleResend}
+                      disabled={isResending}
+                      className="text-purple-400 hover:text-purple-300 font-semibold transition disabled:opacity-50"
+                    >
+                      {isResending ? 'Sending...' : 'Resend code'}
+                    </button>
+                  </p>
+                </form>
               </motion.div>
             )}
-
-            {/* Email Field */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}>
-              <label className="block text-sm font-medium text-foreground mb-2">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-12 py-3 bg-muted/50 border-purple-500/20 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
-                  placeholder="you@company.com"
-                />
-              </div>
-            </motion.div>
-
-            {/* Password Field */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
-              <label className="block text-sm font-medium text-foreground mb-2">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-12 pr-12 py-3 bg-muted/50 border-purple-500/20 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20"
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4 text-muted-foreground" />
-                  ) : (
-                    <Eye className="w-4 h-4 text-muted-foreground" />
-                  )}
-                </button>
-              </div>
-            </motion.div>
-
-            {/* Remember Me and Forgot Password */}
-            <motion.div
-              className="flex items-center justify-between text-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.45 }}
-            >
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 rounded" defaultChecked />
-                <span className="text-muted-foreground">Remember me</span>
-              </label>
-              <Link href="/forgot-password" className="text-purple-400 hover:text-purple-300 transition">
-                Forgot password?
-              </Link>
-            </motion.div>
-
-            {/* Login Button */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:shadow-lg hover:shadow-purple-500/30 disabled:opacity-50 py-3 font-semibold flex items-center justify-center gap-2"
-              >
-                {isLoading ? 'Signing in...' : (
-                  <>
-                    Sign In
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </Button>
-            </motion.div>
-          </motion.form>
-
-          {/* Sign Up Link */}
-          <motion.p
-            className="text-center text-muted-foreground text-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.55 }}
-          >
-            Don't have an account?{' '}
-            <Link href="/register" className="text-purple-400 hover:text-purple-300 font-semibold transition">
-              Sign up
-            </Link>
-          </motion.p>
-
-          {/* Demo Info */}
-          <motion.div
-            className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-sm text-blue-300"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-          >
-            Demo credentials pre-filled. Change them for your account.
-          </motion.div>
+          </AnimatePresence>
         </div>
       </motion.div>
     </div>

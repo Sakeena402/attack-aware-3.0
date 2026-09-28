@@ -1,7 +1,9 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import { authenticate } from '../middleware/auth.js';
-import { User } from '../models/User.js';  // ✅ import User model
+import { User } from '../models/User.js';
+import { toggle2FA } from '../controllers/authController.js';
+import { otpRateLimiter } from '../middleware/security.js';
 
 const router = express.Router();
 
@@ -55,4 +57,10 @@ router.put('/change-password', authenticate, async (req, res) => {
   }
 });
 
-export default router;
+// TOGGLE 2FA
+// Phase 1 (enable=true, no code): sends OTP → returns { otpSent: true }
+// Phase 2 (enable=true, code):    verifies OTP → sets twoFactorEnabled=true
+// Disable (enable=false, password): verifies password → sets twoFactorEnabled=false
+router.patch('/me/2fa', authenticate, otpRateLimiter, toggle2FA);
+
+export default router;
