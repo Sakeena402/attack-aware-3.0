@@ -115,7 +115,7 @@ Output valid JSON matching the requested schema strictly.`;
       totalQuestions: generated.questions.length,
       order: 999,
       source: 'ai_generated',
-      companyId: employee.companyId || (payload.companyId ? new mongoose.Types.ObjectId(payload.companyId) : undefined),
+      companyId: employee.companyId || (payload.companyId ? new Types.ObjectId(payload.companyId) : undefined),
       status: 'published',
       triggerContext: {
         eventType: 'admin_manual',
