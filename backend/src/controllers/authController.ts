@@ -2,10 +2,32 @@
 import { Response } from 'express';
 import bcryptjs from 'bcryptjs';
 import { User } from '../models/User.js';
-import { generateToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
+import Otp from '../models/Otp.js';
+import {
+  generateToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+  generateOtpTempToken,
+  verifyOtpTempToken,
+} from '../utils/jwt.js';
 import { validateLoginRequest, validateRegisterRequest, sanitizeEmail } from '../utils/validators.js';
 import { AppError } from '../utils/errorHandler.js';
-import { AuthRequest, LoginRequest, RegisterRequest, ApiResponse } from '../types/index.js';
+import {
+  AuthRequest,
+  LoginRequest,
+  LoginOtpVerifyBody,
+  LoginOtpResendBody,
+  SignupOtpVerifyBody,
+  ResendSignupOtpBody,
+  Toggle2FABody,
+  RegisterRequest,
+  ApiResponse,
+} from '../types/index.js';
+import { createOtpRecord, verifyOtp as verifyOtpCode } from '../services/otpService.js';
+import { sendOtpEmail } from '../services/emailService.js';
+import crypto from 'crypto';
+
+// ─── Cookie Options ───────────────────────────────────────────────────────────
 
 const COOKIE_OPTS_ACCESS = {
   httpOnly: true,
@@ -21,6 +43,8 @@ const COOKIE_OPTS_REFRESH = {
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function buildUserPayload(user: InstanceType<typeof User>) {
   return {
     id: user._id,
@@ -31,10 +55,199 @@ function buildUserPayload(user: InstanceType<typeof User>) {
     department: user.department,
     points: user.points,
     badge: user.badge ?? 'Rookie',
+    twoFactorEnabled: user.twoFactorEnabled ?? false,
+    emailVerified: user.emailVerified ?? false,
   };
 }
 
-// ------------------- LOGIN -------------------
+/** Issues real JWT cookies and updates lastLogin. Shared by login() and verifyOtp(). */
+async function completeLogin(user: InstanceType<typeof User>, res: Response<ApiResponse>) {
+  const companyId = user.companyId?.toString();
+  const accessToken  = generateToken(user._id.toString(), user.email, user.role, companyId);
+  const refreshToken = generateRefreshToken(user._id.toString(), user.email, user.role, companyId);
+
+  res.cookie('accessToken',  accessToken,  COOKIE_OPTS_ACCESS);
+  res.cookie('refreshToken', refreshToken, COOKIE_OPTS_REFRESH);
+
+  user.lastLogin = new Date();
+  await user.save();
+
+  res.json({ success: true, data: { user: buildUserPayload(user) } });
+}
+
+// ─── REGISTER ─────────────────────────────────────────────────────────────────
+
+/**
+ * POST /api/auth/register
+ *
+ * Creates a user with emailVerified: false and sends a signup OTP.
+ * Does NOT issue a JWT — the client must call verify-signup-otp next.
+ */
+export const register = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    const { name, email, password } = req.body as RegisterRequest;
+
+    const validation = validateRegisterRequest(name, email, password);
+    if (!validation.valid) throw new AppError(validation.error || 'Validation failed', 400);
+
+    const sanitizedEmail = sanitizeEmail(email);
+    if (!sanitizedEmail) throw new AppError('Email sanitization failed', 500);
+
+    if (await User.findOne({ email: sanitizedEmail }))
+      throw new AppError('Email already registered', 409);
+
+    const passwordHash = await bcryptjs.hash(password, 10);
+    const newUser = new User({
+      name,
+      email: sanitizedEmail,
+      passwordHash,
+      role: 'individual',
+      department: 'General',
+      emailVerified: false,       // ← must verify email before getting a session
+      twoFactorEnabled: false,
+    });
+    await newUser.save();
+
+    // Create and send the signup OTP (pass userId now that the user exists)
+    const { code } = await createOtpRecord({
+      email: sanitizedEmail,
+      userId: newUser._id.toString(),
+      purpose: 'signup_verification',
+    });
+
+    await sendOtpEmail({ to: sanitizedEmail, code, purpose: 'signup_verification' });
+
+    // ← NO JWT issued here. Client must verify email first.
+    res.status(201).json({
+      success: true,
+      message: 'Account created. Check your email for a verification code.',
+    });
+  } catch (error: unknown) {
+    if (error instanceof AppError)
+      res.status(error.statusCode).json({ success: false, error: error.message });
+    else
+      res.status(500).json({ success: false, error: 'Registration failed' });
+  }
+};
+
+// ─── VERIFY SIGNUP OTP ────────────────────────────────────────────────────────
+
+/**
+ * POST /api/auth/verify-signup-otp
+ * Body: { email, code }
+ *
+ * Verifies the signup OTP; on success sets emailVerified=true and issues JWT.
+ */
+export const verifySignupOtp = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    const { email, code }: SignupOtpVerifyBody = req.body;
+    const sanitizedEmail = sanitizeEmail(email);
+    if (!sanitizedEmail) throw new AppError('Invalid email', 400);
+
+    const result = await verifyOtpCode({
+      email: sanitizedEmail,
+      purpose: 'signup_verification',
+      submittedCode: code,
+    });
+
+    if (!result.success) {
+      res.status(result.locked ? 429 : 400).json({
+        success: false,
+        error: result.locked
+          ? 'Too many incorrect attempts. Please request a new code.'
+          : 'Incorrect verification code.',
+        remainingAttempts: result.remainingAttempts ?? 0,
+        locked: result.locked ?? false,
+      });
+      return;
+    }
+
+    // Mark user as verified and issue full session
+    const user = await User.findOne({ email: sanitizedEmail });
+    if (!user) throw new AppError('User not found', 404);
+
+    user.emailVerified = true;
+    await user.save();
+
+    await completeLogin(user, res);
+  } catch (error: unknown) {
+    if (error instanceof AppError)
+      res.status(error.statusCode).json({ success: false, error: error.message });
+    else
+      res.status(500).json({ success: false, error: 'Signup verification failed' });
+  }
+};
+
+// ─── RESEND SIGNUP OTP ────────────────────────────────────────────────────────
+
+/**
+ * POST /api/auth/resend-signup-otp
+ * Body: { email }
+ *
+ * Resends the signup OTP (enforces 60-second cooldown inside createOtpRecord).
+ */
+export const resendSignupOtp = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    const { email }: ResendSignupOtpBody = req.body;
+    const sanitizedEmail = sanitizeEmail(email);
+    if (!sanitizedEmail) throw new AppError('Invalid email', 400);
+
+    const user = await User.findOne({ email: sanitizedEmail });
+    if (!user) {
+      // Return success to avoid user enumeration
+      res.json({ success: true, message: 'If that email is registered, a code has been sent.' });
+      return;
+    }
+
+    if (user.emailVerified) {
+      res.status(400).json({ success: false, error: 'Email is already verified.' });
+      return;
+    }
+
+    const { code } = await createOtpRecord({
+      email: sanitizedEmail,
+      userId: user._id.toString(),
+      purpose: 'signup_verification',
+    });
+
+    await sendOtpEmail({ to: sanitizedEmail, code, purpose: 'signup_verification' });
+
+    res.json({ success: true, message: 'A new verification code has been sent.' });
+  } catch (error: unknown) {
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({
+        success: false,
+        error: error.message,
+        retryAfterSeconds:
+          typeof error.details?.retryAfterSeconds === 'number'
+            ? error.details.retryAfterSeconds
+            : undefined,
+      });
+      return;
+    }
+    res.status(500).json({ success: false, error: 'Failed to resend code' });
+  }
+};
+
+// ─── LOGIN ────────────────────────────────────────────────────────────────────
+
+/**
+ * POST /api/auth/login
+ * Body: { email, password }
+ *
+ * Step 1 of the login flow.
+ * - If twoFactorEnabled === false → issues JWT immediately (unchanged behavior)
+ * - If twoFactorEnabled === true  → sends OTP, returns { requires2FA: true, tempToken }
+ */
 export const login = async (
   req: AuthRequest,
   res: Response<ApiResponse>
@@ -52,87 +265,143 @@ export const login = async (
     if (!user) throw new AppError('Invalid credentials', 401);
     if (!user.passwordHash) throw new AppError('User password not set properly', 500);
 
+    // Password check FIRST — wrong password must never reach the OTP stage
     const isPasswordValid = await bcryptjs.compare(password, user.passwordHash);
     if (!isPasswordValid) throw new AppError('Invalid credentials', 401);
 
-    const accessToken = generateToken(user._id.toString(), user.email, user.role, user.companyId?.toString());
-    const refreshToken = generateRefreshToken(user._id.toString(), user.email, user.role, user.companyId?.toString());
+    // If 2FA is disabled: direct login
+    if (!user.twoFactorEnabled) {
+      await completeLogin(user, res);
+      return;
+    }
 
-    res.cookie('accessToken', accessToken, COOKIE_OPTS_ACCESS);
-    res.cookie('refreshToken', refreshToken, COOKIE_OPTS_REFRESH);
-
-    user.lastLogin = new Date();
-    await user.save();
-
-    // Only user data is returned — tokens live exclusively in httpOnly cookies
-    res.json({
-      success: true,
-      data: { user: buildUserPayload(user) },
+    // 2FA is enabled: send OTP and return a short-lived temp token
+    const { code } = await createOtpRecord({
+      userId: user._id.toString(),
+      email: user.email,
+      purpose: 'login_verification',
     });
-  } catch (error: any) {
+
+    await sendOtpEmail({ to: user.email, code, purpose: 'login_verification' });
+
+    const tempToken = generateOtpTempToken(user._id.toString());
+
+    res.status(200).json({
+      success: true,
+      data: { requires2FA: true, tempToken, email: user.email },
+      message: 'Verification code sent to your email.',
+    });
+  } catch (error: unknown) {
     console.error('LOGIN ERROR:', error);
-    if (error instanceof AppError)
+    if (error instanceof AppError) {
       res.status(error.statusCode).json({ success: false, error: error.message });
-    else
-      res.status(500).json({ success: false, error: error?.message || 'Login failed' });
+      return;
+    }
+    res.status(500).json({ success: false, error: 'Login failed' });
   }
 };
 
-// ------------------- REGISTER -------------------
-export const register = async (
+// ─── VERIFY LOGIN OTP ─────────────────────────────────────────────────────────
+
+/**
+ * POST /api/auth/verify-otp
+ * Body: { tempToken, code }
+ *
+ * Step 2 of the 2FA login flow. Verifies the OTP then completes the session.
+ */
+export const verifyOtp = async (
   req: AuthRequest,
   res: Response<ApiResponse>
 ): Promise<void> => {
   try {
-    const { name, email, password, role: _role } = req.body as RegisterRequest;
+    const { tempToken, code }: LoginOtpVerifyBody = req.body;
+    const tokenPayload = verifyOtpTempToken(tempToken);
+    if (!tokenPayload) throw new AppError('Invalid or expired verification token.', 401);
 
-    const validation = validateRegisterRequest(name, email, password);
-    if (!validation.valid) throw new AppError(validation.error || 'Validation failed', 400);
+    const user = await User.findById(tokenPayload.userId);
+    if (!user || !user.twoFactorEnabled) throw new AppError('Invalid verification request.', 401);
 
-    const sanitizedEmail = sanitizeEmail(email);
-    if (!sanitizedEmail) throw new AppError('Email sanitization failed', 500);
-
-    if (await User.findOne({ email: sanitizedEmail }))
-      throw new AppError('Email already registered', 409);
-
-    const passwordHash = await bcryptjs.hash(password, 10);
-    const newUser = new User({
-      name,
-      email: sanitizedEmail,
-      passwordHash,
-      // Public self-registration always creates an 'individual' account.
-      // Employees are created by a company admin via POST /api/employees.
-      role: 'individual',
-      department: 'General',
+    const result = await verifyOtpCode({
+      email: user.email,
+      purpose: 'login_verification',
+      submittedCode: code,
     });
-    await newUser.save();
 
-    const newAccessToken = generateToken(
-      newUser._id.toString(), 
-      newUser.email,
-      newUser.role, // Now 'admin'
-      newUser.companyId?.toString() // Now newCompany._id
-    );const newRefreshToken = generateRefreshToken(
-      newUser._id.toString(), 
-      newUser.email,
-      newUser.role, // Now 'admin'
-      newUser.companyId?.toString() // Now newCompany._id
-    );res.cookie('accessToken', newAccessToken, COOKIE_OPTS_ACCESS);
-    res.cookie('refreshToken', newRefreshToken, COOKIE_OPTS_REFRESH);
+    if (!result.success) {
+      res.status(result.locked ? 429 : 400).json({
+        success: false,
+        error: result.locked
+          ? 'Too many incorrect attempts. Request a new code.'
+          : 'Incorrect verification code.',
+        remainingAttempts: result.remainingAttempts ?? 0,
+        locked: result.locked ?? false,
+      });
+      return;
+    }
 
-    res.status(201).json({
-      success: true,
-      data: { user: buildUserPayload(newUser) },
-    });
-  } catch (error: any) {
-    if (error instanceof AppError)
+    await completeLogin(user, res);
+  } catch (error: unknown) {
+    console.error('VERIFY OTP ERROR:', error);
+    if (error instanceof AppError) {
       res.status(error.statusCode).json({ success: false, error: error.message });
-    else
-      res.status(500).json({ success: false, error: 'Registration failed' });
+      return;
+    }
+    res.status(500).json({ success: false, error: 'Verification failed' });
   }
 };
 
-// ------------------- GET CURRENT USER (/auth/me) -------------------
+// ─── RESEND LOGIN OTP ─────────────────────────────────────────────────────────
+
+/**
+ * POST /api/auth/resend-otp
+ * Body: { tempToken }
+ *
+ * Resends the login OTP and issues a fresh tempToken.
+ */
+export const resendOtp = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    const { tempToken }: LoginOtpResendBody = req.body;
+    const tokenPayload = verifyOtpTempToken(tempToken);
+    if (!tokenPayload) throw new AppError('Invalid or expired verification token.', 401);
+
+    const user = await User.findById(tokenPayload.userId);
+    if (!user || !user.twoFactorEnabled) throw new AppError('Invalid verification request.', 401);
+
+    const { code } = await createOtpRecord({
+      userId: user._id.toString(),
+      email: user.email,
+      purpose: 'login_verification',
+    });
+
+    await sendOtpEmail({ to: user.email, code, purpose: 'login_verification' });
+
+    res.json({
+      success: true,
+      message: 'A new verification code has been sent.',
+      data: { tempToken: generateOtpTempToken(user._id.toString()) },
+    });
+  } catch (error: unknown) {
+    console.error('RESEND OTP ERROR:', error);
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({
+        success: false,
+        error: error.message,
+        retryAfterSeconds:
+          typeof error.details?.retryAfterSeconds === 'number'
+            ? error.details.retryAfterSeconds
+            : undefined,
+      });
+      return;
+    }
+    res.status(500).json({ success: false, error: 'Failed to resend code' });
+  }
+};
+
+// ─── GET CURRENT USER ─────────────────────────────────────────────────────────
+
 export const getCurrentUser = async (
   req: AuthRequest,
   res: Response<ApiResponse>
@@ -143,12 +412,8 @@ export const getCurrentUser = async (
     const user = await User.findById(req.user.id).select('-passwordHash');
     if (!user) throw new AppError('User not found', 404);
 
-    // Shape matches AuthResponse.user on the frontend
-    res.json({
-      success: true,
-      data: buildUserPayload(user),
-    });
-  } catch (error: any) {
+    res.json({ success: true, data: buildUserPayload(user) });
+  } catch (error: unknown) {
     if (error instanceof AppError)
       res.status(error.statusCode).json({ success: false, error: error.message });
     else
@@ -156,14 +421,14 @@ export const getCurrentUser = async (
   }
 };
 
-// ------------------- REFRESH TOKEN -------------------
+// ─── REFRESH TOKEN ────────────────────────────────────────────────────────────
+
 export const refreshTokenHandler = async (
   req: AuthRequest,
   res: Response<ApiResponse>
 ): Promise<void> => {
   try {
-    // The refreshToken cookie is read from the request automatically — no body needed
-    const token = req.cookies.refreshToken;
+    const token = req.cookies.refreshToken as string | undefined;
     if (!token) throw new AppError('Refresh token missing', 401);
 
     const decoded = verifyRefreshToken(token);
@@ -172,39 +437,39 @@ export const refreshTokenHandler = async (
     const user = await User.findById(decoded.id).select('-passwordHash');
     if (!user) throw new AppError('User not found', 404);
 
-    const newAccessToken = generateToken(user._id.toString(), user.email, user.role, user.companyId?.toString());
-    const newRefreshToken = generateRefreshToken(user._id.toString(), user.email, user.role, user.companyId?.toString());
+    const companyId = user.companyId?.toString();
+    const newAccessToken  = generateToken(user._id.toString(), user.email, user.role, companyId);
+    const newRefreshToken = generateRefreshToken(user._id.toString(), user.email, user.role, companyId);
 
-    // Rotate both cookies
-    res.cookie('accessToken', newAccessToken, COOKIE_OPTS_ACCESS);
+    res.cookie('accessToken',  newAccessToken,  COOKIE_OPTS_ACCESS);
     res.cookie('refreshToken', newRefreshToken, COOKIE_OPTS_REFRESH);
 
-    res.json({
-      success: true,
-      data: { user: buildUserPayload(user) },
-    });
-  } catch (error: any) {
+    res.json({ success: true, data: { user: buildUserPayload(user) } });
+  } catch (error: unknown) {
     console.error('REFRESH ERROR:', error);
-    res.status(401).json({ success: false, error: error.message || 'Token refresh failed' });
+    if (error instanceof AppError)
+      res.status(error.statusCode).json({ success: false, error: error.message });
+    else
+      res.status(401).json({ success: false, error: 'Token refresh failed' });
   }
 };
 
-// ------------------- LOGOUT -------------------
+// ─── LOGOUT ───────────────────────────────────────────────────────────────────
+
 export const logout = (_req: AuthRequest, res: Response<ApiResponse>) => {
-  res.clearCookie('accessToken', COOKIE_OPTS_ACCESS);
+  res.clearCookie('accessToken',  COOKIE_OPTS_ACCESS);
   res.clearCookie('refreshToken', COOKIE_OPTS_REFRESH);
   res.json({ success: true });
 };
 
-import crypto from 'crypto';
+// ─── FORGOT PASSWORD ──────────────────────────────────────────────────────────
 
-// ------------------- FORGOT PASSWORD -------------------
 export const forgotPassword = async (
   req: AuthRequest,
   res: Response<ApiResponse>
 ): Promise<void> => {
   try {
-    const { email } = req.body;
+    const { email } = req.body as { email: string };
     if (!email) throw new AppError('Please provide an email address', 400);
 
     const user = await User.findOne({ email });
@@ -215,28 +480,31 @@ export const forgotPassword = async (
     user.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000);
     await user.save({ validateBeforeSave: false });
 
-    // Mock sending email (since no mail setup found)
     console.log(`[EMAIL MOCK] To: ${user.email}, Subject: Password Reset, Body: Your reset token is ${resetToken}`);
 
     res.json({ success: true, message: 'Token sent to email!' });
-  } catch (error: any) {
-    res.status(error.statusCode || 500).json({ success: false, error: error.message || 'Error processing forgot password' });
+  } catch (error: unknown) {
+    if (error instanceof AppError)
+      res.status(error.statusCode).json({ success: false, error: error.message });
+    else
+      res.status(500).json({ success: false, error: 'Error processing forgot password' });
   }
 };
 
-// ------------------- RESET PASSWORD -------------------
+// ─── RESET PASSWORD ───────────────────────────────────────────────────────────
+
 export const resetPassword = async (
   req: AuthRequest,
   res: Response<ApiResponse>
 ): Promise<void> => {
   try {
-    const { token, password } = req.body;
+    const { token, password } = req.body as { token: string; password: string };
     if (!token || !password) throw new AppError('Please provide token and new password', 400);
 
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
     const user = await User.findOne({
       passwordResetToken: hashedToken,
-      passwordResetExpires: { $gt: new Date() }
+      passwordResetExpires: { $gt: new Date() },
     });
 
     if (!user) throw new AppError('Token is invalid or has expired', 400);
@@ -247,12 +515,16 @@ export const resetPassword = async (
     await user.save();
 
     res.json({ success: true, message: 'Password reset successfully!' });
-  } catch (error: any) {
-    res.status(error.statusCode || 500).json({ success: false, error: error.message || 'Error resetting password' });
+  } catch (error: unknown) {
+    if (error instanceof AppError)
+      res.status(error.statusCode).json({ success: false, error: error.message });
+    else
+      res.status(500).json({ success: false, error: 'Error resetting password' });
   }
 };
 
-// ------------------- SEND CREDENTIALS -------------------
+// ─── SEND CREDENTIALS (admin) ─────────────────────────────────────────────────
+
 export const sendCredentials = async (
   req: AuthRequest,
   res: Response<ApiResponse>
@@ -262,10 +534,10 @@ export const sendCredentials = async (
       throw new AppError('Access denied', 403);
     }
 
-    const { employeeId, newPassword } = req.body;
+    const { employeeId, newPassword } = req.body as { employeeId: string; newPassword: string };
     if (!employeeId || !newPassword) throw new AppError('Provide employeeId and newPassword', 400);
 
-    const query: any = { _id: employeeId };
+    const query: Record<string, unknown> = { _id: employeeId };
     if (req.user.role === 'admin') {
       query.companyId = req.user.companyId;
     }
@@ -276,11 +548,111 @@ export const sendCredentials = async (
     employee.passwordHash = await bcryptjs.hash(newPassword, 10);
     await employee.save();
 
-    // Mock sending email
     console.log(`[EMAIL MOCK] To: ${employee.email}, Subject: Your new login credentials, Body: Your new password is ${newPassword}`);
 
     res.json({ success: true, message: 'Credentials sent to employee' });
-  } catch (error: any) {
-    res.status(error.statusCode || 500).json({ success: false, error: error.message || 'Error sending credentials' });
+  } catch (error: unknown) {
+    if (error instanceof AppError)
+      res.status(error.statusCode).json({ success: false, error: error.message });
+    else
+      res.status(500).json({ success: false, error: 'Error sending credentials' });
+  }
+};
+
+// ─── TOGGLE 2FA ───────────────────────────────────────────────────────────────
+
+/**
+ * PATCH /api/users/me/2fa
+ * Body: { enable: boolean, code?: string, password?: string }
+ *
+ * Enabling (enable: true):
+ *   Phase 1 — no code in body → generate OTP, email it, return { otpSent: true }
+ *   Phase 2 — code in body   → verify OTP, on success set twoFactorEnabled: true
+ *
+ * Disabling (enable: false):
+ *   Requires current password in body
+ *   On success: set twoFactorEnabled: false, delete any pending login OTP records
+ */
+export const toggle2FA = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    if (!req.user) throw new AppError('Not authenticated', 401);
+
+    const { enable, code, password }: Toggle2FABody = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) throw new AppError('User not found', 404);
+
+    // ── Enabling ──────────────────────────────────────────────────────────────
+    if (enable) {
+      if (!code) {
+        // Phase 1: send OTP
+        const { code: otpCode } = await createOtpRecord({
+          email: user.email,
+          userId: user._id.toString(),
+          purpose: 'signup_verification',  // reuse signup_verification purpose for 2FA enable
+        });
+
+        await sendOtpEmail({ to: user.email, code: otpCode, purpose: 'signup_verification' });
+
+        res.json({ success: true, data: { otpSent: true }, message: 'Verification code sent to your email.' });
+        return;
+      }
+
+      // Phase 2: verify OTP
+      const result = await verifyOtpCode({
+        email: user.email,
+        purpose: 'signup_verification',
+        submittedCode: code,
+      });
+
+      if (!result.success) {
+        res.status(result.locked ? 429 : 400).json({
+          success: false,
+          error: result.locked
+            ? 'Too many incorrect attempts. Request a new code.'
+            : 'Incorrect verification code.',
+          remainingAttempts: result.remainingAttempts ?? 0,
+        });
+        return;
+      }
+
+      user.twoFactorEnabled = true;
+      await user.save();
+
+      res.json({ success: true, message: '2FA has been enabled for your account.' });
+      return;
+    }
+
+    // ── Disabling ─────────────────────────────────────────────────────────────
+    if (!password) {
+      throw new AppError('Current password is required to disable 2FA.', 400);
+    }
+
+    const isPasswordValid = await bcryptjs.compare(password, user.passwordHash);
+    if (!isPasswordValid) throw new AppError('Incorrect password.', 401);
+
+    user.twoFactorEnabled = false;
+    await user.save();
+
+    // Clean up any pending login OTP records for this user
+    await Otp.deleteMany({ email: user.email, purpose: 'login_verification' });
+
+    res.json({ success: true, message: '2FA has been disabled for your account.' });
+  } catch (error: unknown) {
+    console.error('TOGGLE 2FA ERROR:', error);
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({
+        success: false,
+        error: error.message,
+        retryAfterSeconds:
+          typeof error.details?.retryAfterSeconds === 'number'
+            ? error.details.retryAfterSeconds
+            : undefined,
+      });
+      return;
+    }
+    res.status(500).json({ success: false, error: '2FA toggle failed' });
   }
 };
