@@ -157,6 +157,19 @@ export const authRateLimiter = rateLimit({
   },
 });
 
+export const otpRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: {
+    success: false,
+    error: 'Too many verification requests. Please try again later.',
+    errorCode: ErrorCodes.RATE_LIMIT_EXCEEDED,
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip || 'unknown',
+});
+
 // API rate limiter (for general API endpoints)
 export const apiRateLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
