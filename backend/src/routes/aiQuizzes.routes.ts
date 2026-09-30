@@ -11,6 +11,7 @@ import { QUIZ_TOPICS, QuizTopic, getNextQuizTopic } from '../services/ai/quizTop
 import { enqueueAdminQuiz } from '../queues/trackingQueue.js';
 import { runMonthlyQuizGeneration } from '../services/ai/monthlyQuizService.js';
 import { generateAdminQuiz } from '../services/ai/adminQuizService.js';
+import { enforceAiQuizGenerate } from '../middleware/planLimits.js';
 
 export const aiQuizzesRouter = Router();
 
@@ -161,6 +162,7 @@ aiQuizzesRouter.post(
   '/:id/retry',
   authenticate,
   authorize('admin', 'super_admin'),
+  enforceAiQuizGenerate,
   async (req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
     try {
       const quiz = await findAndValidateQuizTenant(req.params.id, req.user);
@@ -324,6 +326,7 @@ aiQuizzesRouter.post(
   '/generate-for-employee',
   authenticate,
   authorize('admin', 'super_admin'),
+  enforceAiQuizGenerate,
   async (req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
     try {
       const { employeeIds, topicMode, topic, dueInDays } = req.body as {

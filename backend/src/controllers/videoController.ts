@@ -4,6 +4,7 @@ import { Video } from '../models/Video.js';
 import { UserVideo } from '../models/UserVideo.js';
 import { updateUserPoints } from '../services/analyticsService.js';
 import { completeLinkedTasks } from '../services/taskService.js';
+import { awardMonthlyPoints } from '../services/pointsGuard.js';
 import { AppError } from '../utils/errorHandler.js';
 
 export const getVideos = async (_req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
@@ -36,11 +37,18 @@ export const watchVideo = async (req: AuthRequest, res: Response<ApiResponse>): 
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    await updateUserPoints(userId, 'video_completed');
+    // Points only the first time this video is completed each month
+    const pointsGiven = await awardMonthlyPoints(userId, 'video', videoId, () =>
+      updateUserPoints(userId, 'video_completed')
+    );
 
     await completeLinkedTasks(userId, 'video', videoId);
 
-    res.json({ success: true, data: userVideo });
+    res.json({
+      success: true,
+      data: userVideo,
+      ...(pointsGiven ? {} : { message: 'Already completed this month, so no extra points were awarded.' }),
+    });
   } catch (error: any) {
     res.status(error.statusCode || 500).json({ success: false, error: error.message });
   }

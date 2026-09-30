@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useSWR from 'swr';
 import { useParams, useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { quizApi, QuizQuestion } from '@/app/services/quizApi';
+import { LimitNotice } from '@/components/dashboard/LimitNotice';
+import { toMessage, isPlanError } from '@/app/services/errorMessage';
 import { Clock, Globe, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
 
 const TIME_PER_QUESTION = 40;
@@ -17,19 +19,22 @@ export default function QuizAttemptPage() {
   const [phase,    setPhase]    = useState<'rules' | 'quiz' | 'result'>('rules');
   const [lang,     setLang]     = useState<'en' | 'ur'>('en');
   const [current,  setCurrent]  = useState(0);
-  const [answers,  setAnswers]  = useState<Record<string, string>>({});
+  // Answers are kept in a ref so the final submit always includes the last answer
+  const answersRef = useRef<Record<string, string>>({});
   const [selected, setSelected] = useState<string | null>(null);
   const [correct,  setCorrect]  = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(TIME_PER_QUESTION);
   const [timeLine, setTimeLine] = useState(0);
   const [score,    setScore]    = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<{ message: string; isPlan: boolean } | null>(null);
   const [result,   setResult]   = useState<any>(null);
 
-  const { data: questions = [], isLoading } = useSWR<QuizQuestion[]>(
-    phase !== 'rules' ? `quiz-questions:${id}` : null,
+  // Loaded as soon as the page opens so a plan limit is shown before the rules screen
+  const { data: questions = [], error, isLoading } = useSWR<QuizQuestion[]>(
+    `quiz-questions:${id}`,
     () => quizApi.getQuestions(id),
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false, shouldRetryOnError: false }
   );
 
   const q = questions[current];
@@ -59,8 +64,7 @@ export default function QuizAttemptPage() {
     if (selected) return;
     setSelected(opt);
     setCorrect(q.correctOption);
-    const newAnswers = { ...answers, [q._id]: opt };
-    setAnswers(newAnswers);
+    answersRef.current = { ...answersRef.current, [q._id]: opt };
     if (opt === q.correctOption) setScore(s => s + 1);
     setTimeout(moveNext, 1200);
   };
@@ -79,10 +83,16 @@ export default function QuizAttemptPage() {
 
   const handleSubmit = async () => {
     setSubmitting(true);
+    setSubmitError(null);
     try {
-      const res = await quizApi.submit(id, answers);
+      const res = await quizApi.submit(id, answersRef.current);
       setResult(res);
       setPhase('result');
+    } catch (err) {
+      setSubmitError({
+        message: toMessage(err, "Couldn't submit your quiz. Please try again."),
+        isPlan: isPlanError(err),
+      });
     } finally {
       setSubmitting(false);
     }
@@ -102,6 +112,38 @@ export default function QuizAttemptPage() {
 
   if (isLoading && phase !== 'rules') {
     return <div className="h-64 bg-slate-700 rounded-xl animate-pulse" />;
+  }
+
+  // Could not load the quiz (plan limit, not found, network)
+  if (error) {
+    const plan = isPlanError(error);
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <LimitNotice
+          message={toMessage(error, "Couldn't load this quiz. Please try again.")}
+          isPlan={plan}
+          title={plan ? undefined : "Couldn't load this quiz"}
+          onBack={() => router.back()}
+          backLabel="Back to Quizzes"
+        />
+      </div>
+    );
+  }
+
+  // Could not submit the finished quiz
+  if (submitError) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <LimitNotice
+          message={submitError.message}
+          isPlan={submitError.isPlan}
+          title={submitError.isPlan ? undefined : "Couldn't submit your quiz"}
+          onBack={() => router.push('/dashboard/quizzes')}
+          backLabel="All Quizzes"
+          onRetry={submitError.isPlan ? undefined : handleSubmit}
+        />
+      </div>
+    );
   }
 
   return (
@@ -297,13 +339,14 @@ export default function QuizAttemptPage() {
                   onClick={() => {
                     setPhase('rules');
                     setCurrent(0);
-                    setAnswers({});
+                    answersRef.current = {};
                     setSelected(null);
                     setCorrect(null);
                     setScore(0);
                     setTimeLeft(TIME_PER_QUESTION);
                     setTimeLine(0);
                     setResult(null);
+                    setSubmitError(null);
                   }}
                   className="px-6 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 text-white text-sm font-medium"
                 >
