@@ -421,11 +421,12 @@ export const launchCampaign = async (
       campaign.sentCount = targets.length;
       await campaign.save();
 
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
         data: { campaign },
         message: `Vishing awareness campaign launched for ${targets.length} employee(s).`,
       });
+      return;
     }
 
     campaign.status = 'active';

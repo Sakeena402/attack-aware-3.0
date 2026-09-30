@@ -77,8 +77,8 @@ export const apiLimiter = createRateLimiter({
 });
 
 export const authLimiter = createRateLimiter({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  maxRequests: 20,
+  windowMs:  60 * 1000, // 1 minute
+  maxRequests: 10,
   message: 'Too many authentication attempts',
 });
 
