@@ -10,16 +10,20 @@ import {
   quizResponseSchema,
   GeneratedQuizPayload,
 } from './adaptiveQuizService.js';
+import { companyAllowsAiQuizzes } from '../planLimitsService.js';
 
 export const DEFAULT_QUIZ_DUE_DAYS = parseInt(process.env.DEFAULT_QUIZ_DUE_DAYS || '14', 10);
 
 export interface MonthlyQuizGenerationResult {
   successfulCompanies: number;
   failedCompanies: number;
+  /** Companies skipped because their plan does not include AI quizzes */
+  skippedCompanies: number;
   results: Array<{
     companyId: string;
     companyName: string;
     success: boolean;
+    skipped?: boolean;
     quizId?: string;
     topic?: string;
     taskCount?: number;
@@ -34,6 +38,7 @@ export const runMonthlyQuizGeneration = async (
   const summary: MonthlyQuizGenerationResult = {
     successfulCompanies: 0,
     failedCompanies: 0,
+    skippedCompanies: 0,
     results: [],
   };
 
@@ -47,6 +52,22 @@ export const runMonthlyQuizGeneration = async (
     const companyIdStr = company._id.toString();
 
     console.log(`[MonthlyQuiz] 🏢 Processing company="${company.companyName}" (${companyIdStr})`);
+
+    // Plan gate: only companies whose plan includes AI quizzes get one
+    if (!(await companyAllowsAiQuizzes(company._id))) {
+      summary.skippedCompanies++;
+      summary.results.push({
+        companyId: companyIdStr,
+        companyName: company.companyName,
+        success: false,
+        skipped: true,
+        error: 'Plan does not include AI quizzes',
+      });
+      console.log(
+        `[MonthlyQuiz] ⏭️  Skipped company="${company.companyName}" — plan does not include AI quizzes`
+      );
+      continue;
+    }
 
     try {
       const topic = getNextQuizTopic(company.lastMonthlyQuizTopic);
@@ -184,7 +205,7 @@ Output valid JSON matching the requested schema strictly.`;
   }
 
   console.log(
-    `[MonthlyQuiz] 🏁 Monthly run complete | succeeded=${summary.successfulCompanies} | failed=${summary.failedCompanies}`
+    `[MonthlyQuiz] 🏁 Monthly run complete | succeeded=${summary.successfulCompanies} | failed=${summary.failedCompanies} | skipped=${summary.skippedCompanies}`
   );
 
   return summary;

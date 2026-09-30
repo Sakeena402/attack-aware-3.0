@@ -13,4 +13,8 @@ export const videoApi = {
     const res = await apiService.get<WatchedVideo[]>('/videos/me/completed');
     return res.data;
   },
+  /** Throws a 403 ApiError when the monthly video allowance is used up. */
+  checkAccess: async (videoId: string): Promise<void> => {
+    await apiService.get<void>(`/videos/${videoId}/access`);
+  },
 };

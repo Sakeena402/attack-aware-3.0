@@ -1,21 +1,31 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { authorizeRoles } from '../middleware/rbac.js';
-import { getPlans, createPlan, subscribeToPlan } from '../controllers/planController.js';
+import {
+  getPlans,
+  createPlan,
+  subscribeToPlan,
+  getMySubscriptionRequest,
+  getMyIndividualPlan,
+  getMyAllowance,
+} from '../controllers/planController.js';
 
 const router = Router();
-// All plan routes require auth
 router.use(authenticate);
 
-// Reading plans: any authenticated role
 router.get('/', getPlans);
-
-// Creating/modifying global plan catalog: super_admin ONLY
-// (MembershipPlan has no companyId — it is a platform-wide catalog)
 router.post('/', authorizeRoles('super_admin'), createPlan);
 
-// A company admin or individual subscribes their company to a plan
-// Individual needs this to subscribe before creating their own company
-router.post('/subscribe', authorizeRoles('admin', 'super_admin', 'individual'), subscribeToPlan);
+// admin (company) or individual requests a plan → pending SubscriptionRequest, does not activate
+router.post('/subscribe', authorizeRoles('admin', 'individual'), subscribeToPlan);
+
+// admin or individual checks their own latest request
+router.get('/subscribe/status', authorizeRoles('admin', 'individual'), getMySubscriptionRequest);
+
+// individual: current plan
+router.get('/my-plan', authorizeRoles('individual'), getMyIndividualPlan);
+
+// any logged-in user: the monthly content allowance the UI should lock to
+router.get('/my-allowance', getMyAllowance);
 
 export default router;

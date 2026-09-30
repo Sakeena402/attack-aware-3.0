@@ -6,13 +6,23 @@ import { useRouter } from 'next/navigation';
 import {
   Shield, Gamepad2, Video, Bug,
   Lightbulb, TrendingUp, MessageSquare, Wrench,
-  ChevronRight,
+  ChevronRight, Building2,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 
 // ── Feature cards config ──────────────────────────────────────────────────────
 
 const EN_FEATURES = [
+  {
+    icon: Building2,
+    title: 'Create Your Company',
+    desc: 'Register your organization to unlock enterprise training, simulations, and analytics for your team.',
+    btn: 'Get Started',
+    href: '/dashboard/create-company',
+    color: 'from-pink-500/20 to-pink-600/10',
+    iconColor: 'text-pink-400',
+    border: 'hover:border-pink-500/50',
+  },
   {
     icon: Shield,
     title: 'Security Quizzes',
@@ -96,6 +106,16 @@ const EN_FEATURES = [
 ];
 
 const UR_FEATURES = [
+  {
+    icon: Building2,
+    title: 'اپنی کمپنی بنائیں',
+    desc: 'اپنی ٹیم کے لیے انٹرپرائز ٹریننگ، سمولیشنز اور تجزیات کھولنے کے لیے اپنی تنظیم رجسٹر کریں۔',
+    btn: 'شروع کریں',
+    href: '/dashboard/create-company',
+    color: 'from-pink-500/20 to-pink-600/10',
+    iconColor: 'text-pink-400',
+    border: 'hover:border-pink-500/50',
+  },
   {
     icon: Shield,
     title: 'سیکیورٹی کوئزز',

@@ -9,6 +9,7 @@ import { useAuth } from '@/app/context/authContext';
 import { leaderboardApi } from '@/app/services/leaderboardApi';
 import { employeeApi } from '@/app/services/employeeApi';
 import type { LeaderboardEntry } from '@/app/services/types';
+import { PlanGate } from '@/components/dashboard/PlanGate';
 import {
   Trophy, Medal, Award, TrendingUp, TrendingDown,
   Minus, Crown, Star, Users,
@@ -76,6 +77,7 @@ export default function LeaderboardPage() {
   const currentUserRank = leaderboard.findIndex(e => e.userId === state.user?.id);
 
   return (
+    <PlanGate>
     <div className="space-y-8">
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
@@ -286,5 +288,6 @@ export default function LeaderboardPage() {
         </motion.div>
       )}
     </div>
+    </PlanGate>
   );
 }

@@ -7,6 +7,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { gameApi, Game } from '@/app/services/gameApi';
 import { useAuth } from '@/app/context/authContext';
+import { LimitNotice } from '@/components/dashboard/LimitNotice';
+import { toMessage, isPlanError } from '@/app/services/errorMessage';
 import { ArrowLeft, Trophy, CheckCircle } from 'lucide-react';
 
 const DIFF_COLORS: Record<string, string> = {
@@ -39,12 +41,12 @@ export default function GamePlayPage() {
   const [scoreSaved, setScoreSaved] = useState(false);
   const [finalScore, setFinalScore] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  const { data: game, isLoading } = useSWR<Game>(
+  const { data: game, error: gameError, isLoading } = useSWR<Game>(
     `game:${id}`,
     () => gameApi.getById(id),
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false, shouldRetryOnError: false }
   );
 
   useEffect(() => {
@@ -54,12 +56,14 @@ export default function GamePlayPage() {
         const s = Number(event.data.score ?? 0);
         setFinalScore(s);
         setSaving(true);
-        setSaveError(false);
+        setSaveError(null);
         try {
           await gameApi.saveScore(id, s);
           setScoreSaved(true);
-        } catch {
-          setSaveError(true);
+        } catch (err) {
+          setSaveError(
+            toMessage(err, "Couldn't save your score — check your connection and try again.")
+          );
         } finally {
           setSaving(false);
         }
@@ -84,7 +88,15 @@ export default function GamePlayPage() {
         <button onClick={() => router.back()} className="flex items-center gap-2 text-slate-400 hover:text-white text-sm">
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
-        <p className="text-slate-400">Game not found</p>
+        {gameError && isPlanError(gameError) ? (
+          <LimitNotice
+            message={toMessage(gameError)}
+            onBack={() => router.back()}
+            backLabel="Back to Training"
+          />
+        ) : (
+          <p className="text-slate-400">Game not found</p>
+        )}
       </div>
     );
   }
@@ -169,7 +181,7 @@ export default function GamePlayPage() {
             </p>
             {saveError && (
               <p className="text-xs text-red-400 mt-1">
-                Couldn't save your score — check your connection and try again.
+                {saveError}
               </p>
             )}
           </div>

@@ -5,7 +5,9 @@ import useSWR from 'swr';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { gameApi, Game } from '@/app/services/gameApi';
-import { Gamepad2, Trophy, Shield, Bug, UserX } from 'lucide-react';
+import { useAuth } from '@/app/context/authContext';
+import { getUpgradeHref } from '@/hooks/useContentAllowance';
+import { Gamepad2, Trophy, Shield, Bug, UserX, Lock } from 'lucide-react';
 
 const DIFF_CONFIG: Record<string, { color: string; icon: any; label: string; desc: string }> = {
   easy:   { color: 'from-green-500/20 to-transparent border-green-500/20', icon: Shield, label: 'Easy', desc: 'Perfect for beginners. Fun gameplay while learning cyber safety.' },
@@ -23,6 +25,8 @@ const GAME_ICONS: Record<string, string> = {
 
 export default function GamesPage() {
   const router = useRouter();
+  const { state } = useAuth();
+  const upgradeHref = getUpgradeHref(state.user?.role);
 
   const { data: games = [], isLoading } = useSWR<Game[]>(
     'games',
@@ -76,18 +80,29 @@ export default function GamesPage() {
             return (
               <motion.div key={game._id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
                 <Card
-                  className={`p-5 rounded-xl border bg-gradient-to-br transition-all duration-300 ${diff.color} hover:-translate-y-1 cursor-pointer hover:shadow-lg`}
-                  onClick={() => router.push(`/dashboard/games/${game._id}`)}
+                  className={`p-5 rounded-xl border bg-gradient-to-br transition-all duration-300 ${
+                    game.isLocked
+                      ? 'border-slate-700 opacity-70 cursor-not-allowed'
+                      : `${diff.color} hover:-translate-y-1 cursor-pointer hover:shadow-lg`
+                  }`}
+                  onClick={() => !game.isLocked && router.push(`/dashboard/games/${game._id}`)}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <span className="text-4xl">{icon}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
-                      game.difficulty === 'easy' ? 'bg-green-500/20 text-green-400' :
-                      game.difficulty === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                      'bg-red-500/20 text-red-400'
-                    }`}>
-                      {game.difficulty}
-                    </span>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
+                        game.difficulty === 'easy' ? 'bg-green-500/20 text-green-400' :
+                        game.difficulty === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                        'bg-red-500/20 text-red-400'
+                      }`}>
+                        {game.difficulty}
+                      </span>
+                      {game.isLocked && (
+                        <span className="text-yellow-400 text-xs flex items-center gap-1">
+                          <Lock className="w-3 h-3" /> Premium
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <h3 className="font-bold text-foreground mb-1">{game.name}</h3>
@@ -102,9 +117,18 @@ export default function GamesPage() {
                   </div>
 
                   <div className="mt-3">
-                    <div className="w-full py-1.5 rounded-lg bg-white/10 text-white text-xs font-medium text-center border border-white/10">
-                      ▶ Play Now
-                    </div>
+                    {game.isLocked ? (
+                      <button
+                        onClick={e => { e.stopPropagation(); router.push(upgradeHref); }}
+                        className="w-full py-1.5 rounded-lg bg-yellow-400 text-black text-xs font-bold hover:bg-yellow-300 transition"
+                      >
+                        👑 Upgrade to Play
+                      </button>
+                    ) : (
+                      <div className="w-full py-1.5 rounded-lg bg-white/10 text-white text-xs font-medium text-center border border-white/10">
+                        ▶ Play Now
+                      </div>
+                    )}
                   </div>
                 </Card>
               </motion.div>

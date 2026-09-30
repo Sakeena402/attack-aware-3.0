@@ -7,10 +7,13 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/authContext';
 import { Card } from '@/components/ui/card';
 import { getVideos, StaticVideo } from '@/app/data/videos.data';
+import { videosWithAllowance } from '@/app/data/videoAccess';
 import { quizApi, QuizCategory } from '@/app/services/quizApi';
 import { gameApi, Game } from '@/app/services/gameApi';
 import { aiScenarioApi, AIQuiz } from '@/app/services/aiScenarioApi';
 import { GenerateQuizModal } from '@/components/ai/GenerateQuizModal';
+import { PlanGate } from '@/components/dashboard/PlanGate';
+import { useContentAllowance } from '@/hooks/useContentAllowance';
 import {
   Play, HelpCircle, Gamepad2, Lock, CheckCircle,
   Clock, Trophy, Globe, Shield, Bug, UserX, Sparkles,
@@ -57,6 +60,9 @@ export default function TrainingPage() {
   const [quizModalOpen, setQuizModalOpen] = useState(false);
   const isUrdu = lang === 'ur';
 
+  // Videos are unlocked according to the user's plan (company or individual)
+  const { allowance, loading: allowanceLoading, upgradeHref } = useContentAllowance();
+
   // Build tabs dynamically — AI Quizzes tab only for admins
   const TABS = isAdmin
     ? [...BASE_TABS, { key: 'ai_quizzes' as Tab, label: 'AI Quizzes', icon: Brain, desc: 'View AI-generated quizzes' }]
@@ -64,8 +70,10 @@ export default function TrainingPage() {
 
   // ── Videos — static data ──────────────────────────
   const isPremium = isAdmin || user?.companyId != null;
-  const videos: StaticVideo[] = getVideos(lang, category || undefined, isPremium);
-  const vLoading = false;
+  const videos: StaticVideo[] = allowance
+    ? videosWithAllowance(lang, category || undefined, allowance)
+    : getVideos(lang, category || undefined, isPremium);
+  const vLoading = allowanceLoading;
 
   // ── Quizzes — from API ──────────────────────────────
   const { data: quizzes = [], isLoading: qLoading } = useSWR<QuizCategory[]>(
@@ -106,6 +114,7 @@ export default function TrainingPage() {
     gLoading;
 
   return (
+    <PlanGate>
     <div className="space-y-6">
 
       {/* ── Header ── */}
@@ -210,7 +219,7 @@ export default function TrainingPage() {
                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/50">
                               <Lock className="w-6 h-6 text-yellow-400" />
                               <button
-                                onClick={e => { e.stopPropagation(); router.push('/dashboard/subscribe'); }}
+                                onClick={e => { e.stopPropagation(); router.push(upgradeHref); }}
                                 className="px-3 py-1 rounded-full bg-yellow-400 text-black text-xs font-bold"
                               >
                                 👑 Upgrade
@@ -313,7 +322,7 @@ export default function TrainingPage() {
                         <div className="mt-3">
                           {quiz.isLocked ? (
                             <button
-                              onClick={e => { e.stopPropagation(); router.push('/dashboard/subscribe'); }}
+                              onClick={e => { e.stopPropagation(); router.push(upgradeHref); }}
                               className="w-full py-1.5 rounded-lg bg-yellow-400 text-black text-xs font-bold hover:bg-yellow-300 transition"
                             >
                               {isUrdu ? 'ان لاک کریں' : 'Upgrade to Unlock'}
@@ -386,7 +395,7 @@ export default function TrainingPage() {
                           <div className="mt-3">
                             {game.isLocked ? (
                               <button
-                                onClick={e => { e.stopPropagation(); router.push('/dashboard/subscribe'); }}
+                                onClick={e => { e.stopPropagation(); router.push(upgradeHref); }}
                                 className="w-full py-1.5 rounded-lg bg-yellow-400 text-black text-xs font-bold hover:bg-yellow-300 transition"
                               >
                                 👑 Upgrade to Play
@@ -435,6 +444,7 @@ export default function TrainingPage() {
         />
       )}
     </div>
+    </PlanGate>
   );
 }
 

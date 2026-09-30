@@ -41,6 +41,15 @@ export const sendVishingSimulation = async (
       return;
     }
 
+    // ── SECURITY: company ownership check ───────────────────────────────────
+    // Previously unscoped — any admin could initiate a voice call against
+    // another company's campaignId. super_admin is exempt.
+    if (req.user.role !== 'super_admin' && String(campaign.companyId) !== String(req.user.companyId)) {
+      res.status(403).json({ success: false, error: "You can only send simulations for your own company's campaigns" });
+      return;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     const token = generateTrackingToken();
     const hashedToken = hashToken(token);
 

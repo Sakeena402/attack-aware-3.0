@@ -6,7 +6,8 @@ import { AppError }     from '../utils/errorHandler.js';
 import { AuthRequest, ApiResponse, CampaignStatus } from '../types/index.js';
 import { sendSms, generateTrackingToken as generateSmsToken, hashToken, smsTemplates } from '../services/twilioService.js';
 
-import { companyHasFeature } from '../services/planService.js';
+import { companyUsesPlanLimits } from '../services/planLimitsService.js';
+import { isPlanExempt } from '../config/planExemptions.js';
 import { sendPhishingEmail, generateTrackingToken as generateEmailToken, emailTemplates } from '../services/emailService.js';
 
 
@@ -43,6 +44,26 @@ export const createCampaign = async (
 
     const companyId = req.user.companyId;
     if (!companyId) throw new AppError('Company ID not found on user', 400);
+
+    // ── Plan enforcement: campaign count cap ────────────────────────────────
+    // Plans in config/planLimits.ts are limited by monthly per-channel quotas
+    // (middleware/planLimits.ts). This total cap only applies to companies with
+    // no plan, or a legacy plan that is not in that table.
+    // (Flag: placeholder cap of 10 — confirm final number with product team)
+    if (req.user.role !== 'super_admin' && !isPlanExempt(req.user)) {
+      const usesPlanLimits = await companyUsesPlanLimits(companyId);
+      if (!usesPlanLimits) {
+        const CAMPAIGN_CAP = 10;
+        const existingCount = await Campaign.countDocuments({ companyId });
+        if (existingCount >= CAMPAIGN_CAP) {
+          throw new AppError(
+            `Campaign limit reached (max ${CAMPAIGN_CAP}). Subscribe to a plan to create more.`,
+            403
+          );
+        }
+      }
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     let finalEmail = emailTemplate || '';
     let finalSms = smsTemplate || '';

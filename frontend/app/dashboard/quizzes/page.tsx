@@ -6,6 +6,8 @@ import useSWR from 'swr';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { quizApi, QuizCategory } from '@/app/services/quizApi';
+import { useAuth } from '@/app/context/authContext';
+import { getUpgradeHref } from '@/hooks/useContentAllowance';
 import { HelpCircle, Lock, Clock, Globe } from 'lucide-react';
 
 const DIFFICULTIES = ['All', 'easy', 'medium', 'hard'];
@@ -18,6 +20,9 @@ const DIFF_COLORS: Record<string, string> = {
 
 export default function QuizzesPage() {
   const router = useRouter();
+  const { state } = useAuth();
+  const upgradeHref = getUpgradeHref(state.user?.role);
+
   const [lang, setLang]             = useState<'en' | 'ur'>('en');
   const [difficulty, setDifficulty] = useState('');
 
@@ -158,7 +163,7 @@ export default function QuizzesPage() {
                 <div className="mt-3">
                   {quiz.isLocked ? (
                     <button
-                      onClick={e => { e.stopPropagation(); router.push('/dashboard/subscribe'); }}
+                      onClick={e => { e.stopPropagation(); router.push(upgradeHref); }}
                       className="w-full py-1.5 rounded-lg bg-yellow-400 text-black text-xs font-bold hover:bg-yellow-300 transition"
                     >
                       {isUrdu ? 'ان لاک کریں' : 'Upgrade to Unlock'}
