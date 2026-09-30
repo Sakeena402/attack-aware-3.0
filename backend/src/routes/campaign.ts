@@ -1,4 +1,4 @@
-  //backend/src/routes/campaign.ts
+//backend/src/routes/campaign.ts
 
 import { Router } from 'express';
 import {
@@ -10,6 +10,7 @@ import {
   deleteCampaign,
   launchCampaign,
   pauseCampaign,
+  getMyActiveVishingCampaign,
 } from '../controllers/campaignController.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireAdmin, isolateByCompany } from '../middleware/rbac.js';
@@ -29,6 +30,13 @@ campaignRouter.use(authenticate);
 // ADD these routes BEFORE the param routes (/:id)
 campaignRouter.get('/compare', requireAdmin, isolateByCompany, compareCampaignsController);
 
+// Any authenticated employee can check whether they currently have an
+// active vishing campaign targeting them — used to show/hide the
+// "Vishing Awareness" card on the employee dashboard. Must stay ABOVE
+// the '/:id' route below, otherwise Express would treat
+// "my-active-vishing" as an :id value.
+campaignRouter.get('/my-active-vishing', getMyActiveVishingCampaign);
+
 // ADD this route AFTER other /:id routes
 
 campaignRouter.get('/:id/results', requireAdmin, isolateByCompany, getCampaignResults);
@@ -46,7 +54,3 @@ campaignRouter.post('/:id/launch', requireAdmin, isolateByCompany, launchCampaig
 campaignRouter.post('/:id/pause', requireAdmin, isolateByCompany, pauseCampaign);
 
 export default campaignRouter;
-
-
-
-

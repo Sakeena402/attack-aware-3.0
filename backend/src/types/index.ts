@@ -55,6 +55,8 @@ export interface IUser extends Document {
   isUrduPreferred?: boolean;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
+  twoFactorEnabled: boolean;
+  emailVerified: boolean;
   bio?: string;
   trainingProgress?: number;
   createdAt: Date;
@@ -232,6 +234,9 @@ export interface ApiResponse<T = any> {
   message?: string;
   data?: T;
   error?: string;
+  remainingAttempts?: number;
+  locked?: boolean;
+  retryAfterSeconds?: number;
 }
 
 // Company request bodies
@@ -262,6 +267,37 @@ export interface CreateContactBody {
 export interface LoginRequest {
   email: string;
   password: string;
+}
+
+export interface LoginOtpVerifyBody {
+  tempToken: string;
+  code: string;
+}
+
+export interface LoginOtpResendBody {
+  tempToken: string;
+}
+
+export interface SignupOtpVerifyBody {
+  email: string;
+  code: string;
+}
+
+export interface ResendSignupOtpBody {
+  email: string;
+}
+
+export interface Toggle2FABody {
+  enable: boolean;
+  code?: string;
+  password?: string;
+}
+
+export interface OtpTempTokenPayload {
+  userId: string;
+  purpose: 'login_verification';
+  iat?: number;
+  exp?: number;
 }
 
 // Register Request

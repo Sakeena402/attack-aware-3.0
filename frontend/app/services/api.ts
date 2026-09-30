@@ -1,4 +1,6 @@
 // frontend/app/services/api.ts
+import axios from 'axios';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export const ErrorCodes = {
@@ -89,7 +91,7 @@ export const onApiError = (handler: ErrorHandler) => {
 
 export function getErrorMessage(error: ApiError): string {
   if (!error.errorCode) return error.message || 'An unexpected error occurred';
-  
+
   switch (error.errorCode) {
     case ErrorCodes.INVALID_CREDENTIALS:
       return 'Invalid email or password.';
@@ -258,26 +260,10 @@ export class ApiService {
 
 export const apiService = ApiService.getInstance();
 
-
-
-import axios from 'axios';
-
+// Legacy axios client, kept only so existing `import { api }` call sites still compile.
+// Auth is cookie-based (httpOnly), so no Authorization header / localStorage token is
+// attached. New code should use `apiService` (it handles refresh + retry).
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
+  baseURL: API_BASE_URL,
   withCredentials: true,
 });
-
-// ✅ Add token dynamically (VERY IMPORTANT FIX)
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
-
-
-
-

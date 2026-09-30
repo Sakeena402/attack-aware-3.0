@@ -383,6 +383,30 @@ export const launchCampaign = async (
       return;
     }
 
+    if (campaign.type === 'vishing') {
+      const targets = campaign.targetEmployees as TargetEmployee[];
+
+      if (!targets || targets.length === 0) {
+        throw new AppError('No target employees found on this campaign. Add employees before launching.', 400);
+      }
+
+      // Vishing no longer places real/simulated calls. Launching a vishing
+      // campaign simply makes it "active" — targeted employees will then see
+      // the Vishing Awareness card on their dashboard (see
+      // getMyActiveVishingCampaign below), which teaches them how vishing
+      // works and tests them with a quiz.
+      campaign.status = 'active';
+      campaign.startDate = new Date();
+      campaign.sentCount = targets.length;
+      await campaign.save();
+
+      return res.status(200).json({
+        success: true,
+        data: { campaign },
+        message: `Vishing awareness campaign launched for ${targets.length} employee(s).`,
+      });
+    }
+
     campaign.status = 'active';
     campaign.startDate = new Date();
     await campaign.save();
@@ -419,5 +443,41 @@ export const pauseCampaign = async (
       res.status(error.statusCode).json({ success: false, error: error.message });
     else
       res.status(500).json({ success: false, error: 'Failed to pause campaign' });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Called by the employee dashboard to decide whether to show the
+// "Vishing Awareness" card. Returns the first active vishing campaign that
+// currently targets the logged-in employee, or null if there isn't one.
+// ─────────────────────────────────────────────────────────────────────────────
+export const getMyActiveVishingCampaign = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    if (!req.user) throw new AppError('User not authenticated', 401);
+
+    const campaign = await Campaign.findOne({
+      type: 'vishing',
+      status: 'active',
+      'targetEmployees._id': req.user.id,
+    }).sort({ startDate: -1 });
+
+    if (!campaign) {
+      res.json({ success: true, data: null });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        campaignId: campaign._id,
+        campaignName: campaign.campaignName,
+      },
+    });
+  } catch (error) {
+    console.error('getMyActiveVishingCampaign error:', error);
+    res.status(500).json({ success: false, error: 'Failed to check active vishing campaigns' });
   }
 };
