@@ -1,10 +1,8 @@
 //backend/server.ts
+import 'dotenv/config';
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import morgan from 'morgan';
-// Load environment variables first
-dotenv.config();
 
 // Import utilities
 import { connectDB, disconnectDB } from './src/config/database.js';
