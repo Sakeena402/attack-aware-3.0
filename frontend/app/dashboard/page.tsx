@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import AdminDashboard from './admin/page';
 import EmployeeDashboard from './employee/page';
 import SuperAdminDashboard from './super-admin/page';
+import IndividualDashboard from './individual/page';
 
 export default function DashboardPage() {
   const { state } = useAuth();
@@ -53,6 +54,10 @@ export default function DashboardPage() {
 
   if (state.user?.role === 'employee') {
     return <EmployeeDashboard />;
+  }
+
+  if (state.user?.role === 'individual') {
+    return <IndividualDashboard />;
   }
 
   return null;

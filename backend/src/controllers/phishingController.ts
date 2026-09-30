@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { Campaign } from '../models/Campaign.js';
 import SimulationResult from '../models/SimulationResult.js';
+import { AppError } from '../utils/errorHandler.js';
 import { AuthRequest, ApiResponse } from '../types/index.js';
 import { sendPhishingEmail, generateTrackingToken, emailTemplates } from '../services/emailService.js';
 import { hashToken } from '../services/twilioService.js';
@@ -41,6 +42,16 @@ export const sendPhishingSimulation = async (
       res.status(404).json({ success: false, error: 'Campaign not found' });
       return;
     }
+
+    // ── SECURITY: company ownership check ───────────────────────────────────
+    // This lookup previously had no companyId scoping at all, so any
+    // authenticated admin could send a phishing email against ANY company's
+    // campaignId by guessing/enumerating IDs. super_admin is exempt.
+    if (req.user.role !== 'super_admin' && String(campaign.companyId) !== String(req.user.companyId)) {
+      res.status(403).json({ success: false, error: "You can only send simulations for your own company's campaigns" });
+      return;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     const token = generateTrackingToken();
     const hashedToken = hashToken(token);

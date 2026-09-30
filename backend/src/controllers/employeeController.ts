@@ -7,85 +7,7 @@ import { Company } from '../models/Company.js';
 
 import { AppError } from '../utils/errorHandler.js';
 import { AuthRequest, ApiResponse } from '../types/index.js';
-
-// export const getAllEmployees = async (
-//   req: AuthRequest,
-//   res: Response<ApiResponse>
-// ): Promise<void> => {
-//   try {
-//     if (!req.user) {
-//       throw new AppError('User not authenticated', 401);
-//     }
-
-//     const { companyId, department, search, limit = '50', page = '1' } = req.query as {
-//       companyId?: string;
-//       department?: string;
-//       search?: string;
-//       limit?: string;
-//       page?: string;
-//     };
-
-//     const query: Record<string, unknown> = {};
-    
-//     // Filter by company
-//     if (companyId) {
-//       query.companyId = companyId;
-//     } else if (req.user.role !== 'super_admin' && req.user.companyId) {
-//       query.companyId = req.user.companyId;
-//     }
-
-//     // Filter by department
-//     if (department) {
-//       query.department = department;
-//     }
-
-//     // Search by name or email
-//     if (search) {
-//       query.$or = [
-//         { name: { $regex: search, $options: 'i' } },
-//         { email: { $regex: search, $options: 'i' } },
-//       ];
-//     }
-
-//     const pageNum = parseInt(page, 10);
-//     const limitNum = parseInt(limit, 10);
-//     const skip = (pageNum - 1) * limitNum;
-
-//     const [employees, total] = await Promise.all([
-//       User.find(query)
-//         .select('-passwordHash')
-//         .sort({ createdAt: -1 })
-//         .skip(skip)
-//         .limit(limitNum)
-//         .lean(),
-//       User.countDocuments(query),
-//     ]);
-
-//     res.json({
-//       success: true,
-//       data: {
-//         employees: employees.map(emp => ({
-//           ...emp,
-//           _id: emp._id,
-//           id: emp._id,
-//         })),
-//         pagination: {
-//           total,
-//           page: pageNum,
-//           limit: limitNum,
-//           totalPages: Math.ceil(total / limitNum),
-//         },
-//       },
-//     });
-//   } catch (error) {
-//     if (error instanceof AppError) {
-//       res.status(error.statusCode).json({ success: false, error: error.message });
-//     } else {
-//       res.status(500).json({ success: false, error: 'Failed to fetch employees' });
-//     }
-//   }
-// };
-
+import { isPlanExempt } from '../config/planExemptions.js';
 
 // In getAllEmployees — replace the manual companyId query handling with this:
 export const getAllEmployees = async (req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
@@ -133,6 +55,7 @@ export const getAllEmployees = async (req: AuthRequest, res: Response<ApiRespons
     else res.status(500).json({ success: false, error: 'Failed to fetch employees' });
   }
 };
+
 export const getEmployeeById = async (
   req: AuthRequest,
   res: Response<ApiResponse>
@@ -177,13 +100,36 @@ export const createEmployee = async (
       throw new AppError('User not authenticated', 401);
     }
 
-    const { name, email, password, department, role = 'employee', phoneNumber } = req.body;
+    const { name, email, password, department, phoneNumber } = req.body;
     // NOTE: companyId is intentionally NOT destructured from req.body for non-super_admin callers.
     // Only super_admin may specify an arbitrary companyId. Everyone else is locked to their JWT companyId.
     const bodyCompanyId = req.body.companyId;
     if (!name || !email || !password) {
       throw new AppError('Name, email, and password are required', 400);
     }
+
+    // Plan-exempt accounts skip the approval and seat checks below.
+    const exempt = isPlanExempt(req.user);
+
+    // ── SECURITY: role whitelist ────────────────────────────────────────────
+    // Only super_admin may set role freely; everyone else (including plan-exempt
+    // accounts) can only create 'employee' accounts within their own company.
+    const requestedRole = req.body.role;
+    const ADMIN_CREATABLE_ROLES = ['employee'];
+    let role: string;
+
+    if (req.user.role === 'super_admin') {
+      role = requestedRole || 'employee';
+    } else {
+      role = requestedRole || 'employee';
+      if (!ADMIN_CREATABLE_ROLES.includes(role)) {
+        throw new AppError(
+          `You are not allowed to create an account with role "${role}". Allowed roles: ${ADMIN_CREATABLE_ROLES.join(', ')}.`,
+          403
+        );
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     // Determine company ID — non-super_admin is always locked to their own companyId
     const employeeCompanyId = req.user.role === 'super_admin'
@@ -195,7 +141,7 @@ export const createEmployee = async (
     }
 
     // ── Company approval status check: admin must have approved company ──────────
-    if (employeeCompanyId && req.user.role !== 'super_admin') {
+    if (employeeCompanyId && req.user.role !== 'super_admin' && !exempt) {
       const company = await Company.findById(employeeCompanyId).select('approvalStatus').lean();
       if (!company) {
         throw new AppError('Company not found', 404);
@@ -210,7 +156,7 @@ export const createEmployee = async (
     // ──────────────────────────────────────────────────────────────────────────
 
     // ── Plan enforcement: check maxEmployees limit ──────────────────────────
-    if (employeeCompanyId) {
+    if (employeeCompanyId && !exempt) {
       const company = await Company.findById(employeeCompanyId).populate('subscriptionPlan').lean();
       if (company?.subscriptionPlan) {
         const plan = company.subscriptionPlan as any;
@@ -302,9 +248,25 @@ export const updateEmployee = async (
       employee.email = email.toLowerCase().trim();
     }
     if (department) employee.department = department;
-    if (role && (req.user.role === 'super_admin' || req.user.role === 'admin')) {
-      employee.role = role;
+
+    // ── SECURITY: role whitelist ────────────────────────────────────────────
+    // Only super_admin may set role freely; a company admin can only assign 'employee'.
+    if (role) {
+      const ADMIN_ASSIGNABLE_ROLES = ['employee'];
+      if (req.user.role === 'super_admin') {
+        employee.role = role;
+      } else if (req.user.role === 'admin') {
+        if (!ADMIN_ASSIGNABLE_ROLES.includes(role)) {
+          throw new AppError(
+            `You are not allowed to assign role "${role}". Allowed roles: ${ADMIN_ASSIGNABLE_ROLES.join(', ')}.`,
+            403
+          );
+        }
+        employee.role = role;
+      }
     }
+    // ─────────────────────────────────────────────────────────────────────────
+
     if (typeof points === 'number') employee.points = points;
     if (badge) employee.badge = badge;
     if (phoneNumber !== undefined) employee.phoneNumber = phoneNumber;

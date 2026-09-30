@@ -6,7 +6,9 @@ import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { Card } from '@/components/ui/card';
 import { getVideos, StaticVideo } from '@/app/data/videos.data';
+import { videosWithAllowance } from '@/app/data/videoAccess';
 import { videoApi } from '@/app/services/videoApi';
+import { useContentAllowance } from '@/hooks/useContentAllowance';
 import { Play, Lock, CheckCircle, Globe } from 'lucide-react';
 
 import { useAuth } from '@/app/context/authContext';
@@ -30,14 +32,21 @@ export default function VideosPage() {
   const [lang, setLang]         = useState<'en' | 'ur'>('en');
   const [category, setCategory] = useState('');
 
-  // Static data — instant, no loading state, no backend call
-  const videos: StaticVideo[] = getVideos(lang, category || undefined, isPremium);
+  // Videos are unlocked according to the user's plan (company or individual)
+  const { allowance, loading: allowanceLoading, upgradeHref } = useContentAllowance();
+
+  // Static data — instant, no backend call
+  const videos: StaticVideo[] = allowance
+    ? videosWithAllowance(lang, category || undefined, allowance)
+    : getVideos(lang, category || undefined, isPremium);
 
   // Real completion status from backend
   const { data: watched = [] } = useSWR('watched-videos', () => videoApi.getMyWatched(), {
     revalidateOnFocus: true,
   });
   const watchedIds = new Set(watched.map(w => w.videoId));
+
+  const openCount = allowance ? (lang === 'ur' ? allowance.videosUr : allowance.videosEn) : 0;
 
   return (
     <div className="space-y-6">
@@ -54,6 +63,11 @@ export default function VideosPage() {
                 ? 'سائبر حملوں سے بچاؤ کے لیے ویڈیوز دیکھیں'
                 : 'Watch videos to learn how to protect yourself from cyber attacks'}
             </p>
+            {allowance && (
+              <p className="text-xs text-slate-400 mt-1">
+                Your plan unlocks {openCount} {lang === 'ur' ? 'Urdu' : 'English'} videos.
+              </p>
+            )}
           </div>
 
           {/* Language Toggle */}
@@ -85,7 +99,13 @@ export default function VideosPage() {
       </div>
 
       {/* Video Grid */}
-      {videos.length === 0 ? (
+      {allowanceLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-52 bg-slate-700 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      ) : videos.length === 0 ? (
         <div className="text-center py-20 text-slate-400">
           <Play className="w-12 h-12 mx-auto mb-3 text-slate-600" />
           <p>No videos available yet</p>
@@ -131,7 +151,7 @@ export default function VideosPage() {
                             <Lock className="w-6 h-6 text-yellow-400" />
                           </div>
                           <button
-                            onClick={e => { e.stopPropagation(); router.push('/dashboard/subscribe'); }}
+                            onClick={e => { e.stopPropagation(); router.push(upgradeHref); }}
                             className="px-3 py-1 rounded-full bg-yellow-400 text-black text-xs font-bold"
                           >
                             👑 Upgrade to Watch

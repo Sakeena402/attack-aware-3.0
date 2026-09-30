@@ -63,8 +63,8 @@ function CompanyCard({
   actioning: string | null;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const cfg    = STATUS_CONFIG[company.approvalStatus];
-  const Icon   = cfg.icon;
+  const cfg = STATUS_CONFIG[company.approvalStatus];
+  const Icon = cfg.icon;
   const isPending = company.approvalStatus === 'pending';
 
   return (
@@ -206,7 +206,7 @@ function CompanyCard({
 
 export default function EnterpriseRequestsPage() {
   const { state } = useAuth();
-  const [filter, setFilter]     = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [actioning, setActioning] = useState<string | null>(null);
 
   // Only super_admin can access this page
@@ -214,7 +214,7 @@ export default function EnterpriseRequestsPage() {
 
   const { data: companies = [], isLoading } = useSWR<Company[]>(
     isSuperAdmin ? 'enterprise-requests' : null,
-    () => apiService.get<Company[]>('/company').then(r =>
+    () => apiService.get<Company[]>('/companies').then(r =>
       Array.isArray(r.data) ? r.data : []
     ),
     { revalidateOnFocus: false }
@@ -225,7 +225,7 @@ export default function EnterpriseRequestsPage() {
     : companies.filter(c => c.approvalStatus === filter);
 
   const counts = {
-    pending:  companies.filter(c => c.approvalStatus === 'pending').length,
+    pending: companies.filter(c => c.approvalStatus === 'pending').length,
     approved: companies.filter(c => c.approvalStatus === 'approved').length,
     rejected: companies.filter(c => c.approvalStatus === 'rejected').length,
   };
@@ -233,7 +233,7 @@ export default function EnterpriseRequestsPage() {
   async function handleAction(id: string, status: 'approved' | 'rejected') {
     setActioning(id);
     try {
-      await apiService.patch(`/company/${id}`, { approvalStatus: status });
+      await apiService.patch(`/companies/${id}`, { approvalStatus: status });
       mutate('enterprise-requests');
     } catch {
       // fail silently
@@ -298,11 +298,10 @@ export default function EnterpriseRequestsPage() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-colors capitalize ${
-              filter === f
-                ? 'bg-blue-600 border-blue-600 text-white'
-                : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
-            }`}
+            className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-colors capitalize ${filter === f
+              ? 'bg-blue-600 border-blue-600 text-white'
+              : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
+              }`}
           >
             {f === 'all' ? `All (${companies.length})` : `${f} (${counts[f as keyof typeof counts]})`}
           </button>
