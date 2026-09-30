@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import useSWR from 'swr';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/app/context/authContext';
+import { PlanGate } from '@/components/dashboard/PlanGate';
 import { analyticsApi, DashboardStats, SimulationAnalytics, DepartmentRisk } from '@/app/services/analyticsApi';
 import { apiService } from '@/app/services/api';
 import { StatCardSkeleton } from '@/components/ui/skeleton-loader';
@@ -282,6 +283,7 @@ export default function AnalyticsPage() {
   ];
 
   return (
+    <PlanGate>
     <div className="space-y-8">
 
       {/* Header */}
@@ -1023,5 +1025,6 @@ export default function AnalyticsPage() {
       </motion.div>
 
     </div>
+    </PlanGate>
   );
 }

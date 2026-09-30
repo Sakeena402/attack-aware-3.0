@@ -9,11 +9,11 @@ import {
   LayoutDashboard, BarChart3, Trophy, Zap, Settings,
   Users, FileText, Shield, LogOut, Building2, Activity,
   TrendingUp, BookOpen, MessageCircle, CheckSquare,
-  ChevronDown, PlayCircle, Brain, Gamepad2, Bell, User, Sparkles,
+  ChevronDown, PlayCircle, Brain, Gamepad2, Bell, User, Sparkles, CreditCard,
 } from 'lucide-react';
 import { useAuth } from '@/app/context/authContext';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────────────────
 
 interface MenuItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -31,34 +31,37 @@ interface MenuGroup {
   children?: MenuItem[];
 }
 
-// ── Menu Config per Role ──────────────────────────────────────────────────────
+// ── Menu Config per Role ─────────────────────────────────────────────────
 
 const getMenuConfig = (role: string | undefined): MenuGroup[] => {
   if (role === 'super_admin') {
     return [
-      { type: 'link', icon: LayoutDashboard, label: 'Dashboard',           href: '/dashboard' },
-      { type: 'link', icon: Building2,       label: 'Companies',           href: '/dashboard/companies' },
-      { type: 'link', icon: BarChart3,       label: 'Global Analytics',    href: '/dashboard/analytics' },
-      { type: 'link', icon: Sparkles,        label: 'AI Scenarios',        href: '/dashboard/ai-scenarios' },
-      { type: 'link', icon: Activity,        label: 'User Activity',       href: '/dashboard/user-activity' },
-      { type: 'link', icon: Shield,          label: 'Attacks Catalog',     href: '/dashboard/attacks' },
-      { type: 'link', icon: Building2,       label: 'Enterprise Requests', href: '/dashboard/enterprise-requests' },
-      { type: 'link', icon: Settings,        label: 'Settings',            href: '/dashboard/settings' },
+      { type: 'link', icon: LayoutDashboard, label: 'Dashboard',              href: '/dashboard' },
+      { type: 'link', icon: Building2,       label: 'Companies',              href: '/dashboard/companies' },
+      { type: 'link', icon: BarChart3,       label: 'Global Analytics',       href: '/dashboard/analytics' },
+      { type: 'link', icon: Sparkles,        label: 'AI Scenarios',           href: '/dashboard/ai-scenarios' },
+      { type: 'link', icon: Activity,        label: 'User Activity',          href: '/dashboard/user-activity' },
+      { type: 'link', icon: Shield,          label: 'Attacks Catalog',        href: '/dashboard/attacks' },
+      { type: 'link', icon: Building2,       label: 'Enterprise Requests',    href: '/dashboard/enterprise-requests' },
+      { type: 'link', icon: CreditCard,      label: 'Subscription Requests',  href: '/dashboard/subscription-requests' },
+      { type: 'link', icon: Settings,        label: 'Settings',               href: '/dashboard/settings' },
     ];
   }
 
   if (role === 'admin') {
     return [
-      { type: 'link',  icon: LayoutDashboard, label: 'Dashboard',     href: '/dashboard' },
-      { type: 'link',  icon: Zap,             label: 'Campaigns',     href: '/dashboard/campaigns', badge: 'NEW' },
-      { type: 'link',  icon: Sparkles,        label: 'AI Scenarios',  href: '/dashboard/ai-scenarios' },
-      { type: 'link',  icon: Trophy,          label: 'Leaderboard',   href: '/dashboard/leaderboard' },
-      { type: 'link',  icon: Users,           label: 'Employees',     href: '/dashboard/employees' },
-      { type: 'link',  icon: BarChart3,       label: 'Analytics',     href: '/dashboard/analytics' },
-      { type: 'link',  icon: FileText,        label: 'Reports',       href: '/dashboard/reports' },
-      { type: 'link',  icon: Activity,        label: 'User Activity', href: '/dashboard/user-activity' },
-      { type: 'link',  icon: CheckSquare,     label: 'Task Progress', href: '/dashboard/tasks' },
-      { type: 'link',  icon: BookOpen,        label: 'Training',      href: '/dashboard/training' },
+      { type: 'link',  icon: LayoutDashboard, label: 'Dashboard',           href: '/dashboard' },
+      { type: 'link',  icon: Building2,       label: 'Company Profile',     href: '/dashboard/company-profile' },
+      { type: 'link',  icon: CreditCard,      label: 'Subscribe to a Plan', href: '/dashboard/subscribe-plan' },
+      { type: 'link',  icon: Zap,             label: 'Campaigns',           href: '/dashboard/campaigns', badge: 'NEW' },
+      { type: 'link',  icon: Sparkles,        label: 'AI Scenarios',        href: '/dashboard/ai-scenarios' },
+      { type: 'link',  icon: Trophy,          label: 'Leaderboard',         href: '/dashboard/leaderboard' },
+      { type: 'link',  icon: Users,           label: 'Employees',           href: '/dashboard/employees' },
+      { type: 'link',  icon: BarChart3,       label: 'Analytics',           href: '/dashboard/analytics' },
+      { type: 'link',  icon: FileText,        label: 'Reports',             href: '/dashboard/reports' },
+      { type: 'link',  icon: Activity,        label: 'User Activity',       href: '/dashboard/user-activity' },
+      { type: 'link',  icon: CheckSquare,     label: 'Task Progress',       href: '/dashboard/tasks' },
+      { type: 'link',  icon: BookOpen,        label: 'Training',            href: '/dashboard/training' },
       { type: 'group', icon: MessageCircle, label: 'Community',
         children: [
           { icon: MessageCircle, label: 'Forum',          href: '/dashboard/forum' },
@@ -89,10 +92,11 @@ const getMenuConfig = (role: string | undefined): MenuGroup[] => {
 
   if (role === 'individual') {
     return [
-      { type: 'link',  icon: LayoutDashboard, label: 'Dashboard',   href: '/dashboard' },
-      { type: 'link',  icon: Trophy,          label: 'Leaderboard', href: '/dashboard/leaderboard' },
-      { type: 'link',  icon: BookOpen,        label: 'Training',    href: '/dashboard/training' },
-      { type: 'link',  icon: TrendingUp,      label: 'My Progress', href: '/dashboard/progress' },
+      { type: 'link',  icon: LayoutDashboard, label: 'Dashboard',           href: '/dashboard' },
+      { type: 'link',  icon: Trophy,          label: 'Leaderboard',         href: '/dashboard/leaderboard' },
+      { type: 'link',  icon: BookOpen,        label: 'Training',            href: '/dashboard/training' },
+      { type: 'link',  icon: CreditCard,      label: 'Subscribe to a Plan', href: '/dashboard/my-plan' },
+      { type: 'link',  icon: TrendingUp,      label: 'My Progress',         href: '/dashboard/progress' },
       { type: 'group', icon: MessageCircle, label: 'Community',
         children: [
           { icon: MessageCircle, label: 'Forum',           href: '/dashboard/forum' },
@@ -108,7 +112,7 @@ const getMenuConfig = (role: string | undefined): MenuGroup[] => {
   ];
 };
 
-// ── Dropdown Group Component ───────────────────────────────────────────────────
+// ── Dropdown Group Component ─────────────────────────────────────────────
 
 function SidebarGroup({
   group,
@@ -186,7 +190,7 @@ const [open, setOpen] = useState(isChildActive ?? false);
   );
 }
 
-// ── Main Sidebar ──────────────────────────────────────────────────────────────
+// ── Main Sidebar ─────────────────────────────────────────────────────────
 
 export function EnhancedSidebar() {
   const pathname  = usePathname();

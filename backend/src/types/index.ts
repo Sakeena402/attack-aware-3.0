@@ -66,6 +66,8 @@ export interface ICompany extends Document {
   _id: Types.ObjectId;
   companyName: string;
   industry: string;
+  companyUrl?: string;
+  companyEmail?: string;
   adminId: Types.ObjectId;
   employeeCount: number;
   approvalStatus?: 'pending' | 'approved' | 'rejected';
@@ -79,6 +81,7 @@ export interface ICompany extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
 
 //hifza code
 //hifza code
@@ -238,6 +241,11 @@ export interface ApiResponse<T = any> {
 export interface CreateCompanyBody {
   companyName: string;
   industry: string;
+  companyUrl?: string;
+  companyEmail?: string;
+  employeeCount?: number;
+  contactPerson?: string;
+  taxId?: string;
   /** Optional: the userId to assign as company admin. If omitted, company is created with no admin. */
   adminId?: string;
 }
@@ -245,6 +253,11 @@ export interface CreateCompanyBody {
 export interface UpdateCompanyBody {
   companyName?: string;
   industry?: string;
+  companyUrl?: string;
+  companyEmail?: string;
+  employeeCount?: number;
+  contactPerson?: string;
+  taxId?: string;
   adminId?: string;
   approvalStatus?: 'pending' | 'approved' | 'rejected';
 }

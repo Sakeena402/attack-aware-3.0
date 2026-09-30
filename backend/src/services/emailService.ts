@@ -241,6 +241,46 @@ export const sendPhishingEmail = async (options: SendEmailOptions): Promise<{
   }
 };
 
+// ============================================
+// GENERIC NOTIFICATION EMAIL (non-phishing) —
+// used for account/company/subscription lifecycle notices
+// ============================================
+interface SendNotificationEmailOptions {
+  to: string;
+  subject: string;
+  html: string;
+}
+
+export const sendNotificationEmail = async (
+  options: SendNotificationEmailOptions
+): Promise<{ success: boolean; messageId?: string; error?: string; mocked?: boolean }> => {
+  if (process.env.MOCK_EMAIL === 'true' || process.env.NODE_ENV === 'test') {
+    const mockId = `MOCK_EM_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    console.log(`\n[MOCK EMAIL] ══════════════════════════════════`);
+    console.log(`  To      : ${options.to}`);
+    console.log(`  Subject : ${options.subject}`);
+    console.log(`  Mock ID : ${mockId}`);
+    console.log(`════════════════════════════════════════════════\n`);
+    return { success: true, messageId: mockId, mocked: true };
+  }
+
+  try {
+    const transporter = getTransporter();
+    const info = await transporter.sendMail({
+      from: process.env.EMAIL_FROM || 'security@company.com',
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+    });
+    console.log(`[EMAIL SENT] To: ${options.to} | MessageID: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to send email';
+    console.error('Notification email error:', errorMessage);
+    return { success: false, error: errorMessage };
+  }
+};
+
 export const generateEmailTrackingUrl = (
   token: string,
   campaignId: string,

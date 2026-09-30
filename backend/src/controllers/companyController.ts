@@ -5,25 +5,18 @@ import { AppError } from '../utils/errorHandler.js';
 import { AuthRequest, ApiResponse, CreateCompanyBody, UpdateCompanyBody } from '../types/index.js';
 import { generateToken, generateRefreshToken } from '../utils/jwt.js';
 
-// ============================================
-// SELF-SERVICE FLOW: Individual creates their own company and becomes admin
-// ============================================
-// ============================================
-// SELF-SERVICE FLOW: Individual creates their own company and becomes admin
-// ============================================
-
 const COOKIE_OPTS_ACCESS = {
   httpOnly: true,
   secure: true,
   sameSite: 'none' as const,
-  maxAge: 60 * 60 * 1000, // 1 hour
+  maxAge: 60 * 60 * 1000,
 };
 
 const COOKIE_OPTS_REFRESH = {
   httpOnly: true,
   secure: true,
   sameSite: 'none' as const,
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
 function buildUserPayload(user: any) {
@@ -39,178 +32,174 @@ function buildUserPayload(user: any) {
   };
 }
 
+// ============================================
+// SELF-SERVICE: Individual creates their own company and becomes admin
+// ============================================
 export const createCompanySelfService = async (
   req: AuthRequest,
   res: Response<ApiResponse>
 ): Promise<void> => {
   try {
-    if (!req.user) {
-      throw new AppError('User not authenticated', 401);
-    }
-
-    // Only individual role can use this endpoint
+    if (!req.user) throw new AppError('User not authenticated', 401);
     if (req.user.role !== 'individual') {
       throw new AppError('This endpoint is for individual users only', 403);
     }
 
-    const { companyName, industry } = req.body as CreateCompanyBody;
+    const {
+      companyName,
+      industry,
+      companyUrl,
+      companyEmail,
+      employeeCount,
+      contactPerson,
+      taxId,
+    } = req.body as CreateCompanyBody;
 
     if (!companyName || !industry) {
       throw new AppError('Company name and industry are required', 400);
     }
 
     const existingCompany = await Company.findOne({ companyName });
-    if (existingCompany) {
-      throw new AppError('Company already exists', 409);
-    }
+    if (existingCompany) throw new AppError('Company already exists', 409);
+    if (req.user.companyId) throw new AppError('You already belong to a company', 400);
 
-    // Check if user already belongs to a company
-    if (req.user.companyId) {
-      throw new AppError('You already belong to a company', 400);
-    }
-
-    // Create company with the calling user as admin (approvalStatus defaults to 'pending')
     const newCompany = new Company({
       companyName,
       industry,
-      adminId: req.user.id, // Self-service: caller becomes the admin
+      companyUrl,
+      companyEmail,
+      employeeCount: typeof employeeCount === 'number' ? employeeCount : 0,
+      contactPerson,
+      taxId,
+      adminId: req.user.id,
     });
 
     await newCompany.save();
 
-    // Update the calling user: change role to admin and set companyId
     const updatedUser = await User.findByIdAndUpdate(
-      req.user.id, 
-      {
-        companyId: newCompany._id,
-        role: 'admin',
-      },
-      { new: true } // Return the updated document
+      req.user.id,
+      { companyId: newCompany._id, role: 'admin' },
+      { new: true }
     );
+    if (!updatedUser) throw new AppError('Failed to update user after company creation', 500);
 
-    if (!updatedUser) {
-      throw new AppError('Failed to update user after company creation', 500);
-    }
-
-    // 🔑 CRITICAL FIX: Generate new JWT tokens with updated role and companyId
-    // The old tokens still have role='individual' and companyId=null
     const newAccessToken = generateToken(
-      updatedUser._id.toString(), 
-      updatedUser.email, 
-      updatedUser.role, // Now 'admin'
-      updatedUser.companyId?.toString() // Now newCompany._id
+      updatedUser._id.toString(), updatedUser.email, updatedUser.role, updatedUser.companyId?.toString()
     );
-    
     const newRefreshToken = generateRefreshToken(
-      updatedUser._id.toString(), 
-      updatedUser.email, 
-      updatedUser.role, // Now 'admin'
-      updatedUser.companyId?.toString() // Now newCompany._id
+      updatedUser._id.toString(), updatedUser.email, updatedUser.role, updatedUser.companyId?.toString()
     );
-
-    // Set new cookies with updated user data
     res.cookie('accessToken', newAccessToken, COOKIE_OPTS_ACCESS);
     res.cookie('refreshToken', newRefreshToken, COOKIE_OPTS_REFRESH);
 
     res.status(201).json({
       success: true,
       data: {
-        company: {
-          id: newCompany._id,
-          companyName: newCompany.companyName,
-          industry: newCompany.industry,
-          adminId: newCompany.adminId,
-          approvalStatus: newCompany.approvalStatus,
-        },
-        user: buildUserPayload(updatedUser), // Return updated user data
+        company: newCompany,
+        user: buildUserPayload(updatedUser),
         message: 'Company created successfully. Approval is pending.',
       },
     });
   } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ success: false, error: error.message });
-    } else {
-      res.status(500).json({ success: false, error: 'Failed to create company' });
-    }
+    if (error instanceof AppError) res.status(error.statusCode).json({ success: false, error: error.message });
+    else res.status(500).json({ success: false, error: 'Failed to create company' });
   }
 };
 
 // ============================================
-// SUPER-ADMIN FLOW: Create company on behalf of someone else (or with no admin)
+// Admin: fetch their own company profile
+// ============================================
+export const getMyCompany = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    if (!req.user) throw new AppError('Not authenticated', 401);
+    if (!req.user.companyId) {
+      throw new AppError('Your account is not associated with a company', 400);
+    }
+
+    const company = await Company.findById(req.user.companyId)
+      .populate('adminId', 'name email')
+      .populate('subscriptionPlan');
+
+    if (!company) throw new AppError('Company not found', 404);
+
+    res.json({ success: true, data: company });
+  } catch (error) {
+    if (error instanceof AppError) res.status(error.statusCode).json({ success: false, error: error.message });
+    else res.status(500).json({ success: false, error: 'Failed to fetch company' });
+  }
+};
+
+// Admin: update their own company's editable fields
+export const updateMyCompany = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    if (!req.user) throw new AppError('Not authenticated', 401);
+    if (!req.user.companyId) {
+      throw new AppError('Your account is not associated with a company', 400);
+    }
+
+    const { companyUrl, companyEmail, employeeCount, contactPerson, taxId } = req.body as UpdateCompanyBody;
+
+    const company = await Company.findByIdAndUpdate(
+      req.user.companyId,
+      { companyUrl, companyEmail, employeeCount, contactPerson, taxId },
+      { new: true, runValidators: true }
+    );
+    if (!company) throw new AppError('Company not found', 404);
+
+    res.json({ success: true, data: company });
+  } catch (error) {
+    if (error instanceof AppError) res.status(error.statusCode).json({ success: false, error: error.message });
+    else res.status(500).json({ success: false, error: 'Failed to update company' });
+  }
+};
+
+// ============================================
+// SUPER-ADMIN: create company on behalf of someone else
 // ============================================
 export const createCompany = async (
   req: AuthRequest,
   res: Response<ApiResponse>
 ): Promise<void> => {
   try {
-    if (!req.user) {
-      throw new AppError('User not authenticated', 401);
-    }
-
-    // Only super_admin can use this endpoint
+    if (!req.user) throw new AppError('User not authenticated', 401);
     if (req.user.role !== 'super_admin') {
       throw new AppError('Access denied. Super admin role required.', 403);
     }
 
-    // adminId is optional — super_admin creates companies on behalf of others.
-    // NEVER use req.user.id here: that would demote/reassign the calling super_admin.
     const { companyName, industry, adminId } = req.body as CreateCompanyBody & { adminId?: string };
-
-    if (!companyName || !industry) {
-      throw new AppError('Company name and industry are required', 400);
-    }
+    if (!companyName || !industry) throw new AppError('Company name and industry are required', 400);
 
     const existingCompany = await Company.findOne({ companyName });
-    if (existingCompany) {
-      throw new AppError('Company already exists', 409);
-    }
+    if (existingCompany) throw new AppError('Company already exists', 409);
 
-    // If an adminId was provided, verify the target user exists before assigning them.
     let resolvedAdminId: string | undefined;
     if (adminId) {
       const targetUser = await User.findById(adminId).select('_id role').lean();
-      if (!targetUser) {
-        throw new AppError('Specified admin user not found', 404);
-      }
+      if (!targetUser) throw new AppError('Specified admin user not found', 404);
       resolvedAdminId = adminId;
     }
 
     const newCompany = new Company({
       companyName,
       industry,
-      // adminId is undefined when not provided — company is created without an admin
-      // and one can be assigned later via updateCompany.
       ...(resolvedAdminId ? { adminId: resolvedAdminId } : {}),
     });
-
     await newCompany.save();
 
-    // Only update the target user's role and companyId — NEVER touch req.user.
     if (resolvedAdminId) {
-      await User.findByIdAndUpdate(resolvedAdminId, {
-        companyId: newCompany._id,
-        role: 'admin',
-      });
+      await User.findByIdAndUpdate(resolvedAdminId, { companyId: newCompany._id, role: 'admin' });
     }
 
-    res.status(201).json({
-      success: true,
-      data: {
-        company: {
-          id: newCompany._id,
-          companyName: newCompany.companyName,
-          industry: newCompany.industry,
-          adminId: newCompany.adminId ?? null,
-          approvalStatus: newCompany.approvalStatus,
-        },
-      },
-    });
+    res.status(201).json({ success: true, data: newCompany });
   } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ success: false, error: error.message });
-    } else {
-      res.status(500).json({ success: false, error: 'Failed to create company' });
-    }
+    if (error instanceof AppError) res.status(error.statusCode).json({ success: false, error: error.message });
+    else res.status(500).json({ success: false, error: 'Failed to create company' });
   }
 };
 
@@ -220,22 +209,12 @@ export const getCompany = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-
     const company = await Company.findById(id).populate('adminId', 'name email');
-    if (!company) {
-      throw new AppError('Company not found', 404);
-    }
-
-    res.json({
-      success: true,
-      data: company,
-    });
+    if (!company) throw new AppError('Company not found', 404);
+    res.json({ success: true, data: company });
   } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ success: false, error: error.message });
-    } else {
-      res.status(500).json({ success: false, error: 'Failed to fetch company' });
-    }
+    if (error instanceof AppError) res.status(error.statusCode).json({ success: false, error: error.message });
+    else res.status(500).json({ success: false, error: 'Failed to fetch company' });
   }
 };
 
@@ -248,25 +227,49 @@ export const updateCompany = async (
     const { companyName, industry } = req.body as UpdateCompanyBody;
 
     const company = await Company.findByIdAndUpdate(
-      id,
-      { companyName, industry },
-      { new: true, runValidators: true }
+      id, { companyName, industry }, { new: true, runValidators: true }
     );
-
-    if (!company) {
-      throw new AppError('Company not found', 404);
-    }
-
-    res.json({
-      success: true,
-      data: company,
-    });
+    if (!company) throw new AppError('Company not found', 404);
+    res.json({ success: true, data: company });
   } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ success: false, error: error.message });
-    } else {
-      res.status(500).json({ success: false, error: 'Failed to update company' });
+    if (error instanceof AppError) res.status(error.statusCode).json({ success: false, error: error.message });
+    else res.status(500).json({ success: false, error: 'Failed to update company' });
+  }
+};
+
+export const updateCompanyApprovalStatus = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { approvalStatus } = req.body as { approvalStatus?: string };
+
+    if (!approvalStatus || !['pending', 'approved', 'rejected'].includes(approvalStatus)) {
+      throw new AppError('approvalStatus must be pending, approved, or rejected', 400);
     }
+
+    const company = await Company.findByIdAndUpdate(
+      id, { approvalStatus }, { new: true, runValidators: true }
+    );
+    if (!company) throw new AppError('Company not found', 404);
+    res.json({ success: true, data: company });
+  } catch (error) {
+    if (error instanceof AppError) res.status(error.statusCode).json({ success: false, error: error.message });
+    else res.status(500).json({ success: false, error: 'Failed to update approval status' });
+  }
+};
+
+// Flat array for enterprise-requests/page.tsx
+export const getCompaniesForReview = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    const companies = await Company.find().populate('adminId', 'name email').sort({ createdAt: -1 }).lean();
+    res.json({ success: true, data: companies });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch companies' });
   }
 };
 
@@ -276,23 +279,12 @@ export const getAllCompanies = async (
 ): Promise<void> => {
   try {
     const { approvalStatus } = req.query as { approvalStatus?: string };
-    
-    // Build filter - allow filtering by approval status
     const filter: Record<string, unknown> = {};
     if (approvalStatus && ['pending', 'approved', 'rejected'].includes(approvalStatus)) {
       filter.approvalStatus = approvalStatus;
     }
-
     const companies = await Company.find(filter).populate('adminId', 'name email').lean();
-
-    res.json({
-      success: true,
-      data: {
-        companies,
-        total: companies.length,
-        filter: approvalStatus ? { approvalStatus } : null,
-      },
-    });
+    res.json({ success: true, data: { companies, total: companies.length, filter: approvalStatus ? { approvalStatus } : null } });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to fetch companies' });
   }
@@ -304,21 +296,11 @@ export const deleteCompany = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-
     const company = await Company.findByIdAndDelete(id);
-    if (!company) {
-      throw new AppError('Company not found', 404);
-    }
-
-    res.json({
-      success: true,
-      message: 'Company deleted successfully',
-    });
+    if (!company) throw new AppError('Company not found', 404);
+    res.json({ success: true, message: 'Company deleted successfully' });
   } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ success: false, error: error.message });
-    } else {
-      res.status(500).json({ success: false, error: 'Failed to delete company' });
-    }
+    if (error instanceof AppError) res.status(error.statusCode).json({ success: false, error: error.message });
+    else res.status(500).json({ success: false, error: 'Failed to delete company' });
   }
 };

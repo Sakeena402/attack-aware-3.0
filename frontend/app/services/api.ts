@@ -156,6 +156,7 @@ export class ApiService {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include', // sends refreshToken cookie, receives new accessToken cookie
+        cache: 'no-store',
       });
 
       if (res.ok) {
@@ -232,6 +233,8 @@ export class ApiService {
       ...options,
       headers,
       credentials: 'include', // Always send/receive cookies
+      cache: 'no-store', // Prevents the browser from serving stale cached GET responses
+                          // (e.g. an empty /plans array cached before seeding ran)
     });
 
     const data = await res.json();
@@ -277,7 +280,3 @@ api.interceptors.request.use((config) => {
 
   return config;
 });
-
-
-
-
