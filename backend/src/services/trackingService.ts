@@ -54,11 +54,20 @@ export const recordSmsClick = async (
   }
 };
 
+// Called from webhookController.ts's handleSmsStatus with a single options
+// object matching the Twilio webhook field names. Kept as an object param
+// (rather than positional args) so the call site stays readable and so
+// adding new Twilio fields later doesn't require reordering arguments.
 export const recordSmsStatus = async (
-  messageSid: string,
-  status: string,
-  errorCode?: string
+  params: {
+    messageSid: string;
+    status: string;
+    errorCode?: string;
+    errorMessage?: string;
+  }
 ): Promise<void> => {
+  const { messageSid, status, errorCode } = params;
+
   try {
     const result = await SimulationResult.findOne({ messageSid });
 
@@ -67,13 +76,12 @@ export const recordSmsStatus = async (
       return;
     }
 
-    result.smsStatus = status;
+    result.smsDeliveryStatus = status;
     if (status === 'delivered') {
       result.smsDelivered = true;
       result.smsDeliveredAt = new Date();
     } else if (status === 'failed' || status === 'undelivered') {
-      result.smsFailed = true;
-      result.smsFailedAt = new Date();
+      result.smsDeliveryError = errorCode;
       result.smsErrorCode = errorCode;
     }
 
@@ -95,11 +103,18 @@ export const recordSmsStatus = async (
   }
 };
 
+// Called from webhookController.ts's handleCallStatus with a single options
+// object matching Twilio's call-status webhook field names.
 export const recordCallStatus = async (
-  callSid: string,
-  status: string,
-  duration?: number
+  params: {
+    callSid: string;
+    status: string;
+    duration?: number;
+    answeredBy?: string;
+  }
 ): Promise<void> => {
+  const { callSid, status, duration, answeredBy } = params;
+
   try {
     const result = await SimulationResult.findOne({ callSid });
 
@@ -111,8 +126,23 @@ export const recordCallStatus = async (
     result.callStatus = status;
     result.callStatusUpdatedAt = new Date();
 
-    if (status === 'completed' && duration) {
-      result.callDuration = duration;
+    if (answeredBy) {
+      result.answeredBy = answeredBy;
+    }
+
+    // Twilio reports "in-progress" once a human/machine picks up — that's
+    // the actual "answered" moment (there is no literal "answered" CallStatus).
+    if (status === 'in-progress' && !result.callAnswered) {
+      result.callAnswered = true;
+      result.callAnsweredAt = new Date();
+    }
+
+    if (status === 'completed') {
+      result.callCompleted = true;
+      result.callCompletedAt = new Date();
+      if (duration) {
+        result.callDuration = duration;
+      }
     }
 
     await result.save();
@@ -121,12 +151,18 @@ export const recordCallStatus = async (
   }
 };
 
+// Called from webhookController.ts's handleVoiceResponse with a single
+// options object. digitsPressed is the DTMF key the employee pressed.
 export const recordVoiceResponse = async (
-  callSid: string,
-  digits: string,
-  campaignId: string,
-  userId: string
+  params: {
+    callSid: string;
+    digitsPressed: string;
+    campaignId: string;
+    userId: string;
+  }
 ): Promise<{ success: boolean }> => {
+  const { callSid, digitsPressed, campaignId, userId } = params;
+
   try {
     const result = await SimulationResult.findOne({
       callSid,
@@ -139,17 +175,27 @@ export const recordVoiceResponse = async (
       return { success: false };
     }
 
-    result.voiceResponse = digits;
-    result.voiceResponseAt = new Date();
+    result.callResponse = digitsPressed;
+    result.callResponseAt = new Date();
 
-    if (digits === '1' || digits === '2') {
-      result.callAnswered = true;
-      result.callAnsweredAt = new Date();
+    if (digitsPressed === '1' || digitsPressed === '2') {
+      // They engaged with the fake "verify"/"speak to rep" prompt — fell for it.
+      result.voiceEngaged = true;
 
       await Campaign.findByIdAndUpdate(
         campaignId,
         { $inc: { clickedCount: 1 } }
       );
+    } else if (digitsPressed === '9') {
+      // They correctly flagged the call as suspicious.
+      result.voiceReported = true;
+
+      await Campaign.findByIdAndUpdate(
+        campaignId,
+        { $inc: { reportedCount: 1 } }
+      );
+    } else {
+      result.voiceOtherResponse = digitsPressed;
     }
 
     await result.save();

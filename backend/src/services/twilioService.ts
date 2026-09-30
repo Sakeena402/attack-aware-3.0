@@ -1,4 +1,3 @@
-
 import Twilio from 'twilio';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
@@ -27,33 +26,6 @@ export const hashToken = (token: string): string => {
   return crypto.createHash('sha256').update(token).digest('hex');
 };
 
-// export const generateTrackingUrl = (
-//   token: string,
-//   campaignId: string,
-//   userId: string,
-//   pageType: string = 'bank'
-// ): string => {
-//   const baseUrl = process.env.TRACKING_BASE_URL || 'http://localhost:5000/api/track';
-//   const params = new URLSearchParams({
-//     t: token,
-//     c: campaignId,
-//     u: userId,
-//     p: pageType,
-//   });
-//   return `${baseUrl}/click?${params.toString()}`;
-// };
-
-// export const generatePhishingPageUrl = (
-//   token: string,
- 
-//   pageType: string = 'bank'
-// ): string => {
-//   const baseUrl = process.env.PHISHING_PAGE_BASE_URL || 'http://localhost:3000/verify';
-//   return `${baseUrl}/${pageType}?token=${token}`;
-// };
-
-// Replace only these functions in your existing twilioService.ts
-
 export const generateTrackingUrl = (
   token: string,
   campaignId: string,
@@ -66,16 +38,8 @@ export const generateTrackingUrl = (
   return `${baseUrl}/click?${params.toString()}`;
 };
 
-// export const generatePhishingPageUrl = (
-//   token: string,
-//   pageType: string = 'bank'
-// ): string => {
-//   // Must point to FRONTEND port 3000 — this is where employee lands after click
-//   const baseUrl = process.env.PHISHING_PAGE_BASE_URL || 'http://localhost:3000/verify';
-//   return `${baseUrl}/${pageType}?token=${token}`;
-// };
-
-// Change generatePhishingPageUrl to include campaignId and userId
+// Includes campaignId and userId so the fake landing page can report back
+// which simulation record a click/submission belongs to.
 export const generatePhishingPageUrl = (
   token: string,
   pageType: string = 'bank',
@@ -121,6 +85,14 @@ export const smsTemplates = {
   },
 };
 
+// The <Gather> "action" attribute MUST be an absolute URL — Twilio's servers
+// hit it directly from the internet, not from a browser, so a relative path
+// like "/api/webhooks/..." would be invalid and the call would fail silently
+// in production (this only "worked" before because MOCK_SMS mode never
+// actually places a real Twilio call, so the broken URL was never exercised).
+const WEBHOOK_BASE_URL = process.env.API_URL || 'http://localhost:5000';
+const VOICE_RESPONSE_URL = `${WEBHOOK_BASE_URL}/api/webhooks/twilio/voice-response`;
+
 export const voiceScripts = {
   bank_verification: {
     name: 'Bank Account Verification',
@@ -133,7 +105,7 @@ export const voiceScripts = {
           Press 2 to verify your account details.
           Press 9 to report this as a suspicious call.
         </Say>
-        <Gather numDigits="1" action="/api/webhooks/twilio/voice-response" method="POST">
+        <Gather numDigits="1" action="${VOICE_RESPONSE_URL}" method="POST">
           <Say voice="alice">Please make your selection now.</Say>
         </Gather>
         <Say voice="alice">We did not receive your response. Goodbye.</Say>
@@ -151,7 +123,7 @@ export const voiceScripts = {
           Press 2 to schedule a callback.
           Press 9 to report this as a suspicious call.
         </Say>
-        <Gather numDigits="1" action="/api/webhooks/twilio/voice-response" method="POST">
+        <Gather numDigits="1" action="${VOICE_RESPONSE_URL}" method="POST">
           <Say voice="alice">Please make your selection now.</Say>
         </Gather>
         <Say voice="alice">We did not receive your response. Goodbye.</Say>
@@ -169,7 +141,7 @@ export const voiceScripts = {
           Press 2 to confirm your current coverage.
           Press 9 to report this as a suspicious call.
         </Say>
-        <Gather numDigits="1" action="/api/webhooks/twilio/voice-response" method="POST">
+        <Gather numDigits="1" action="${VOICE_RESPONSE_URL}" method="POST">
           <Say voice="alice">Please make your selection now.</Say>
         </Gather>
         <Say voice="alice">We did not receive your response. Goodbye.</Say>
@@ -186,70 +158,6 @@ interface SendSmsOptions {
   userId: string;
   customMessage?: string;
 }
-
-// export const sendSms = async (options: SendSmsOptions): Promise<{
-//   success: boolean;
-//   messageSid?: string;
-//   error?: string;
-//   mocked?: boolean;
-// }> => {
-//   // if (process.env.MOCK_SMS === 'true' || process.env.NODE_ENV === 'test') {
-//   //   const mockSid = `MOCK_SM_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-//   //   console.log(`[MOCK SMS] To: ${options.to} | Template: ${options.templateKey} | SID: ${mockSid}`);
-//   //   return { success: true, messageSid: mockSid, mocked: true };
-//   // }
-//   if (process.env.MOCK_SMS === 'true' || process.env.NODE_ENV === 'test') {
-//   const mockSid = `MOCK_SM_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-
-//   const trackingUrl = generateTrackingUrl(
-//     options.trackingToken,
-//     options.campaignId,
-//     options.userId,
-//     options.templateKey
-//   );
-
-//   const template = smsTemplates[options.templateKey];
-//   const messageBody = options.customMessage || template.message(trackingUrl);
-
-//   console.log('\n================ MOCK SMS ================');
-//   console.log(`📱 To: ${options.to}`);
-//   console.log(`📌 Campaign: ${options.campaignId}`);
-//   console.log(`👤 User: ${options.userId}`);
-//   console.log(`🧾 Template: ${options.templateKey}`);
-//   console.log(`🔗 Tracking URL:\n${trackingUrl}`);
-//   console.log(`💬 Message:\n${messageBody}`);
-//   console.log('==========================================\n');
-
-//   return { success: true, messageSid: mockSid, mocked: true };
-// }
-
-//   try {
-//     const client = getTwilioClient();
-//     const template = smsTemplates[options.templateKey];
-
-//     const trackingUrl = generateTrackingUrl(
-//       options.trackingToken,
-//       options.campaignId,
-//       options.userId,
-//       options.templateKey
-//     );
-
-//     const messageBody = options.customMessage || template.message(trackingUrl);
-
-//     const message = await client.messages.create({
-//       body: messageBody,
-//       from: process.env.TWILIO_PHONE_NUMBER,
-//       to: options.to,
-      
-//     });
-
-//     return { success: true, messageSid: message.sid };
-//   } catch (error) {
-//     const errorMessage = error instanceof Error ? error.message : 'Failed to send SMS';
-//     console.error('Twilio SMS Error:', errorMessage);
-//     return { success: false, error: errorMessage };
-//   }
-// };
 
 export const sendSms = async (options: SendSmsOptions): Promise<{
   success: boolean;
@@ -308,33 +216,6 @@ interface MakeCallOptions {
   userId: string;
 }
 
-// export const makeVoiceCall = async (options: MakeCallOptions): Promise<{
-//   success: boolean;
-//   callSid?: string;
-//   error?: string;
-// }> => {
-//   try {
-//     const client = getTwilioClient();
-//     const script = voiceScripts[options.scriptKey];
-
-//     const call = await client.calls.create({
-//       twiml: script.twiml(),
-//       from: process.env.TWILIO_PHONE_NUMBER!,
-//       to: options.to,
-//       statusCallback: `${process.env.API_URL}/api/webhooks/twilio/call-status`,
-//       statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
-//       statusCallbackMethod: 'POST',
-//       machineDetection: 'Enable',
-//     });
-
-//     return { success: true, callSid: call.sid };
-//   } catch (error) {
-//     const errorMessage = error instanceof Error ? error.message : 'Failed to make call';
-//     console.error('Twilio Voice Error:', errorMessage);
-//     return { success: false, error: errorMessage };
-//   }
-// };
-
 export const makeVoiceCall = async (options: MakeCallOptions): Promise<{
   success: boolean;
   callSid?: string;
@@ -349,7 +230,11 @@ export const makeVoiceCall = async (options: MakeCallOptions): Promise<{
     console.log(`  To          : ${options.to}`);
     console.log(`  Script      : ${options.scriptKey}`);
     console.log(`  Mock SID    : ${mockSid}`);
-    console.log(`  Script text : ${voiceScripts[options.scriptKey].twiml()}`);
+    console.log(`  ─────────────────────────────────────────────`);
+    console.log(`  Simulate the employee pressing a key by hitting one of:`);
+    console.log(`  curl -X POST ${VOICE_RESPONSE_URL} -d "CallSid=${mockSid}&Digits=1"`);
+    console.log(`  curl -X POST ${VOICE_RESPONSE_URL} -d "CallSid=${mockSid}&Digits=2"`);
+    console.log(`  curl -X POST ${VOICE_RESPONSE_URL} -d "CallSid=${mockSid}&Digits=9"   (reports as suspicious)`);
     console.log(`════════════════════════════════════════════════\n`);
 
     return { success: true, callSid: mockSid, mocked: true };
@@ -363,7 +248,7 @@ export const makeVoiceCall = async (options: MakeCallOptions): Promise<{
       twiml: script.twiml(),
       from: process.env.TWILIO_PHONE_NUMBER!,
       to: options.to,
-      statusCallback: `${process.env.API_URL}/api/webhooks/twilio/call-status`,
+      statusCallback: `${WEBHOOK_BASE_URL}/api/webhooks/twilio/call-status`,
       statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
       statusCallbackMethod: 'POST',
       machineDetection: 'Enable',
