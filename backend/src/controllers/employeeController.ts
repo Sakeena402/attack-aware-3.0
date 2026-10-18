@@ -193,7 +193,7 @@ export const createEmployee = async (
           );
         }
       }
-            // No subscriptionPlan set → skip the check (don't block on missing plan)
+      // No subscriptionPlan set → skip the check (don't block on missing plan)
     }
     // ──────────────────────────────────────────────────────────────────────────
 

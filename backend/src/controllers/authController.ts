@@ -556,7 +556,8 @@ export const setPassword = async (
   }
 };
 
-// ------------------- SEND CREDENTIALS -------------------
+// ─── SEND CREDENTIALS (admin) ─────────────────────────────────────────────────
+
 export const sendCredentials = async (
   req: AuthRequest,
   res: Response<ApiResponse>
