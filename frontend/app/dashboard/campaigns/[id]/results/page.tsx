@@ -89,13 +89,17 @@ export default function CampaignResultsPage() {
             {data.campaign.name} · {data.campaign.type} · {data.campaign.status}
           </p>
         </div>
-        <button
-          onClick={handleDownloadPDF}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:shadow-lg transition"
-        >
-          <Download className="w-4 h-4" />
-          Download PDF Report
-        </button>
+
+        <div className="flex items-center gap-3">
+          
+          <button
+            onClick={handleDownloadPDF}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:shadow-lg transition"
+          >
+            <Download className="w-4 h-4" />
+            Download PDF Report
+          </button>
+        </div>
       </motion.div>
 
       {/* Summary Cards */}

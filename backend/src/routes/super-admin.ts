@@ -4,8 +4,14 @@ import {
   getCompany,
   createCompany,
   updateCompany,
+  updateCompanyApprovalStatus,
   deleteCompany,
 } from '../controllers/companyController.js';
+import {
+  listSubscriptionRequests,
+  approveSubscriptionRequest,
+  rejectSubscriptionRequest,
+} from '../controllers/subscriptionRequestController.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireSuperAdmin } from '../middleware/rbac.js';
 import { User } from '../models/User.js';
@@ -26,7 +32,13 @@ superAdminRouter.post('/companies',    createCompany);
 superAdminRouter.get('/companies/:id', getCompany);
 superAdminRouter.patch('/companies/:id', updateCompany);
 superAdminRouter.put('/companies/:id',   updateCompany);
+superAdminRouter.patch('/companies/:id/approval', updateCompanyApprovalStatus);
 superAdminRouter.delete('/companies/:id', deleteCompany);
+
+// ── Subscription Requests ─────────────────────────────────────────────────────
+superAdminRouter.get('/subscription-requests', listSubscriptionRequests);
+superAdminRouter.post('/subscription-requests/:id/approve', approveSubscriptionRequest);
+superAdminRouter.post('/subscription-requests/:id/reject', rejectSubscriptionRequest);
 
 // ── Global Analytics — REAL DATA, no companyId filter ────────────────────────
 superAdminRouter.get('/analytics/global', async (_req, res) => {

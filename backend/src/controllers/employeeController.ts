@@ -14,12 +14,14 @@ import { sendEmployeeSetupEmail } from '../services/emailService.js';
 
 import { AppError } from '../utils/errorHandler.js';
 import { AuthRequest, ApiResponse } from '../types/index.js';
+import { isPlanExempt } from '../config/planExemptions.js';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// In getAllEmployees — replace the manual companyId query handling with this:
 export const getAllEmployees = async (req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
   try {
     if (!req.user) throw new AppError('User not authenticated', 401);
@@ -110,10 +112,12 @@ export const createEmployee = async (
       throw new AppError('User not authenticated', 401);
     }
 
-    const { name, department, role = 'employee', phoneNumber, personalEmail } = req.body;
+    const { name, department, phoneNumber, personalEmail } = req.body;
     // NOTE: the company login email and the placeholder password are both
     // auto-generated below. The employee's PERSONAL email is what the setup
     // link is delivered to.
+    // NOTE: companyId is intentionally NOT destructured from req.body for non-super_admin callers.
+    // Only super_admin may specify an arbitrary companyId. Everyone else is locked to their JWT companyId.
     const bodyCompanyId = req.body.companyId;
 
     if (!name || !String(name).trim()) {
@@ -126,6 +130,29 @@ export const createEmployee = async (
     if (!EMAIL_REGEX.test(trimmedPersonalEmail)) {
       throw new AppError('A valid personal email is required so the setup link can be delivered', 400);
     }
+
+    // Plan-exempt accounts skip the approval and seat checks below.
+    const exempt = isPlanExempt(req.user);
+
+    // ── SECURITY: role whitelist ────────────────────────────────────────────
+    // Only super_admin may set role freely; everyone else (including plan-exempt
+    // accounts) can only create 'employee' accounts within their own company.
+    const requestedRole = req.body.role;
+    const ADMIN_CREATABLE_ROLES = ['employee'];
+    let role: string;
+
+    if (req.user.role === 'super_admin') {
+      role = requestedRole || 'employee';
+    } else {
+      role = requestedRole || 'employee';
+      if (!ADMIN_CREATABLE_ROLES.includes(role)) {
+        throw new AppError(
+          `You are not allowed to create an account with role "${role}". Allowed roles: ${ADMIN_CREATABLE_ROLES.join(', ')}.`,
+          403
+        );
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     // Determine company ID — non-super_admin is always locked to their own companyId
     const employeeCompanyId = req.user.role === 'super_admin'
@@ -143,7 +170,7 @@ export const createEmployee = async (
     }
 
     // ── Company approval status check: admin must have approved company ──────────
-    if (req.user.role !== 'super_admin' && company.approvalStatus !== 'approved') {
+    if (req.user.role !== 'super_admin' && !exempt && company.approvalStatus !== 'approved') {
       throw new AppError(
         'Your company is pending approval. You cannot add employees yet. Please contact support.',
         403
@@ -152,7 +179,7 @@ export const createEmployee = async (
     // ──────────────────────────────────────────────────────────────────────────
 
     // ── Plan enforcement: check maxEmployees limit ──────────────────────────
-    if (company.subscriptionPlan) {
+    if (!exempt && company.subscriptionPlan) {
       const plan = company.subscriptionPlan as any;
       if (typeof plan.maxEmployees === 'number') {
         const currentCount = await User.countDocuments({
@@ -166,7 +193,7 @@ export const createEmployee = async (
           );
         }
       }
-      // No subscriptionPlan set → skip the check (don't block on missing plan)
+            // No subscriptionPlan set → skip the check (don't block on missing plan)
     }
     // ──────────────────────────────────────────────────────────────────────────
 
@@ -524,9 +551,25 @@ export const updateEmployee = async (
       employee.email = email.toLowerCase().trim();
     }
     if (department) employee.department = department;
-    if (role && (req.user.role === 'super_admin' || req.user.role === 'admin')) {
-      employee.role = role;
+
+    // ── SECURITY: role whitelist ────────────────────────────────────────────
+    // Only super_admin may set role freely; a company admin can only assign 'employee'.
+    if (role) {
+      const ADMIN_ASSIGNABLE_ROLES = ['employee'];
+      if (req.user.role === 'super_admin') {
+        employee.role = role;
+      } else if (req.user.role === 'admin') {
+        if (!ADMIN_ASSIGNABLE_ROLES.includes(role)) {
+          throw new AppError(
+            `You are not allowed to assign role "${role}". Allowed roles: ${ADMIN_ASSIGNABLE_ROLES.join(', ')}.`,
+            403
+          );
+        }
+        employee.role = role;
+      }
     }
+    // ─────────────────────────────────────────────────────────────────────────
+
     if (typeof points === 'number') employee.points = points;
     if (badge) employee.badge = badge;
     if (phoneNumber !== undefined) employee.phoneNumber = phoneNumber;

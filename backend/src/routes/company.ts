@@ -1,16 +1,26 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
-import { authorizeRoles } from '../middleware/rbac.js';
-import { createCompanySelfService } from '../controllers/companyController.js';
+import { authorizeRoles, requireSuperAdmin } from '../middleware/rbac.js';
+import {
+  createCompanySelfService,
+  getMyCompany,
+  updateMyCompany,
+  getCompaniesForReview,
+  updateCompanyApprovalStatus,
+} from '../controllers/companyController.js';
 
 const router = Router();
-
-// All company routes require authentication
 router.use(authenticate);
 
-// Self-service company creation: individual role only
-// This is the flow where someone registers as individual, subscribes to a plan,
-// then creates their own company and automatically becomes its admin.
+// Self-service: individual creates their own company, becomes admin
 router.post('/', authorizeRoles('individual'), createCompanySelfService);
+
+// Admin: view/update their own company profile
+router.get('/me', authorizeRoles('admin'), getMyCompany);
+router.patch('/me', authorizeRoles('admin'), updateMyCompany);
+
+// Super-admin: review queue for enterprise-requests page
+router.get('/', requireSuperAdmin, getCompaniesForReview);
+router.patch('/:id', requireSuperAdmin, updateCompanyApprovalStatus);
 
 export default router;

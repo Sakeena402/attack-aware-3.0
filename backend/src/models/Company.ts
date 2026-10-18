@@ -3,50 +3,19 @@ import { ICompany } from '../types/index.js';
 
 const companySchema = new Schema<ICompany>(
   {
-    companyName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    industry: {
-      type: String,
-      required: true,
-    },
-    adminId: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    employeeCount: {
-      type: Number,
-      default: 0,
-    },
-    approvalStatus: {
-      type: String,
-      enum: ['pending', 'approved', 'rejected'],
-      default: 'pending',
-    },
-    enterpriseCode: {
-      type: String,
-      unique: true,
-      sparse: true,
-    },
-    contactPerson: {
-      type: String,
-    },
-    taxId: {
-      type: String,
-    },
-    subscriptionPlan: {
-      type: Schema.Types.ObjectId,
-      ref: 'MembershipPlan',
-    },
-    lastMonthlyQuizTopic: {
-      type: String,
-    },
-    lastMonthlyQuizGeneratedAt: {
-      type: Date,
-    },
+    companyName: { type: String, required: true, trim: true },
+    industry: { type: String, required: true },
+    companyUrl: { type: String, trim: true },
+    companyEmail: { type: String, trim: true, lowercase: true },
+    adminId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    employeeCount: { type: Number, default: 0 },
+    approvalStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+    enterpriseCode: { type: String, unique: true, sparse: true },
+    contactPerson: { type: String },
+    taxId: { type: String },
+    subscriptionPlan: { type: Schema.Types.ObjectId, ref: 'MembershipPlan' },
+    lastMonthlyQuizTopic: { type: String },
+    lastMonthlyQuizGeneratedAt: { type: Date },
   },
   { timestamps: true }
 );

@@ -55,6 +55,8 @@ export interface IUser extends Document {
   isUrduPreferred?: boolean;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
+  twoFactorEnabled: boolean;
+  emailVerified: boolean;
   bio?: string;
   trainingProgress?: number;
 
@@ -74,6 +76,8 @@ export interface ICompany extends Document {
   _id: Types.ObjectId;
   companyName: string;
   industry: string;
+  companyUrl?: string;
+  companyEmail?: string;
   adminId: Types.ObjectId;
   employeeCount: number;
   approvalStatus?: 'pending' | 'approved' | 'rejected';
@@ -87,6 +91,7 @@ export interface ICompany extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
 
 //hifza code
 //hifza code
@@ -240,12 +245,20 @@ export interface ApiResponse<T = any> {
   message?: string;
   data?: T;
   error?: string;
+  remainingAttempts?: number;
+  locked?: boolean;
+  retryAfterSeconds?: number;
 }
 
 // Company request bodies
 export interface CreateCompanyBody {
   companyName: string;
   industry: string;
+  companyUrl?: string;
+  companyEmail?: string;
+  employeeCount?: number;
+  contactPerson?: string;
+  taxId?: string;
   /** Optional: the userId to assign as company admin. If omitted, company is created with no admin. */
   adminId?: string;
 }
@@ -253,6 +266,11 @@ export interface CreateCompanyBody {
 export interface UpdateCompanyBody {
   companyName?: string;
   industry?: string;
+  companyUrl?: string;
+  companyEmail?: string;
+  employeeCount?: number;
+  contactPerson?: string;
+  taxId?: string;
   adminId?: string;
   approvalStatus?: 'pending' | 'approved' | 'rejected';
 }
@@ -270,6 +288,37 @@ export interface CreateContactBody {
 export interface LoginRequest {
   email: string;
   password: string;
+}
+
+export interface LoginOtpVerifyBody {
+  tempToken: string;
+  code: string;
+}
+
+export interface LoginOtpResendBody {
+  tempToken: string;
+}
+
+export interface SignupOtpVerifyBody {
+  email: string;
+  code: string;
+}
+
+export interface ResendSignupOtpBody {
+  email: string;
+}
+
+export interface Toggle2FABody {
+  enable: boolean;
+  code?: string;
+  password?: string;
+}
+
+export interface OtpTempTokenPayload {
+  userId: string;
+  purpose: 'login_verification';
+  iat?: number;
+  exp?: number;
 }
 
 // Register Request

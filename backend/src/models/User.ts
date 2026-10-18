@@ -111,6 +111,14 @@ const userSchema = new Schema<IUser>(
     passwordResetExpires: {
       type: Date,
     },
+    twoFactorEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
     bio: {
       type: String,
     },

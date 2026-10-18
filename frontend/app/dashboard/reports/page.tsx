@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import useSWR from 'swr';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/app/context/authContext';
+import { PlanGate } from '@/components/dashboard/PlanGate';
 import { campaignReportsApi, AggregateReportData } from '@/app/services/campaignReportsApi';
 import { Download, Calendar, Filter } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -51,6 +52,7 @@ export default function ReportsPage() {
   };
 
   return (
+    <PlanGate>
     <div className="space-y-8">
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex items-start justify-between flex-wrap gap-4">
@@ -181,5 +183,6 @@ export default function ReportsPage() {
         </>
       )}
     </div>
+    </PlanGate>
   );
 }

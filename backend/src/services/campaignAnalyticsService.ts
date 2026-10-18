@@ -4,6 +4,22 @@ import SimulationResult from '../models/SimulationResult.js';
 import { Campaign }     from '../models/Campaign.js';
 import mongoose         from 'mongoose';
 
+// Small helpers so "was this link/call clicked/engaged" checks stay consistent
+// across every function below — and only need updating in one place if field
+// names change again.
+function wasClicked(r: any): boolean {
+  return !!(r.emailClicked || r.smsClicked || r.smsLinkClicked);
+}
+function wasCompromised(r: any): boolean {
+  // "Compromised" = fell for the attack completely:
+  //  - phishing: submitted credentials on the fake page
+  //  - vishing:  engaged with the fake caller (pressed 1 or 2)
+  return !!(r.credentialsSubmitted || r.voiceEngaged || r.voiceVerified);
+}
+function wasReported(r: any): boolean {
+  return !!(r.reportedPhishing || r.voiceReported);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CAMPAIGN DETAILED RESULTS
 // Shows EVERY user who received this campaign and what they did
@@ -31,21 +47,21 @@ export async function getCampaignDetailedResults(campaignId: string) {
       primaryAction = 'compromised';
       actionTime    = r.credentialsSubmittedAt;
       actionDetail  = `Submitted: ${r.formFieldsSubmitted?.join(', ') ?? 'credentials'}`;
-    } else if (r.smsLinkClicked || r.linkClicked) {
+    } else if (wasClicked(r)) {
       primaryAction = 'clicked';
-      actionTime    = r.smsClickedAt || r.clickedAt;
+      actionTime    = r.smsClickedAt || r.emailClickedAt;
       actionDetail  = `IP: ${r.clickIpAddress ?? 'unknown'}`;
-    } else if (r.reportedPhishing || r.voiceReported) {
+    } else if (wasReported(r)) {
       primaryAction = 'reported';
       actionTime    = r.reportedAt || r.callResponseAt;
       actionDetail  = `Method: ${r.reportMethod ?? 'button'}`;
     } else if (r.voiceEngaged || r.voiceVerified) {
       primaryAction = 'engaged';
       actionTime    = r.callResponseAt;
-      actionDetail  = 'Call interaction';
-    } else if (r.smsSent || r.emailOpened || r.callInitiated) {
+      actionDetail  = `Pressed: ${r.callResponse ?? 'key'}`;
+    } else if (r.smsSent || r.emailSent || r.callInitiated) {
       primaryAction = 'received_no_action';
-      actionTime    = r.smsSentAt || r.timestamp || r.createdAt;
+      actionTime    = r.smsSentAt || r.emailSentAt || r.callInitiatedAt || r.timestamp || r.createdAt;
     }
 
     return {
@@ -57,25 +73,25 @@ export async function getCampaignDetailedResults(campaignId: string) {
       riskLevel:     user?.riskLevel ?? 'low',
       badge:         user?.badge ?? 'Rookie',
       points:        user?.points ?? 0,
-      
+
       // Action details
       action:        primaryAction,
       actionTime:    actionTime,
       actionDetail:  actionDetail,
-      
-      // Raw tracking data
-      sent:          r.smsSent || r.emailOpened || r.callInitiated || false,
+
+      // Raw tracking data — feeds the summary cards (Click/Compromise/Report Rate)
+      sent:          r.smsSent || r.emailSent || r.callInitiated || false,
       delivered:     r.smsDelivered || r.emailOpened || r.callAnswered || false,
-      clicked:       r.smsLinkClicked || r.linkClicked || false,
-      compromised:   r.credentialsSubmitted || false,
-      reported:      r.reportedPhishing || r.voiceReported || false,
-      
+      clicked:       wasClicked(r),
+      compromised:   wasCompromised(r),
+      reported:      wasReported(r),
+
       // Timestamps
-      sentAt:        r.smsSentAt || r.timestamp || r.createdAt,
-      clickedAt:     r.smsClickedAt || r.clickedAt,
+      sentAt:        r.smsSentAt || r.emailSentAt || r.callInitiatedAt || r.timestamp || r.createdAt,
+      clickedAt:     r.smsClickedAt || r.emailClickedAt,
       reportedAt:    r.reportedAt,
-      compromisedAt: r.credentialsSubmittedAt,
-      
+      compromisedAt: r.credentialsSubmittedAt || r.callResponseAt,
+
       // Additional context
       ipAddress:     r.clickIpAddress,
       userAgent:     r.clickUserAgent,
@@ -90,13 +106,13 @@ export async function getCampaignDetailedResults(campaignId: string) {
   const clicked     = userActions.filter(u => u.clicked).length;
   const compromised = userActions.filter(u => u.compromised).length;
   const reported    = userActions.filter(u => u.reported).length;
-  const ignored     = total - clicked - reported;
+  const ignored      = total - clicked - compromised - reported;
 
   const pct = (n: number, d: number) => d > 0 ? Math.round((n / d) * 1000) / 10 : 0;
 
   // Group by action type
   const byAction = {
-    compromised: userActions.filter(u => u.action === 'compromised'),
+    compromised: userActions.filter(u => u.action === 'compromised' || u.action === 'engaged'),
     clicked:     userActions.filter(u => u.action === 'clicked'),
     reported:    userActions.filter(u => u.action === 'reported'),
     engaged:     userActions.filter(u => u.action === 'engaged'),
@@ -178,9 +194,9 @@ export async function compareCampaigns(campaignIds: string[]) {
     campaigns.map(async (campaign) => {
       const results = await SimulationResult.find({ campaignId: campaign._id }).lean();
       const total       = results.length;
-      const clicked     = results.filter(r => r.smsLinkClicked || r.linkClicked).length;
-      const compromised = results.filter(r => r.credentialsSubmitted).length;
-      const reported    = results.filter(r => r.reportedPhishing || r.voiceReported).length;
+      const clicked     = results.filter(r => wasClicked(r)).length;
+      const compromised = results.filter(r => wasCompromised(r)).length;
+      const reported    = results.filter(r => wasReported(r)).length;
 
       const pct = (n: number) => total > 0 ? Math.round((n / total) * 100) : 0;
 
@@ -248,9 +264,9 @@ export async function getAggregateReportData(options: {
 
   // Overall stats
   const total       = filteredResults.length;
-  const clicked     = filteredResults.filter(r => r.smsLinkClicked || r.linkClicked).length;
-  const compromised = filteredResults.filter(r => r.credentialsSubmitted).length;
-  const reported    = filteredResults.filter(r => r.reportedPhishing || r.voiceReported).length;
+  const clicked     = filteredResults.filter(r => wasClicked(r)).length;
+  const compromised = filteredResults.filter(r => wasCompromised(r)).length;
+  const reported    = filteredResults.filter(r => wasReported(r)).length;
 
   const pct = (n: number) => total > 0 ? Math.round((n / total) * 100) : 0;
 
@@ -263,9 +279,9 @@ export async function getAggregateReportData(options: {
       deptStats[dept] = { total: 0, clicked: 0, compromised: 0, reported: 0 };
     }
     deptStats[dept].total++;
-    if (r.smsLinkClicked || r.linkClicked)  deptStats[dept].clicked++;
-    if (r.credentialsSubmitted)             deptStats[dept].compromised++;
-    if (r.reportedPhishing || r.voiceReported) deptStats[dept].reported++;
+    if (wasClicked(r))     deptStats[dept].clicked++;
+    if (wasCompromised(r)) deptStats[dept].compromised++;
+    if (wasReported(r))    deptStats[dept].reported++;
   });
 
   const departmentBreakdown = Object.entries(deptStats).map(([dept, stats]: [string, any]) => ({
@@ -284,9 +300,9 @@ export async function getAggregateReportData(options: {
       typeStats[type] = { total: 0, clicked: 0, compromised: 0, reported: 0 };
     }
     typeStats[type].total++;
-    if (r.smsLinkClicked || r.linkClicked)  typeStats[type].clicked++;
-    if (r.credentialsSubmitted)             typeStats[type].compromised++;
-    if (r.reportedPhishing || r.voiceReported) typeStats[type].reported++;
+    if (wasClicked(r))     typeStats[type].clicked++;
+    if (wasCompromised(r)) typeStats[type].compromised++;
+    if (wasReported(r))    typeStats[type].reported++;
   });
 
   const simulationTypeBreakdown = Object.entries(typeStats).map(([type, stats]: [string, any]) => ({

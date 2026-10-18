@@ -28,8 +28,9 @@ export interface ISimulationResult extends Document {
   smsDeliveryStatus?:  string;
   smsDeliveryError?:   string;
   smsErrorCode?:       string;
-  smsLinkClicked?:     boolean;
+  smsClicked?:         boolean;
   smsClickedAt?:       Date;
+  smsLinkClicked?:     boolean;
   smsTemplate?:        string;
   messageSid?:         string;
   phoneNumber?:        string;
@@ -43,6 +44,7 @@ export interface ISimulationResult extends Document {
   callCompletedAt?:  Date;
   callDuration?:     number;
   callStatus?:       string;
+  callStatusUpdatedAt?: Date;
   callResponse?:     string;
   callResponseAt?:   Date;
   voiceEngaged?:     boolean;
@@ -66,10 +68,8 @@ export interface ISimulationResult extends Document {
   smsStatus?:              string;
   smsFailed?:              boolean;
   smsFailedAt?:            Date;
-  callStatusUpdatedAt?:    Date;
   voiceResponse?:          string;
   voiceResponseAt?:        Date;
-  smsClicked?:             boolean;
   linkClicked?:            boolean;
   linkClickedAt?:          Date;
 
@@ -122,8 +122,9 @@ const simulationResultSchema = new Schema<ISimulationResult>(
     smsDeliveryStatus: String,
     smsDeliveryError:  String,
     smsErrorCode:      String,
-    smsLinkClicked:    { type: Boolean, default: false },
+    smsClicked:        { type: Boolean, default: false },
     smsClickedAt:      Date,
+    smsLinkClicked:    { type: Boolean, default: false },
     smsTemplate:       String,
     messageSid:        String,
     phoneNumber:       String,
@@ -137,6 +138,7 @@ const simulationResultSchema = new Schema<ISimulationResult>(
     callCompletedAt:   Date,
     callDuration:      Number,
     callStatus:        String,
+    callStatusUpdatedAt: Date,
     callResponse:      String,
     callResponseAt:    Date,
     voiceEngaged:      { type: Boolean, default: false },
@@ -160,10 +162,8 @@ const simulationResultSchema = new Schema<ISimulationResult>(
     smsStatus:              String,
     smsFailed:              { type: Boolean, default: false },
     smsFailedAt:            Date,
-    callStatusUpdatedAt:    Date,
     voiceResponse:          String,
     voiceResponseAt:        Date,
-    smsClicked:             { type: Boolean, default: false },
     linkClicked:            { type: Boolean, default: false },
     linkClickedAt:          Date,
 

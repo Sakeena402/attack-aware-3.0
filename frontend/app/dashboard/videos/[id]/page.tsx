@@ -5,8 +5,12 @@ import { motion } from 'framer-motion';
 import { useParams, useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { getVideoById, getVideos, StaticVideo } from '@/app/data/videos.data';
+import { videoWithAllowance, videosWithAllowance } from '@/app/data/videoAccess';
 import { ArrowLeft, CheckCircle, SkipBack, SkipForward, Play, Pause } from 'lucide-react';
 import { videoApi } from '@/app/services/videoApi';
+import { LimitBanner, LimitNotice } from '@/components/dashboard/LimitNotice';
+import { toMessage, isPlanError } from '@/app/services/errorMessage';
+import { useContentAllowance } from '@/hooks/useContentAllowance';
 
 import { useAuth } from '@/app/context/authContext';
 
@@ -36,15 +40,26 @@ export default function VideoWatchPage() {
   const user = authState?.user;
   const isPremium = user?.role === 'admin' || user?.role === 'super_admin' || user?.companyId != null;
 
+  // Videos are unlocked according to the user's plan (company or individual)
+  const { allowance, loading: allowanceLoading } = useContentAllowance();
+
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const [completed, setCompleted] = useState(false);
   const [marking, setMarking] = useState(false);
+  const [saveError, setSaveError] = useState<{ message: string; isPlan: boolean } | null>(null);
+  const [blocked, setBlocked] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
   // Static data — instant, synchronous
-  const video: StaticVideo | undefined = getVideoById(id, isPremium);
-  const allVideos: StaticVideo[] = video ? getVideos(video.language, undefined, isPremium) : [];
+  const video: StaticVideo | undefined = allowance
+    ? videoWithAllowance(id, allowance)
+    : getVideoById(id, isPremium);
+  const allVideos: StaticVideo[] = video
+    ? allowance
+      ? videosWithAllowance(video.language, undefined, allowance)
+      : getVideos(video.language, undefined, isPremium)
+    : [];
 
   // Check localStorage for completion status on mount
   useEffect(() => {
@@ -53,15 +68,35 @@ export default function VideoWatchPage() {
     }
   }, [id]);
 
+  // Ask the backend whether this video is still within the monthly plan allowance.
+  // Only plan errors block the page; network errors let the video play as before.
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    setBlocked(null);
+    videoApi
+      .checkAccess(id)
+      .catch((err) => {
+        if (!cancelled && isPlanError(err)) setBlocked(toMessage(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
   const handleComplete = async () => {
     if (completed || marking) return;
     setMarking(true);
+    setSaveError(null);
     try {
       await videoApi.markWatched(id);
       markCompletedLocally(id); // keep local cache too, for instant UI feedback
       setCompleted(true);
-    } catch {
-      // optional: show a saveError state like the game page does
+    } catch (err) {
+      setSaveError({
+        message: toMessage(err, "Couldn't save your progress. Please try again."),
+        isPlan: isPlanError(err),
+      });
     } finally {
       setMarking(false);
     }
@@ -87,7 +122,29 @@ export default function VideoWatchPage() {
 
   const isUrdu = video?.language === 'ur';
 
+  if (allowanceLoading) {
+    return <p className="text-slate-400">Loading...</p>;
+  }
+
   if (!video) return <p className="text-slate-400">Video not found</p>;
+
+  // Not included in the plan, or the monthly video allowance is used up — show the plan message
+  const lockedMessage =
+    blocked ?? (video.isLocked ? 'This video is not included in your current plan.' : null);
+
+  if (lockedMessage) {
+    return (
+      <div className="space-y-6">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-slate-400 hover:text-white transition text-sm"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to Videos
+        </button>
+        <LimitNotice message={lockedMessage} onBack={() => router.back()} backLabel="Back to Videos" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -182,6 +239,12 @@ export default function VideoWatchPage() {
                   : isUrdu ? 'مکمل کریں (+10 پوائنٹس)' : 'Mark as Complete (+10 pts)'
                 }
               </button>
+            )}
+
+            {saveError && (
+              <div className="mt-3">
+                <LimitBanner message={saveError.message} isPlan={saveError.isPlan} />
+              </div>
             )}
           </div>
         </div>

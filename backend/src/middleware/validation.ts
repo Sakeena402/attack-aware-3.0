@@ -123,6 +123,33 @@ export const refreshTokenSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token is required'),
 });
 
+export const loginOtpVerifySchema = z.object({
+  tempToken: z.string().min(1, 'Temporary verification token is required'),
+  code: z.string().regex(/^\d{6}$/, 'OTP must be a 6-digit code'),
+});
+
+export const loginOtpResendSchema = z.object({
+  tempToken: z.string().min(1, 'Temporary verification token is required'),
+});
+
+// Signup OTP verification — body: { email, code }
+export const signupOtpVerifySchema = z.object({
+  email: emailSchema,
+  code: z.string().regex(/^\d{6}$/, 'OTP must be a 6-digit code'),
+});
+
+// Signup OTP resend — body: { email }
+export const signupOtpResendSchema = z.object({
+  email: emailSchema,
+});
+
+// 2FA toggle — body: { enable, code?, password? }
+export const toggle2faSchema = z.object({
+  enable: z.boolean(),
+  code: z.string().regex(/^\d{6}$/, 'OTP must be a 6-digit code').optional(),
+  password: z.string().min(1).optional(),
+});
+
 // Employee Schemas
 export const createEmployeeSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100).trim(),

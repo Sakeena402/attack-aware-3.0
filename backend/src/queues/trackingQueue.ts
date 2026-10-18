@@ -6,6 +6,8 @@ import dotenv from 'dotenv';
 // Load environment variables first
 dotenv.config();
 import Bull from 'bull';
+import { User } from '../models/User.js';
+import { companyAllowsAiQuizzes } from '../services/planLimitsService.js';
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 
@@ -169,6 +171,15 @@ export async function enqueueCampaignCounter(job: CampaignCounterJob): Promise<v
 }
 
 export async function enqueueAdaptiveQuiz(job: AdaptiveQuizJobPayload): Promise<void> {
+  // Plan gate: only queue an AI quiz if the employee's company plan includes AI quizzes
+  const employee = await User.findById(job.employeeId).select('companyId').lean();
+  if (!(await companyAllowsAiQuizzes(employee?.companyId))) {
+    console.log(
+      `[QUEUE] Skipped adaptive quiz for employee="${job.employeeId}" — company plan does not include AI quizzes`
+    );
+    return;
+  }
+
   await adaptiveQuizQueue.add(job, {
     jobId: `quiz-${job.employeeId}-${job.failureEventId}-${job.eventType}`,
   });

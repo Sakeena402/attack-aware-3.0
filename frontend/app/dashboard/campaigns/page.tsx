@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Modal, ConfirmDialog } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast-notification';
 import { useAuth } from '@/app/context/authContext';
+import { PlanGate } from '@/components/dashboard/PlanGate';
 import Link from 'next/link';
 import { StatCardSkeleton } from '@/components/ui/skeleton-loader';
 import {
@@ -411,6 +412,7 @@ const selectAllEmployees = () => {
   };
 */
   return (
+    <PlanGate>
     <div className="space-y-8">
       {/* Header */}
       <motion.div
@@ -1168,5 +1170,6 @@ onChange={() => toggleEmployee(employee)}  // poora employee object pass karo
         loading={isSubmitting}
       />
     </div>
+    </PlanGate>
   );
 }

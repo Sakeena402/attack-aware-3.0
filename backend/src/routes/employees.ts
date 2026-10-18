@@ -12,6 +12,7 @@ import {
 import { authenticate } from '../middleware/auth.js';
 import { requireAdmin, isolateByCompany } from '../middleware/rbac.js';
 import { uploadExcel } from '../middleware/upload.js';
+import { enforceEmployeeSeatLimit } from '../middleware/planLimits.js';
 
 const employeesRouter = Router();
 
@@ -25,7 +26,7 @@ employeesRouter.post('/bulk', requireAdmin, isolateByCompany, uploadExcel, creat
 
 // Collection routes
 employeesRouter.get('/',    isolateByCompany, getAllEmployees);
-employeesRouter.post('/',   requireAdmin, isolateByCompany, createEmployee);
+employeesRouter.post('/',   requireAdmin, isolateByCompany, enforceEmployeeSeatLimit, createEmployee);
 
 // Param routes last
 employeesRouter.get('/:id',    isolateByCompany, getEmployeeById);

@@ -4,6 +4,8 @@ import { Game } from '../models/Game.js';
 import { UserGame } from '../models/UserGame.js';
 import { updateUserPoints } from '../services/analyticsService.js';
 import { completeLinkedTasks } from '../services/taskService.js';
+import { awardMonthlyPoints } from '../services/pointsGuard.js';
+import { getOpenCounts } from '../services/contentAccessService.js';
 import { AppError } from '../utils/errorHandler.js';
 
 import { Company } from '../models/Company.js';
@@ -21,9 +23,12 @@ export const getGames = async (req: AuthRequest, res: Response<ApiResponse>): Pr
       }
     }
 
+    // Not unlocked through a company plan: open the first N games (N depends on the plan)
+    const open = isUnlocked ? null : await getOpenCounts(req.user);
+
     const withLockStatus = games.map((g, index) => ({
       ...g.toObject(),
-      isLocked: isUnlocked ? false : index >= 3,
+      isLocked: open ? index >= open.games : false,
     }));
 
     res.json({ success: true, data: withLockStatus });
@@ -72,15 +77,27 @@ export const saveScore = async (req: AuthRequest, res: Response<ApiResponse>): P
       companyId: req.user?.companyId
     });
 
-    await updateUserPoints(userId, 'game_played');
+    // Points only the first time per month for each of the two awards
+    const playPoints = await awardMonthlyPoints(userId, 'game', gameId, () =>
+      updateUserPoints(userId, 'game_played')
+    );
 
+    let highScorePoints = false;
     if (score >= game.maxScore * 0.8) {
-      await updateUserPoints(userId, 'game_high_score');
+      highScorePoints = await awardMonthlyPoints(userId, 'game_high_score', gameId, () =>
+        updateUserPoints(userId, 'game_high_score')
+      );
     }
 
     await completeLinkedTasks(userId, 'game', gameId);
 
-    res.json({ success: true, data: userGame });
+    res.json({
+      success: true,
+      data: userGame,
+      ...(playPoints || highScorePoints
+        ? {}
+        : { message: 'Already played this month, so no extra points were awarded.' }),
+    });
 
   } catch (error: any) {
      res.status(error.statusCode || 500).json({ success: false, error: error.message });

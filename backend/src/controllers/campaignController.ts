@@ -6,7 +6,8 @@ import { AppError }     from '../utils/errorHandler.js';
 import { AuthRequest, ApiResponse, CampaignStatus } from '../types/index.js';
 import { sendSms, generateTrackingToken as generateSmsToken, hashToken, smsTemplates } from '../services/twilioService.js';
 
-import { companyHasFeature } from '../services/planService.js';
+import { companyUsesPlanLimits } from '../services/planLimitsService.js';
+import { isPlanExempt } from '../config/planExemptions.js';
 import { sendPhishingEmail, generateTrackingToken as generateEmailToken, emailTemplates } from '../services/emailService.js';
 
 
@@ -43,6 +44,26 @@ export const createCampaign = async (
 
     const companyId = req.user.companyId;
     if (!companyId) throw new AppError('Company ID not found on user', 400);
+
+    // ── Plan enforcement: campaign count cap ────────────────────────────────
+    // Plans in config/planLimits.ts are limited by monthly per-channel quotas
+    // (middleware/planLimits.ts). This total cap only applies to companies with
+    // no plan, or a legacy plan that is not in that table.
+    // (Flag: placeholder cap of 10 — confirm final number with product team)
+    if (req.user.role !== 'super_admin' && !isPlanExempt(req.user)) {
+      const usesPlanLimits = await companyUsesPlanLimits(companyId);
+      if (!usesPlanLimits) {
+        const CAMPAIGN_CAP = 10;
+        const existingCount = await Campaign.countDocuments({ companyId });
+        if (existingCount >= CAMPAIGN_CAP) {
+          throw new AppError(
+            `Campaign limit reached (max ${CAMPAIGN_CAP}). Subscribe to a plan to create more.`,
+            403
+          );
+        }
+      }
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     let finalEmail = emailTemplate || '';
     let finalSms = smsTemplate || '';
@@ -383,6 +404,31 @@ export const launchCampaign = async (
       return;
     }
 
+    if (campaign.type === 'vishing') {
+      const targets = campaign.targetEmployees as TargetEmployee[];
+
+      if (!targets || targets.length === 0) {
+        throw new AppError('No target employees found on this campaign. Add employees before launching.', 400);
+      }
+
+      // Vishing no longer places real/simulated calls. Launching a vishing
+      // campaign simply makes it "active" — targeted employees will then see
+      // the Vishing Awareness card on their dashboard (see
+      // getMyActiveVishingCampaign below), which teaches them how vishing
+      // works and tests them with a quiz.
+      campaign.status = 'active';
+      campaign.startDate = new Date();
+      campaign.sentCount = targets.length;
+      await campaign.save();
+
+      res.status(200).json({
+        success: true,
+        data: { campaign },
+        message: `Vishing awareness campaign launched for ${targets.length} employee(s).`,
+      });
+      return;
+    }
+
     campaign.status = 'active';
     campaign.startDate = new Date();
     await campaign.save();
@@ -419,5 +465,41 @@ export const pauseCampaign = async (
       res.status(error.statusCode).json({ success: false, error: error.message });
     else
       res.status(500).json({ success: false, error: 'Failed to pause campaign' });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Called by the employee dashboard to decide whether to show the
+// "Vishing Awareness" card. Returns the first active vishing campaign that
+// currently targets the logged-in employee, or null if there isn't one.
+// ─────────────────────────────────────────────────────────────────────────────
+export const getMyActiveVishingCampaign = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    if (!req.user) throw new AppError('User not authenticated', 401);
+
+    const campaign = await Campaign.findOne({
+      type: 'vishing',
+      status: 'active',
+      'targetEmployees._id': req.user.id,
+    }).sort({ startDate: -1 });
+
+    if (!campaign) {
+      res.json({ success: true, data: null });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        campaignId: campaign._id,
+        campaignName: campaign.campaignName,
+      },
+    });
+  } catch (error) {
+    console.error('getMyActiveVishingCampaign error:', error);
+    res.status(500).json({ success: false, error: 'Failed to check active vishing campaigns' });
   }
 };
