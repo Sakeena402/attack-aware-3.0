@@ -68,10 +68,8 @@ export interface ISimulationResult extends Document {
   smsStatus?:              string;
   smsFailed?:              boolean;
   smsFailedAt?:            Date;
-  callStatusUpdatedAt?:    Date;
   voiceResponse?:          string;
   voiceResponseAt?:        Date;
-  smsClicked?:             boolean;
   linkClicked?:            boolean;
   linkClickedAt?:          Date;
 
@@ -164,10 +162,8 @@ const simulationResultSchema = new Schema<ISimulationResult>(
     smsStatus:              String,
     smsFailed:              { type: Boolean, default: false },
     smsFailedAt:            Date,
-    callStatusUpdatedAt:    Date,
     voiceResponse:          String,
     voiceResponseAt:        Date,
-    smsClicked:             { type: Boolean, default: false },
     linkClicked:            { type: Boolean, default: false },
     linkClickedAt:          Date,
 

@@ -195,10 +195,8 @@ export class ApiService {
       // No body needed — the refreshToken cookie is sent automatically
       const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // sends refreshToken cookie, receives new accessToken cookie
         cache: 'no-store',
       });
 
@@ -302,8 +300,9 @@ export class ApiService {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers,
-      credentials: 'include',
-      cache: 'no-store',
+      credentials: 'include', // Always send/receive cookies
+      cache: 'no-store', // Prevents the browser from serving stale cached GET responses
+                          // (e.g. an empty /plans array cached before seeding ran)
     });
 
     const data = await response.json();
@@ -395,4 +394,15 @@ export const apiService = ApiService.getInstance();
 export const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
+});
+
+// ✅ Add token dynamically (VERY IMPORTANT FIX)
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
 });
