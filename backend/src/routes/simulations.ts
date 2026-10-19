@@ -2,12 +2,9 @@
 
 import { Router } from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
-<<<<<<< HEAD
 import { enforceChannelSend } from '../middleware/planLimits.js';
-=======
 
 // Smishing
->>>>>>> origin/main
 import {
   sendSmishingSimulation,
   sendCampaignSmishing,
@@ -37,67 +34,42 @@ const simulationsRouter = Router();
 // All simulation routes require authentication
 simulationsRouter.use(authenticate);
 
-<<<<<<< HEAD
-simulationsRouter.get('/sms/templates', getSmsTemplates);
-simulationsRouter.post('/sms/send', authorize('admin', 'super_admin'), enforceChannelSend('smishing'), sendSmishingSimulation);
-simulationsRouter.post('/sms/campaign/:campaignId', authorize('admin', 'super_admin'), enforceChannelSend('smishing'), sendCampaignSmishing);
-simulationsRouter.get('/sms/stats/:campaignId', getCampaignSmishingStats);
-
-simulationsRouter.get('/voice/scripts', getVoiceScripts);
-simulationsRouter.post('/voice/call', authorize('admin', 'super_admin'), enforceChannelSend('vishing'), sendVishingSimulation);
-simulationsRouter.post('/voice/campaign/:campaignId', authorize('admin', 'super_admin'), enforceChannelSend('vishing'), sendCampaignVishing);
-simulationsRouter.get('/voice/stats/:campaignId', getCampaignVishingStats);
-
-simulationsRouter.get('/email/templates', getEmailTemplates);
-simulationsRouter.post('/email/send', authorize('admin', 'super_admin'), enforceChannelSend('phishing'), sendPhishingSimulation);
-simulationsRouter.post('/email/campaign/:campaignId', authorize('admin', 'super_admin'), enforceChannelSend('phishing'), sendCampaignPhishing);
-simulationsRouter.get('/email/stats/:campaignId', getCampaignPhishingStats);
-=======
 // ─────────────────────────────────────────────────────────────────────────────
 // SMS / SMISHING
 // ─────────────────────────────────────────────────────────────────────────────
-simulationsRouter.get(
-  '/sms/templates',
-  getSmsTemplates
-);
+simulationsRouter.get('/sms/templates', getSmsTemplates);
 simulationsRouter.post(
   '/sms/send',
   authorize('admin', 'super_admin'),
+  enforceChannelSend('smishing'),
   sendSmishingSimulation
 );
 simulationsRouter.post(
   '/sms/campaign/:campaignId',
   authorize('admin', 'super_admin'),
+  enforceChannelSend('smishing'),
   sendCampaignSmishing
 );
-simulationsRouter.get(
-  '/sms/stats/:campaignId',
-  getCampaignSmishingStats
-);
+simulationsRouter.get('/sms/stats/:campaignId', getCampaignSmishingStats);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // VOICE / VISHING
 // ─────────────────────────────────────────────────────────────────────────────
-simulationsRouter.get(
-  '/voice/scripts',
-  getVoiceScripts
-);
+simulationsRouter.get('/voice/scripts', getVoiceScripts);
 simulationsRouter.post(
   '/voice/call',
   authorize('admin', 'super_admin'),
+  enforceChannelSend('vishing'),
   sendVishingSimulation
 );
 simulationsRouter.post(
   '/voice/campaign/:campaignId',
   authorize('admin', 'super_admin'),
+  enforceChannelSend('vishing'),
   sendCampaignVishing
 );
-simulationsRouter.get(
-  '/voice/stats/:campaignId',
-  getCampaignVishingStats
-);
-// Mock-mode call simulator — lets an admin simulate an employee pressing a
-// key on the fake call without a real Twilio call or public webhook URL.
+simulationsRouter.get('/voice/stats/:campaignId', getCampaignVishingStats);
+
 simulationsRouter.post(
   '/voice/simulate-response',
   authorize('admin', 'super_admin'),
@@ -107,24 +79,19 @@ simulationsRouter.post(
 // ─────────────────────────────────────────────────────────────────────────────
 // EMAIL / PHISHING
 // ─────────────────────────────────────────────────────────────────────────────
-simulationsRouter.get(
-  '/email/templates',
-  getEmailTemplates
-);
+simulationsRouter.get('/email/templates', getEmailTemplates);
 simulationsRouter.post(
   '/email/send',
   authorize('admin', 'super_admin'),
+  enforceChannelSend('phishing'),
   sendPhishingSimulation
 );
 simulationsRouter.post(
   '/email/campaign/:campaignId',
   authorize('admin', 'super_admin'),
+  enforceChannelSend('phishing'),
   sendCampaignPhishing
 );
-simulationsRouter.get(
-  '/email/stats/:campaignId',
-  getCampaignPhishingStats
-);
->>>>>>> origin/main
+simulationsRouter.get('/email/stats/:campaignId', getCampaignPhishingStats);
 
 export default simulationsRouter;
