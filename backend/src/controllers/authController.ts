@@ -61,7 +61,17 @@ function buildUserPayload(user: InstanceType<typeof User>) {
 }
 
 /** Issues real JWT cookies and updates lastLogin. Shared by login() and verifyOtp(). */
-async function completeLogin(user: InstanceType<typeof User>, res: Response<ApiResponse>) {
+// Mobile apps send "X-Client: mobile" and get the tokens in the JSON body too
+// (they cannot use httpOnly cookies). Web behaviour is unchanged.
+function isMobileClient(req: AuthRequest): boolean {
+  return req.headers['x-client'] === 'mobile';
+}
+
+async function completeLogin(
+  req: AuthRequest,
+  user: InstanceType<typeof User>,
+  res: Response<ApiResponse>
+) {
   const companyId = user.companyId?.toString();
   const accessToken  = generateToken(user._id.toString(), user.email, user.role, companyId);
   const refreshToken = generateRefreshToken(user._id.toString(), user.email, user.role, companyId);
@@ -72,7 +82,13 @@ async function completeLogin(user: InstanceType<typeof User>, res: Response<ApiR
   user.lastLogin = new Date();
   await user.save();
 
-  res.json({ success: true, data: { user: buildUserPayload(user) } });
+  res.json({
+    success: true,
+    data: {
+      user: buildUserPayload(user),
+      ...(isMobileClient(req) ? { accessToken, refreshToken } : {}),
+    },
+  });
 }
 
 // ─── REGISTER ─────────────────────────────────────────────────────────────────
@@ -175,7 +191,7 @@ export const verifySignupOtp = async (
     user.emailVerified = true;
     await user.save();
 
-    await completeLogin(user, res);
+    await completeLogin(req, user, res);
   } catch (error: unknown) {
     if (error instanceof AppError)
       res.status(error.statusCode).json({ success: false, error: error.message });
@@ -271,7 +287,7 @@ export const login = async (
 
     // If 2FA is disabled: direct login
     if (!user.twoFactorEnabled) {
-      await completeLogin(user, res);
+      await completeLogin(req, user, res);
       return;
     }
 
@@ -339,7 +355,7 @@ export const verifyOtp = async (
       return;
     }
 
-    await completeLogin(user, res);
+    await completeLogin(req, user, res);
   } catch (error: unknown) {
     console.error('VERIFY OTP ERROR:', error);
     if (error instanceof AppError) {
@@ -428,7 +444,7 @@ export const refreshTokenHandler = async (
   res: Response<ApiResponse>
 ): Promise<void> => {
   try {
-    const token = req.cookies.refreshToken as string | undefined;
+    const token = (req.cookies?.refreshToken ?? req.body?.refreshToken) as string | undefined;
     if (!token) throw new AppError('Refresh token missing', 401);
 
     const decoded = verifyRefreshToken(token);
@@ -444,7 +460,15 @@ export const refreshTokenHandler = async (
     res.cookie('accessToken',  newAccessToken,  COOKIE_OPTS_ACCESS);
     res.cookie('refreshToken', newRefreshToken, COOKIE_OPTS_REFRESH);
 
-    res.json({ success: true, data: { user: buildUserPayload(user) } });
+    res.json({
+      success: true,
+      data: {
+        user: buildUserPayload(user),
+        ...(isMobileClient(req)
+          ? { accessToken: newAccessToken, refreshToken: newRefreshToken }
+          : {}),
+      },
+    });
   } catch (error: unknown) {
     console.error('REFRESH ERROR:', error);
     if (error instanceof AppError)

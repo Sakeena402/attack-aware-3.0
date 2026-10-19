@@ -1,0 +1,28 @@
+@"
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.iml
+.idea/
+.metadata
+.flutter-plugins-dependencies
+
+# Generated platform files
+windows/flutter/ephemeral/
+linux/flutter/ephemeral/
+macos/Flutter/ephemeral/
+ios/Flutter/ephemeral/
+**/Pods/
+
+# Secrets and local files
+*.jks
+*.keystore
+key.properties
+.env
+.env.*
+"@ | Set-Content -Path C:\Users\Administrator\attack-aware-3.0\mobile-app\.gitignore -Encoding ascii

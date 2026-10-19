@@ -1,7 +1,8 @@
 // frontend/app/services/api.ts
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export const ErrorCodes = {
   INVALID_CREDENTIALS: 'E1001',
@@ -50,6 +51,7 @@ export class ApiError extends Error {
     this.errorCode = errorCode;
     this.details = details;
     this.requestId = requestId;
+
     this.isRetryable =
       statusCode >= 500 ||
       statusCode === 429 ||
@@ -57,8 +59,17 @@ export class ApiError extends Error {
       errorCode === ErrorCodes.RATE_LIMIT_EXCEEDED;
   }
 
-  static fromResponse(data: ApiErrorResponse, statusCode: number): ApiError {
-    return new ApiError(data.error || 'An error occurred', statusCode, data.errorCode, data.details, data.requestId);
+  static fromResponse(
+    data: ApiErrorResponse,
+    statusCode: number
+  ): ApiError {
+    return new ApiError(
+      data.error || 'An error occurred',
+      statusCode,
+      data.errorCode,
+      data.details,
+      data.requestId
+    );
   }
 }
 
@@ -81,66 +92,91 @@ interface ApiErrorResponse {
 }
 
 type ErrorHandler = (error: ApiError) => void;
+
 const errorHandlers = new Set<ErrorHandler>();
+
 export const onApiError = (handler: ErrorHandler) => {
   errorHandlers.add(handler);
+
   return () => {
     errorHandlers.delete(handler);
   };
 };
 
 export function getErrorMessage(error: ApiError): string {
-  if (!error.errorCode) return error.message || 'An unexpected error occurred';
+  if (!error.errorCode) {
+    return error.message || 'An unexpected error occurred';
+  }
 
   switch (error.errorCode) {
     case ErrorCodes.INVALID_CREDENTIALS:
       return 'Invalid email or password.';
+
     case ErrorCodes.TOKEN_EXPIRED:
       return 'Your session has expired. Please login again.';
+
     case ErrorCodes.TOKEN_INVALID:
       return 'Invalid session. Please login again.';
+
     case ErrorCodes.UNAUTHORIZED:
       return 'You must be logged in to access this resource.';
+
     case ErrorCodes.FORBIDDEN:
       return 'You do not have permission to access this resource.';
+
     case ErrorCodes.VALIDATION_ERROR:
       return error.message || 'Please check your inputs.';
+
     case ErrorCodes.NOT_FOUND:
       return 'The requested resource was not found.';
+
     case ErrorCodes.ALREADY_EXISTS:
       return 'This resource already exists.';
+
     case ErrorCodes.RATE_LIMIT_EXCEEDED:
       return 'Too many requests. Please try again later.';
+
     default:
       return error.message || 'An unexpected error occurred';
   }
 }
 
 const notifyErrorHandlers = (error: ApiError) =>
-  errorHandlers.forEach((h) => {
+  errorHandlers.forEach((handler) => {
     try {
-      h(error);
+      handler(error);
     } catch {}
   });
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-const defaultRetryConfig = { maxRetries: 3, baseDelay: 1000, maxDelay: 10000 };
+const delay = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+const defaultRetryConfig = {
+  maxRetries: 3,
+  baseDelay: 1000,
+  maxDelay: 10000,
+};
 
 export class ApiService {
   private static instance: ApiService;
+
   private isRefreshing = false;
+
   private refreshSubscribers: ((success: boolean) => void)[] = [];
 
   private constructor() {}
 
   static getInstance() {
-    if (!ApiService.instance) ApiService.instance = new ApiService();
+    if (!ApiService.instance) {
+      ApiService.instance = new ApiService();
+    }
+
     return ApiService.instance;
   }
 
   // Notify all queued requests whether the refresh succeeded or not
   private onRefreshComplete(success: boolean) {
-    this.refreshSubscribers.forEach((cb) => cb(success));
+    this.refreshSubscribers.forEach((callback) => callback(success));
     this.refreshSubscribers = [];
   }
 
@@ -148,20 +184,23 @@ export class ApiService {
   private async refreshAccessToken(): Promise<boolean> {
     if (this.isRefreshing) {
       // Queue callers and wait for the in-flight refresh to finish
-      return new Promise((resolve) => this.refreshSubscribers.push(resolve));
+      return new Promise((resolve) =>
+        this.refreshSubscribers.push(resolve)
+      );
     }
 
     this.isRefreshing = true;
+
     try {
       // No body needed — the refreshToken cookie is sent automatically
-      const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include', // sends refreshToken cookie, receives new accessToken cookie
         cache: 'no-store',
       });
 
-      if (res.ok) {
+      if (response.ok) {
         this.onRefreshComplete(true);
         return true;
       }
@@ -179,10 +218,21 @@ export class ApiService {
   async request<T>(
     endpoint: string,
     options: RequestInit = {},
-    config?: { retry?: boolean; retryConfig?: Partial<typeof defaultRetryConfig> }
+    config?: {
+      retry?: boolean;
+      retryConfig?: Partial<typeof defaultRetryConfig>;
+    }
   ): Promise<ApiResponse<T>> {
-    const { retry = true, retryConfig = {} } = config || {};
-    const finalRetryConfig = { ...defaultRetryConfig, ...retryConfig };
+    const {
+      retry = true,
+      retryConfig = {},
+    } = config || {};
+
+    const finalRetryConfig = {
+      ...defaultRetryConfig,
+      ...retryConfig,
+    };
+
     let attempt = 0;
     let lastError: ApiError | null = null;
 
@@ -195,17 +245,23 @@ export class ApiService {
           throw error;
         }
 
-        // On 401 try a single token refresh, then retry the original request once
+        // On 401 try a single token refresh,
+        // then retry the original request once
         if (error.statusCode === 401 && attempt === 0) {
           const refreshed = await this.refreshAccessToken();
+
           if (refreshed) {
             try {
-              return await this.executeRequest<T>(endpoint, options);
+              return await this.executeRequest<T>(
+                endpoint,
+                options
+              );
             } catch (retryError) {
               notifyErrorHandlers(retryError as ApiError);
               throw retryError;
             }
           }
+
           // Refresh failed — bubble the original 401 up
           notifyErrorHandlers(error);
           throw error;
@@ -217,7 +273,14 @@ export class ApiService {
         }
 
         lastError = error;
-        await delay(Math.min(finalRetryConfig.baseDelay * Math.pow(2, attempt), finalRetryConfig.maxDelay));
+
+        await delay(
+          Math.min(
+            finalRetryConfig.baseDelay * Math.pow(2, attempt),
+            finalRetryConfig.maxDelay
+          )
+        );
+
         attempt++;
       }
     }
@@ -225,13 +288,16 @@ export class ApiService {
     throw lastError!;
   }
 
-  private async executeRequest<T>(endpoint: string, options: RequestInit): Promise<ApiResponse<T>> {
+  private async executeRequest<T>(
+    endpoint: string,
+    options: RequestInit
+  ): Promise<ApiResponse<T>> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...(options.headers as Record<string, string> || {}),
+      ...((options.headers as Record<string, string>) || {}),
     };
 
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers,
       credentials: 'include', // Always send/receive cookies
@@ -239,25 +305,84 @@ export class ApiService {
                           // (e.g. an empty /plans array cached before seeding ran)
     });
 
-    const data = await res.json();
-    if (!res.ok) throw ApiError.fromResponse(data, res.status);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw ApiError.fromResponse(data, response.status);
+    }
+
     return data;
   }
 
-  get<T>(endpoint: string, config?: { retry?: boolean }) {
-    return this.request<T>(endpoint, { method: 'GET' }, config);
+  get<T>(
+    endpoint: string,
+    config?: { retry?: boolean }
+  ) {
+    return this.request<T>(
+      endpoint,
+      {
+        method: 'GET',
+      },
+      config
+    );
   }
-  post<T>(endpoint: string, data?: unknown, config?: { retry?: boolean }) {
-    return this.request<T>(endpoint, { method: 'POST', body: data ? JSON.stringify(data) : undefined }, config);
+
+  post<T>(
+    endpoint: string,
+    data?: unknown,
+    config?: { retry?: boolean }
+  ) {
+    return this.request<T>(
+      endpoint,
+      {
+        method: 'POST',
+        body: data ? JSON.stringify(data) : undefined,
+      },
+      config
+    );
   }
-  put<T>(endpoint: string, data?: unknown, config?: { retry?: boolean }) {
-    return this.request<T>(endpoint, { method: 'PUT', body: data ? JSON.stringify(data) : undefined }, config);
+
+  put<T>(
+    endpoint: string,
+    data?: unknown,
+    config?: { retry?: boolean }
+  ) {
+    return this.request<T>(
+      endpoint,
+      {
+        method: 'PUT',
+        body: data ? JSON.stringify(data) : undefined,
+      },
+      config
+    );
   }
-  delete<T>(endpoint: string, config?: { retry?: boolean }) {
-    return this.request<T>(endpoint, { method: 'DELETE' }, config);
+
+  delete<T>(
+    endpoint: string,
+    config?: { retry?: boolean }
+  ) {
+    return this.request<T>(
+      endpoint,
+      {
+        method: 'DELETE',
+      },
+      config
+    );
   }
-  patch<T>(endpoint: string, data?: unknown, config?: { retry?: boolean }) {
-    return this.request<T>(endpoint, { method: 'PATCH', body: data ? JSON.stringify(data) : undefined }, config);
+
+  patch<T>(
+    endpoint: string,
+    data?: unknown,
+    config?: { retry?: boolean }
+  ) {
+    return this.request<T>(
+      endpoint,
+      {
+        method: 'PATCH',
+        body: data ? JSON.stringify(data) : undefined,
+      },
+      config
+    );
   }
 }
 
