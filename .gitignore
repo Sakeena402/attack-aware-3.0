@@ -1,14 +1,11 @@
 # =========================
 # ENV FILES (CRITICAL)
 # =========================
-.env
-.env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
 # Ignore env files in ALL subfolders (frontend/backend)
-**/.env
 **/.env.local
 **/.env.*.local
 
@@ -66,7 +63,6 @@ __v0_jsx-dev-runtime.ts
 # =========================
 # IDE / EDITOR
 # =========================
-.vscode/
 .idea/
 
 **/backend-c/
@@ -85,3 +81,4 @@ frontend-c/
 # CACHE
 # =========================
 .cache/
+config.bat
