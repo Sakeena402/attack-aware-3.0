@@ -9,7 +9,7 @@ import {
   LayoutDashboard, BarChart3, Trophy, Zap, Settings,
   Users, FileText, Shield, LogOut, Building2, Activity,
   TrendingUp, BookOpen, MessageCircle, CheckSquare,
-  ChevronDown, PlayCircle, Brain, Gamepad2, Bell, User, Sparkles, CreditCard,
+    ChevronDown, PlayCircle, Brain, Gamepad2, Bell, User, Sparkles, CreditCard, ShieldAlert,
 } from 'lucide-react';
 import { useAuth } from '@/app/context/authContext';
 
@@ -42,6 +42,7 @@ const getMenuConfig = (role: string | undefined): MenuGroup[] => {
       { type: 'link', icon: Sparkles,        label: 'AI Scenarios',           href: '/dashboard/ai-scenarios' },
       { type: 'link', icon: Activity,        label: 'User Activity',          href: '/dashboard/user-activity' },
       { type: 'link', icon: Shield,          label: 'Attacks Catalog',        href: '/dashboard/attacks' },
+      { type: 'link', icon: ShieldAlert,     label: 'Incident Response',      href: '/dashboard/playbooks' },
       { type: 'link', icon: Building2,       label: 'Enterprise Requests',    href: '/dashboard/enterprise-requests' },
       { type: 'link', icon: CreditCard,      label: 'Subscription Requests',  href: '/dashboard/subscription-requests' },
       { type: 'link', icon: Settings,        label: 'Settings',               href: '/dashboard/settings' },
@@ -62,7 +63,9 @@ const getMenuConfig = (role: string | undefined): MenuGroup[] => {
       { type: 'link',  icon: Activity,        label: 'User Activity',       href: '/dashboard/user-activity' },
       { type: 'link',  icon: CheckSquare,     label: 'Task Progress',       href: '/dashboard/tasks' },
       { type: 'link',  icon: BookOpen,        label: 'Training',            href: '/dashboard/training' },
+      { type: 'link',  icon: ShieldAlert,     label: 'Incident Response',   href: '/dashboard/playbooks' },
       { type: 'group', icon: MessageCircle, label: 'Community',
+
         children: [
           { icon: MessageCircle, label: 'Forum',          href: '/dashboard/forum' },
           { icon: Shield,        label: 'Attacks Catalog', href: '/dashboard/attacks' },
@@ -78,6 +81,7 @@ const getMenuConfig = (role: string | undefined): MenuGroup[] => {
       { type: 'link',  icon: Trophy,          label: 'Leaderboard', href: '/dashboard/leaderboard' },
       { type: 'link',  icon: BookOpen,        label: 'Training',    href: '/dashboard/training' },
       { type: 'link',  icon: TrendingUp,      label: 'My Progress', href: '/dashboard/progress' },
+      { type: 'link',  icon: ShieldAlert,     label: 'Incident Response', href: '/dashboard/playbooks' },
       { type: 'group', icon: MessageCircle, label: 'Community',
         children: [
           { icon: MessageCircle, label: 'Forum',           href: '/dashboard/forum' },
@@ -97,6 +101,7 @@ const getMenuConfig = (role: string | undefined): MenuGroup[] => {
       { type: 'link',  icon: BookOpen,        label: 'Training',            href: '/dashboard/training' },
       { type: 'link',  icon: CreditCard,      label: 'Subscribe to a Plan', href: '/dashboard/my-plan' },
       { type: 'link',  icon: TrendingUp,      label: 'My Progress',         href: '/dashboard/progress' },
+      { type: 'link',  icon: ShieldAlert,     label: 'Incident Response',   href: '/dashboard/playbooks' },
       { type: 'group', icon: MessageCircle, label: 'Community',
         children: [
           { icon: MessageCircle, label: 'Forum',           href: '/dashboard/forum' },
