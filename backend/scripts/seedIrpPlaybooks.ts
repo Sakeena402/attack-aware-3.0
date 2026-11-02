@@ -31,8 +31,7 @@ const PLAYBOOKS: SeedPlaybook[] = [
     title: 'Phishing Account Compromise',
     category: 'Phishing',
     severity: 'high',
-    // TODO: replace with real simulation category values (Step 4)
-    linkedCategories: ['credential_harvesting', 'it_support'],
+    linkedCategories: ['phishing'],
     phases: [
       {
         title: 'Identify',
@@ -124,6 +123,106 @@ const PLAYBOOKS: SeedPlaybook[] = [
           { description: 'Write an incident report with a timeline and the cost of downtime.', owner: 'Admin' },
           { description: 'Fix the entry point (patching, email filtering, backups).', owner: 'IT' },
           { description: 'Run a team briefing and update training.', owner: 'Admin' },
+        ],
+      },
+    ],
+    resources: [],
+  },
+  {
+    title: 'Smishing (SMS) Attack',
+    category: 'Smishing',
+    severity: 'medium',
+    linkedCategories: ['smishing'],
+    phases: [
+      {
+        title: 'Identify',
+        steps: [
+          { description: 'Look for texts with urgent warnings, unknown senders, or odd links.', owner: 'Employee' },
+          { description: 'Note whether you tapped the link or replied to the message.', owner: 'Employee' },
+          { description: 'Take a screenshot of the message and report it to IT/security.', owner: 'Employee' },
+        ],
+      },
+      {
+        title: 'Contain',
+        steps: [
+          { description: 'Do not reply and do not tap any more links in the message.', owner: 'Employee' },
+          { description: 'If you entered a password or code, change it now from a safe device.', owner: 'Employee' },
+          { description: 'If you installed anything from the link, turn on airplane mode and tell IT.', owner: 'Employee' },
+          { description: 'Disable the account if login details were entered.', owner: 'Admin' },
+        ],
+      },
+      {
+        title: 'Eradicate',
+        steps: [
+          { description: 'Block the sender number and delete the message.', owner: 'Employee' },
+          { description: 'Scan the phone for unwanted apps and remove anything unknown.', owner: 'IT' },
+          { description: 'Check whether other employees received the same text.', owner: 'Admin' },
+        ],
+      },
+      {
+        title: 'Recover',
+        steps: [
+          { description: 'Reset passwords for any account that may have been exposed.', owner: 'Employee' },
+          { description: 'Turn on two-factor authentication (2FA) on those accounts.', owner: 'Employee' },
+          { description: 'Watch the accounts for unusual activity for the next 30 days.', owner: 'IT' },
+        ],
+      },
+      {
+        title: 'Lessons Learned',
+        steps: [
+          { description: 'Write a short report: what the text said and what was done.', owner: 'Admin' },
+          { description: 'Warn the whole team about this type of text.', owner: 'Admin' },
+          { description: 'Flag the employee for follow-up smishing training if they tapped the link.', owner: 'Admin' },
+        ],
+      },
+    ],
+    resources: [],
+  },
+  {
+    title: 'Vishing (Phone Call) Attack',
+    category: 'Vishing',
+    severity: 'high',
+    linkedCategories: ['vishing'],
+    phases: [
+      {
+        title: 'Identify',
+        steps: [
+          { description: 'Watch for callers who rush you, claim to be IT, a bank, or a manager, and ask for codes or passwords.', owner: 'Employee' },
+          { description: 'Write down what you shared, the caller number, and the time of the call.', owner: 'Employee' },
+          { description: 'Report the call to IT/security right away, even if you shared nothing.', owner: 'Employee' },
+        ],
+      },
+      {
+        title: 'Contain',
+        steps: [
+          { description: 'Hang up. Do not call back on the number the caller gave you.', owner: 'Employee' },
+          { description: 'If you shared a password or OTP, change it immediately.', owner: 'Employee' },
+          { description: 'Disable the affected account until it is checked.', owner: 'Admin' },
+          { description: 'If money or gift cards were requested, stop the payment and tell your manager.', owner: 'Employee' },
+        ],
+      },
+      {
+        title: 'Eradicate',
+        steps: [
+          { description: 'Review recent logins on the affected accounts and log out unknown sessions.', owner: 'IT' },
+          { description: 'Block the caller number where possible.', owner: 'IT' },
+          { description: 'Check whether other employees received similar calls.', owner: 'Admin' },
+        ],
+      },
+      {
+        title: 'Recover',
+        steps: [
+          { description: 'Re-enable the account with a new strong password.', owner: 'Admin' },
+          { description: 'Turn on two-factor authentication (2FA).', owner: 'Employee' },
+          { description: 'Watch the account and any related payments for the next 30 days.', owner: 'IT' },
+        ],
+      },
+      {
+        title: 'Lessons Learned',
+        steps: [
+          { description: 'Write a short report: who called, what they asked, and what was shared.', owner: 'Admin' },
+          { description: 'Remind everyone: IT never asks for OTPs or passwords over the phone.', owner: 'Admin' },
+          { description: 'Flag the employee for follow-up vishing training if information was shared.', owner: 'Admin' },
         ],
       },
     ],

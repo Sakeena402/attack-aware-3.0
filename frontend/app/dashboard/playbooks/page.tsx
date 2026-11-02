@@ -5,7 +5,11 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useSWR from 'swr';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Modal } from '@/components/ui/modal';
+import { useToast } from '@/components/ui/toast-notification';
 import { useAuth } from '@/app/context/authContext';
 import { playbookApi } from '@/app/services/playbookApi';
 import type { Playbook, PlaybookSeverity } from '@/app/services/playbookApi';
@@ -19,6 +23,7 @@ import {
   Globe,
   ArrowRight,
   ListChecks,
+  Plus,
 } from 'lucide-react';
 
 type StatusTab = 'all' | 'draft' | 'approved' | 'rejected';
@@ -38,20 +43,32 @@ const SEVERITY_RANK: Record<PlaybookSeverity, number> = {
   low: 1,
 };
 
+const SEVERITY_OPTIONS: PlaybookSeverity[] = ['low', 'medium', 'high', 'critical'];
+
 function countSteps(playbook: Playbook): number {
   return playbook.phases.reduce((total, phase) => total + phase.steps.length, 0);
 }
 
 export default function PlaybooksPage() {
+  const router = useRouter();
   const { state } = useAuth();
+  const { success, error: showError } = useToast();
   const role = state.user?.role;
   const isAdminLike = role === 'admin' || role === 'super_admin';
+  // Only company admins can generate (backend rejects other roles)
+  const canGenerate = role === 'admin';
 
   const [statusTab, setStatusTab] = useState<StatusTab>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: playbooks, isLoading, error } = useSWR<Playbook[]>(
+  // Generate modal state
+  const [isGenerateOpen, setIsGenerateOpen] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [genCategory, setGenCategory] = useState('');
+  const [genSeverity, setGenSeverity] = useState<PlaybookSeverity>('medium');
+
+  const { data: playbooks, isLoading, error, mutate } = useSWR<Playbook[]>(
     'playbooks',
     () => playbookApi.list(),
     { revalidateOnFocus: false }
@@ -81,6 +98,29 @@ export default function PlaybooksPage() {
   const tabCount = (tab: StatusTab): number =>
     tab === 'all' ? all.length : all.filter((p) => p.status === tab).length;
 
+  const handleGenerate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const category = genCategory.trim();
+    if (!category) {
+      showError('Category required', 'Enter the type of incident, e.g. Lost or Stolen Device.');
+      return;
+    }
+    try {
+      setIsGenerating(true);
+      const created = await playbookApi.generate({ category, severity: genSeverity });
+      success('Draft created', 'Review it, then approve it so employees can see it.');
+      setIsGenerateOpen(false);
+      setGenCategory('');
+      await mutate();
+      router.push(`/dashboard/playbooks/${created._id}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to generate playbook';
+      showError('Error', msg);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Page Header */}
@@ -100,6 +140,16 @@ export default function PlaybooksPage() {
             </p>
           </div>
         </div>
+
+        {canGenerate && (
+          <Button
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:shadow-lg hover:shadow-purple-500/30 flex items-center gap-2"
+            onClick={() => setIsGenerateOpen(true)}
+          >
+            <Plus className="w-4 h-4" />
+            Generate Playbook
+          </Button>
+        )}
       </motion.div>
 
       {/* Filters */}
@@ -279,6 +329,71 @@ export default function PlaybooksPage() {
           </div>
         )}
       </motion.div>
+
+      {/* Generate Playbook modal (company admins only) */}
+      <Modal
+        isOpen={isGenerateOpen}
+        onClose={() => {
+          if (!isGenerating) setIsGenerateOpen(false);
+        }}
+        title="Generate Playbook"
+        description="AI writes a draft for your company. You review and approve it before employees can see it."
+        size="md"
+      >
+        <form onSubmit={handleGenerate} className="space-y-5">
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">
+              Incident type
+            </label>
+            <input
+              type="text"
+              value={genCategory}
+              onChange={(e) => setGenCategory(e.target.value)}
+              placeholder="e.g. Lost or Stolen Device, Data Breach"
+              maxLength={60}
+              className="w-full px-3 py-2 bg-muted/40 border border-purple-500/20 rounded-lg text-sm text-foreground"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-2">Severity</label>
+            <div className="grid grid-cols-4 gap-2">
+              {SEVERITY_OPTIONS.map((sev) => (
+                <button
+                  key={sev}
+                  type="button"
+                  onClick={() => setGenSeverity(sev)}
+                  className={`py-2 px-3 rounded-lg border text-xs font-medium capitalize transition-all ${
+                    genSeverity === sev
+                      ? 'bg-purple-600/30 border-purple-500 text-purple-200 font-bold'
+                      : 'bg-muted/40 border-purple-500/20 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {sev}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-3 border-t border-purple-500/20">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isGenerating}
+              onClick={() => setIsGenerateOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isGenerating}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold"
+            >
+              {isGenerating ? 'Generating (up to 20 sec)...' : 'Generate'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

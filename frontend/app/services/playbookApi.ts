@@ -60,6 +60,12 @@ export interface PlaybookListParams {
   companyId?: string; // super_admin only
 }
 
+// Body for POST /playbooks/generate (company admins only)
+export interface PlaybookGeneratePayload {
+  category: string;
+  severity: PlaybookSeverity;
+}
+
 // apiService.get/post/patch already return { success, data }, so we return res.data
 export const playbookApi = {
   list: async (params: PlaybookListParams = {}): Promise<Playbook[]> => {
@@ -92,5 +98,8 @@ export const playbookApi = {
     return res.data;
   },
 
-  // generate() will be added in Step 3b, once the backend endpoint exists
+  generate: async (payload: PlaybookGeneratePayload): Promise<Playbook> => {
+    const res = await apiService.post<Playbook>('/playbooks/generate', payload);
+    return res.data;
+  },
 };

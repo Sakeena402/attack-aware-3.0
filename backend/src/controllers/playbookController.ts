@@ -6,6 +6,7 @@ import { AuthRequest, ApiResponse } from '../types/index.js';
 import { Playbook } from '../models/Playbook.js';
 import type { IPlaybook, PlaybookStatus } from '../models/Playbook.js';
 import { AppError } from '../utils/errorHandler.js';
+import { generatePlaybook } from '../services/ai/playbookGenerationService.js';
 
 type AuthUser = NonNullable<AuthRequest['user']>;
 
@@ -42,6 +43,13 @@ const updatePlaybookSchema = z
     phases: z.array(phaseSchema).min(1).max(8).optional(),
     resources: z.array(resourceSchema).max(20).optional(),
     linkedCategories: z.array(z.string().trim().min(1).max(60)).max(20).optional(),
+  })
+  .strict();
+
+  const generatePlaybookSchema = z
+  .object({
+    category: z.string().trim().min(1).max(60),
+    severity: z.enum(['low', 'medium', 'high', 'critical']),
   })
   .strict();
 
@@ -247,5 +255,38 @@ export const rejectPlaybookHandler = async (
     res.json({ success: true, data: playbook });
   } catch (error) {
     sendError(res, error, 'Failed to reject playbook');
+  }
+};
+// ─── POST /api/playbooks/generate ────────────────────────────────────────────
+
+export const generatePlaybookHandler = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    if (!req.user) throw new AppError('User not authenticated', 401);
+
+    // Always the caller's own company; never taken from the request body
+    const companyId = req.user.companyId;
+    if (!companyId) throw new AppError('Company ID required', 400);
+
+    const parsed = generatePlaybookSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const message = parsed.error.issues
+        .map((i) => `${i.path.join('.') || 'body'}: ${i.message}`)
+        .join('; ');
+      throw AppError.badRequest(message);
+    }
+
+    const playbook = await generatePlaybook({
+      companyId,
+      category: parsed.data.category,
+      severity: parsed.data.severity,
+      requestedBy: req.user.id,
+    });
+
+    res.status(201).json({ success: true, data: playbook });
+  } catch (error) {
+    sendError(res, error, 'Failed to generate playbook');
   }
 };

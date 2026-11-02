@@ -4,7 +4,8 @@ export type AIGenerationPurpose =
   | 'scenario_generation'
   | 'adaptive_quiz_generation'
   | 'admin_triggered_quiz_generation'
-  | 'monthly_quiz_generation';
+  |  'monthly_quiz_generation'
+  | 'playbook_generation';
 
 export interface IAIGenerationLog {
   _id?: Types.ObjectId;
@@ -32,6 +33,7 @@ const aiGenerationLogSchema = new Schema<IAIGenerationLog>(
         'adaptive_quiz_generation',
         'admin_triggered_quiz_generation',
         'monthly_quiz_generation',
+        'playbook_generation',
       ],
       required: true,
     },
