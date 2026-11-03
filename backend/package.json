@@ -5,9 +5,9 @@
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/server.js",
-    "dev": "nodemon --watch src --ext ts,json,js --exec tsx server.ts",
+    "build": "node init && tsc",
+    "start": "node init && node dist/server.js",
+    "dev": "node init && nodemon --watch src --ext ts,json,js --exec tsx server.ts",
     "seed": "tsx scripts/fixExistingRecords.ts",
     "seed:games": "tsx scripts/seedGames.ts",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.cjs --runInBand --detectOpenHandles --forceExit",
