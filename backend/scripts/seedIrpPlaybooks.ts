@@ -76,7 +76,10 @@ const PLAYBOOKS: SeedPlaybook[] = [
         ],
       },
     ],
-    resources: [],
+    resources: [
+      { title: 'CISA: Phishing Guidance, Stopping the Attack Cycle at Phase One', link: 'https://www.cisa.gov/resources-tools/resources/phishing-guidance-stopping-attack-cycle-phase-one', type: 'article' },
+      { title: 'FTC: How to Recognize and Avoid Phishing Scams', link: 'https://consumer.ftc.gov/articles/how-recognize-and-avoid-phishing-scams', type: 'article' },
+    ],
   },
   {
     title: 'Ransomware Infection',
@@ -126,7 +129,9 @@ const PLAYBOOKS: SeedPlaybook[] = [
         ],
       },
     ],
-    resources: [],
+    resources: [
+      { title: 'CISA: #StopRansomware Guide', link: 'https://www.cisa.gov/stopransomware/ransomware-guide', type: 'article' },
+    ],
   },
   {
     title: 'Smishing (SMS) Attack',
@@ -176,7 +181,9 @@ const PLAYBOOKS: SeedPlaybook[] = [
         ],
       },
     ],
-    resources: [],
+    resources: [
+      { title: 'FTC: How to Recognize and Avoid Phishing Scams (emails and texts)', link: 'https://consumer.ftc.gov/articles/how-recognize-and-avoid-phishing-scams', type: 'article' },
+    ],
   },
   {
     title: 'Vishing (Phone Call) Attack',
@@ -226,7 +233,10 @@ const PLAYBOOKS: SeedPlaybook[] = [
         ],
       },
     ],
-    resources: [],
+    resources: [
+      { title: 'FTC: Phone Scams (PDF)', link: 'https://www.bulkorder.ftc.gov/system/files/publications/512a_phone_scams-508.pdf', type: 'document' },
+      { title: 'FTC: 10 Things You Can Do to Avoid Fraud', link: 'https://consumer.ftc.gov/articles/0060-10-things-you-can-do-avoid-fraud', type: 'article' },
+    ],
   },
 ];
 
