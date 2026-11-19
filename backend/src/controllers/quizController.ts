@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import { Types } from 'mongoose';
 import { AuthRequest, ApiResponse } from '../types/index.js';
 import { Quiz } from '../models/Quiz.js';
 import { QuizQuestion } from '../models/QuizQuestion.js';
@@ -75,6 +76,74 @@ export const getQuestions = async (req: AuthRequest, res: Response<ApiResponse>)
   }
 };
 
+/** Static quizzes default to status 'queued', so only AI quizzes are gated on 'published'. */
+function isPlayable(quiz: { source?: string; status?: string }): boolean {
+  return quiz.source !== 'ai_generated' || quiz.status === 'published';
+}
+
+export const getQuizForPlay = async (req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
+  try {
+    const quiz = await Quiz.findById(req.params.id)
+      .select('title title_ur totalQuestions timeLimit source status companyId')
+      .lean();
+    if (!quiz || !canAccessQuiz(quiz, req.user) || !isPlayable(quiz)) {
+      res.status(404).json({ success: false, error: 'Quiz not found' });
+      return;
+    }
+
+    const questions = await QuizQuestion.find({ quizId: req.params.id }).lean();
+    res.json({
+      success: true,
+      data: {
+        quiz: {
+          id: String(quiz._id),
+          title: quiz.title,
+          titleUr: quiz.title_ur ?? null,
+          totalQuestions: questions.length || quiz.totalQuestions,
+          timeLimit: quiz.timeLimit ?? null,
+        },
+        // Explicit whitelist: correctOption, answer and explanation are never sent here
+        questions: questions.map((q) => ({
+          id: String(q._id),
+          question: q.question,
+          options: { a: q.option_a, b: q.option_b, c: q.option_c, d: q.option_d },
+          questionUr: q.question_ur ?? null,
+          optionsUr:
+            q.option_a_ur && q.option_b_ur && q.option_c_ur && q.option_d_ur
+              ? { a: q.option_a_ur, b: q.option_b_ur, c: q.option_c_ur, d: q.option_d_ur }
+              : null,
+        })),
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Server error' });
+  }
+};
+
+export const getMyQuizzes = async (req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
+  try {
+    const userId = req.user?.id; // always from the JWT, never from query or body
+    if (!userId || !Types.ObjectId.isValid(userId)) throw new AppError('Unauthorized', 401);
+
+    const quizzes = await Quiz.find({
+      source: 'ai_generated',
+      status: 'published',
+      'triggerContext.employeeId': new Types.ObjectId(userId),
+    })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .select(
+        'title title_ur description category difficulty totalQuestions timeLimit createdAt triggerContext.attackType triggerContext.eventType triggerContext.language'
+      )
+      .lean();
+
+    res.json({ success: true, data: quizzes });
+  } catch (error) {
+    const status = error instanceof AppError ? error.statusCode : 500;
+    res.status(status).json({ success: false, error: error instanceof Error ? error.message : 'Server error' });
+  }
+};
+
 export const submitQuiz = async (req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
   try {
     const quizId = req.params.id;
@@ -124,9 +193,24 @@ export const submitQuiz = async (req: AuthRequest, res: Response<ApiResponse>): 
 
     await completeLinkedTasks(userId, 'quiz', quizId);
 
+    // Built only after the attempt is saved, and only when the app asks for it
+    const review =
+      req.query.review === 'true'
+        ? questions.map((q) => {
+            const given = answers[String(q._id)];
+            return {
+              questionId: String(q._id),
+              selected: given ?? null,
+              correctOption: q.correctOption,
+              isCorrect: given === q.correctOption,
+              explanation: q.explanation ?? null,
+            };
+          })
+        : undefined;
+
     res.json({
       success: true,
-      data: { score, totalQuestions, passed, pointsEarned: pointsGiven ? pointsEarned : 0 },
+      data: { score, totalQuestions, passed, pointsEarned: pointsGiven ? pointsEarned : 0, ...(review ? { review } : {}) },
     });
   } catch (error: any) {
     res.status(error.statusCode || 500).json({ success: false, error: error.message });
