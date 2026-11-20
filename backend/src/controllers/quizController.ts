@@ -188,7 +188,7 @@ export const submitQuiz = async (req: AuthRequest, res: Response<ApiResponse>): 
 
     // Points only for the first submission of this quiz each month
     const pointsGiven = await awardMonthlyPoints(userId, 'quiz', quizId, () =>
-      updateUserPoints(userId, actionType as any)
+      updateUserPoints(userId, actionType)
     );
 
     await completeLinkedTasks(userId, 'quiz', quizId);

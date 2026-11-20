@@ -67,9 +67,15 @@ export function getRiskLevel(score: number): 'low' | 'medium' | 'high' {
 // ─────────────────────────────────────────────────────────────────────────────
 // POINTS SYSTEM — Consistent with risk weights
 // ─────────────────────────────────────────────────────────────────────────────
+export type PointsAction =
+  | 'click' | 'credentials' | 'report' | 'video_completed'
+  | 'quiz_pass' | 'quiz_fail'
+  | 'quiz_90' | 'quiz_75' | 'quiz_60' | 'quiz_40' | 'quiz_0'
+  | 'game_played' | 'game_high_score';
+
 export function calculatePoints(
   currentPoints: number,
-action: 'click' | 'credentials' | 'report' | 'video_completed' | 'quiz_pass' | 'quiz_fail' | 'game_played' | 'game_high_score'
+  action: PointsAction
 ): number {
   const safePoints = Number.isFinite(currentPoints) ? currentPoints : 0;
 
@@ -80,6 +86,11 @@ action === 'report'            ? +10  :
     action === 'video_completed'   ? +10  :
     action === 'quiz_pass'         ? +20  :
     action === 'quiz_fail'         ? +5   :
+    action === 'quiz_90'           ? +30  :
+    action === 'quiz_75'           ? +20  :
+    action === 'quiz_60'           ? +15  :
+    action === 'quiz_40'           ? +8   :
+    action === 'quiz_0'            ? +3   :
     action === 'game_played'       ? +5   :
     action === 'game_high_score'   ? +15  : 0;
 
@@ -152,7 +163,7 @@ export async function recalculateUserRisk(userId: string): Promise<void> {
 // ─────────────────────────────────────────────────────────────────────────────
 export async function updateUserPoints(
   userId: string,
-action: 'click' | 'credentials' | 'report' | 'video_completed' | 'quiz_pass' | 'quiz_fail' | 'game_played' | 'game_high_score'
+  action: PointsAction
 ): Promise<void> {
   const user = await User.findById(userId).select('points').lean();
   if (!user) return;
