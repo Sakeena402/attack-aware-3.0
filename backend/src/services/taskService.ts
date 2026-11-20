@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import { Task } from '../models/Task.js';
 import { User } from '../models/User.js';
 
@@ -8,10 +9,15 @@ export const completeLinkedTasks = async (
   contentType: ContentType,
   contentId: string
 ) => {
+  // AI quiz services store contentId as an ObjectId, POST /tasks stores a string, and
+  // Task.contentId is Mixed (Mongoose does not cast it), so match both forms.
+  const contentIds: Array<string | Types.ObjectId> = [contentId];
+  if (/^[0-9a-fA-F]{24}$/.test(contentId)) contentIds.push(new Types.ObjectId(contentId));
+
   const pending = await Task.find({
     assignedTo: userId,
     contentType,
-    contentId,
+    contentId: { $in: contentIds },
     status: { $ne: 'completed' },
   })
     .select('_id')
