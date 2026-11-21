@@ -192,6 +192,9 @@ class QuizResult {
       );
 }
 
+/// True when a due date has already passed.
+bool isOverdue(DateTime? due, {DateTime? now}) => due != null && due.isBefore(now ?? DateTime.now());
+
 /// Body for POST /quizzes/:id/submit: { questionId: 'a' | 'b' | 'c' | 'd' }.
 Map<String, String> answersToWire(Map<String, QuizOption> answers) => {
       for (final entry in answers.entries) entry.key: entry.value.name,

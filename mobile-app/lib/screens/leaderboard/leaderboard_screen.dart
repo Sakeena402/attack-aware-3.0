@@ -9,7 +9,10 @@ import '../../widgets/async_body.dart';
 import '../../widgets/common_widgets.dart';
 
 class LeaderboardScreen extends StatefulWidget {
-  const LeaderboardScreen({super.key});
+  const LeaderboardScreen({super.key, this.active = true});
+
+  /// False while another tab is showing; turning true refreshes the data.
+  final bool active;
 
   @override
   State<LeaderboardScreen> createState() => _LeaderboardScreenState();
@@ -26,6 +29,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
     _tabController = TabController(length: 2, vsync: this);
     final data = context.read<AuthProvider>().data;
     _controller = LoadController<List<LeaderboardEntry>>(data.leaderboard)..load();
+  }
+
+  @override
+  void didUpdateWidget(covariant LeaderboardScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.active && !oldWidget.active) _controller.refresh();
   }
 
   @override

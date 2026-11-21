@@ -2,6 +2,7 @@
 import '../models/account_settings.dart';
 import '../models/leaderboard_entry.dart';
 import '../models/my_analytics.dart';
+import '../models/progress_models.dart';
 import '../models/quiz_models.dart';
 import '../models/video_completion.dart';
 import '../utils/json_helpers.dart';
@@ -37,6 +38,13 @@ class DataService {
   // PUT /api/settings  (email and department are not sent from mobile)
   Future<void> updateSettings({required String name, required String phoneNumber}) async {
     await api.put('/settings', {'name': name.trim(), 'phoneNumber': phoneNumber.trim()});
+  }
+
+  // ── Progress ───────────────────────────────────────────────────────────────
+  // GET /api/progress/me → totals plus the history of videos, quizzes and games
+  Future<ProgressSummary> myProgress() async {
+    final res = await api.get('/progress/me');
+    return ProgressSummary.fromJson(asJsonMap(res['data']));
   }
 
   // ── Videos ─────────────────────────────────────────────────────────────────

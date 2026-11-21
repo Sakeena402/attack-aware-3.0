@@ -58,7 +58,10 @@ class _DashboardData {
 }
 
 class EmployeeDashboardScreen extends StatefulWidget {
-  const EmployeeDashboardScreen({super.key});
+  const EmployeeDashboardScreen({super.key, this.active = true});
+
+  /// False while another tab is showing; turning true refreshes the data.
+  final bool active;
 
   @override
   State<EmployeeDashboardScreen> createState() => _EmployeeDashboardScreenState();
@@ -72,6 +75,12 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
     super.initState();
     final auth = context.read<AuthProvider>();
     _controller = LoadController<_DashboardData>(() => _fetch(auth))..load();
+  }
+
+  @override
+  void didUpdateWidget(covariant EmployeeDashboardScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.active && !oldWidget.active) _controller.refresh();
   }
 
   @override

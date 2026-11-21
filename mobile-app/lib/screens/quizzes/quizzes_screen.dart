@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../models/quiz_models.dart';
 import '../../services/auth_provider.dart';
 import '../../utils/app_theme.dart';
+import '../../utils/date_format.dart';
 import '../../utils/load_state.dart';
 import '../../widgets/async_body.dart';
 import '../../widgets/common_widgets.dart';
@@ -27,7 +28,10 @@ class _QuizzesData {
 }
 
 class QuizzesScreen extends StatefulWidget {
-  const QuizzesScreen({super.key});
+  const QuizzesScreen({super.key, this.active = true});
+
+  /// False while another tab is showing; turning true refreshes the data.
+  final bool active;
 
   @override
   State<QuizzesScreen> createState() => _QuizzesScreenState();
@@ -41,6 +45,12 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
     super.initState();
     final auth = context.read<AuthProvider>();
     _controller = LoadController<_QuizzesData>(() => _fetch(auth))..load();
+  }
+
+  @override
+  void didUpdateWidget(covariant QuizzesScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.active && !oldWidget.active) _controller.refresh();
   }
 
   @override
@@ -90,9 +100,6 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
     if (mounted) await _controller.refresh();
   }
 
-  static String _date(DateTime d) =>
-      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-
   @override
   Widget build(BuildContext context) {
     return AsyncBody<_QuizzesData>(
@@ -126,8 +133,10 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
               child: _QuizCard(
                 quiz: item.quiz,
                 titleOverride: item.title,
-                badge: item.dueDate == null ? 'Assigned' : 'Due ${_date(item.dueDate!)}',
-                badgeColor: AppColors.yellow,
+                badge: item.dueDate == null
+                    ? 'Assigned'
+                    : '${isOverdue(item.dueDate) ? 'Overdue' : 'Due'} ${formatDate(item.dueDate!)}',
+                badgeColor: isOverdue(item.dueDate) ? AppColors.red : AppColors.yellow,
                 onTap: () => _open(item.quiz),
               ),
             ),

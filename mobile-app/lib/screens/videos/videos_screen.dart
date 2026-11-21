@@ -13,7 +13,10 @@ import 'video_player_screen.dart';
 /// Training video library (employee and individual). The list comes from the
 /// bundled catalog; which ones are done comes from GET /videos/me/completed.
 class VideosScreen extends StatefulWidget {
-  const VideosScreen({super.key});
+  const VideosScreen({super.key, this.active = true});
+
+  /// False while another tab is showing; turning true refreshes the data.
+  final bool active;
 
   @override
   State<VideosScreen> createState() => _VideosScreenState();
@@ -35,6 +38,12 @@ class _VideosScreenState extends State<VideosScreen> {
       };
     })
       ..load();
+  }
+
+  @override
+  void didUpdateWidget(covariant VideosScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.active && !oldWidget.active) _controller.refresh();
   }
 
   @override

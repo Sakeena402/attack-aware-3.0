@@ -7,9 +7,9 @@ import '../../utils/app_theme.dart';
 import '../../widgets/common_widgets.dart';
 import '../employee/employee_dashboard_screen.dart';
 import '../leaderboard/leaderboard_screen.dart';
-import '../quizzes/quizzes_screen.dart';
+import '../learn/learn_screen.dart';
+import '../progress/progress_screen.dart';
 import '../settings/settings_screen.dart';
-import '../videos/videos_screen.dart';
 
 /// Learner shell for EMPLOYEE and INDIVIDUAL users. Admin, super-admin and
 /// unknown roles never get here: RoleGate sends them elsewhere.
@@ -31,8 +31,8 @@ class _DashboardLayoutState extends State<DashboardLayout> {
   List<_NavItem> _getNavItems() {
     return [
       _NavItem(icon: Icons.dashboard_outlined, label: 'Dashboard', selectedIcon: Icons.dashboard),
-      _NavItem(icon: Icons.play_circle_outline, label: 'Videos', selectedIcon: Icons.play_circle),
-      _NavItem(icon: Icons.quiz_outlined, label: 'Quizzes', selectedIcon: Icons.quiz),
+      _NavItem(icon: Icons.school_outlined, label: 'Learn', selectedIcon: Icons.school),
+      _NavItem(icon: Icons.insights_outlined, label: 'Progress', selectedIcon: Icons.insights),
       if (_showLeaderboard)
         _NavItem(icon: Icons.leaderboard_outlined, label: 'Leaderboard', selectedIcon: Icons.leaderboard),
       _NavItem(icon: Icons.settings_outlined, label: 'Settings', selectedIcon: Icons.settings),
@@ -40,11 +40,13 @@ class _DashboardLayoutState extends State<DashboardLayout> {
   }
 
   Widget _getScreen(int index) {
+    // A tab refreshes its data quietly each time it becomes the visible one.
+    final isActive = index == _selectedIndex;
     final screens = <Widget>[
-      const EmployeeDashboardScreen(),
-      const VideosScreen(),
-      const QuizzesScreen(),
-      if (_showLeaderboard) const LeaderboardScreen(),
+      EmployeeDashboardScreen(active: isActive),
+      LearnScreen(active: isActive),
+      ProgressScreen(active: isActive),
+      if (_showLeaderboard) LeaderboardScreen(active: isActive),
       const SettingsScreen(),
     ];
     return screens[index];
