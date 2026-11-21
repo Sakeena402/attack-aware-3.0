@@ -1,13 +1,18 @@
 // lib/screens/employee/employee_dashboard_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../data/video_catalog.dart';
 import '../../models/leaderboard_entry.dart';
 import '../../models/my_analytics.dart';
+import '../../models/quiz_models.dart';
+import '../../models/up_next.dart';
 import '../../services/auth_provider.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/load_state.dart';
 import '../../widgets/async_body.dart';
 import '../../widgets/common_widgets.dart';
+import '../quizzes/quiz_session_screen.dart';
+import '../videos/video_player_screen.dart';
 
 // Same badge ladder as the website.
 class _BadgeLevel {
@@ -51,10 +56,30 @@ _ActionStyle _styleFor(SimulationAction action) {
 /// [leaders] is null for individual users (the backend has no leaderboard for
 /// them) and when the leaderboard request failed ([leadersFailed] is true).
 class _DashboardData {
-  const _DashboardData({required this.me, this.leaders, this.leadersFailed = false});
+  const _DashboardData({
+    required this.me,
+    this.leaders,
+    this.leadersFailed = false,
+    this.upNext = const [],
+    this.upNextFailed = false,
+  });
   final MyAnalytics me;
   final List<LeaderboardEntry>? leaders;
   final bool leadersFailed;
+
+  /// What to do next; [upNextFailed] is true when part of that list could not be loaded.
+  final List<UpNextItem> upNext;
+  final bool upNextFailed;
+}
+
+/// Loads an optional part of the dashboard. A failure becomes null so one
+/// broken request never hides the rest of the screen.
+Future<T?> _tryLoad<T>(Future<T> future) async {
+  try {
+    return await future;
+  } catch (_) {
+    return null;
+  }
 }
 
 class EmployeeDashboardScreen extends StatefulWidget {
@@ -91,15 +116,82 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
 
   Future<_DashboardData> _fetch(AuthProvider auth) async {
     final data = auth.data;
+    final isEmployee = auth.user?.isEmployee == true;
+
+    // The optional parts start together; each can fail on its own.
+    final leadersLoad = isEmployee ? _tryLoad(data.leaderboard()) : null;
+    final assignedLoad = isEmployee ? _tryLoad(data.myAssignedQuizzes()) : null;
+    final mineLoad = _tryLoad(data.myAdaptiveQuizzes());
+    final completedLoad = _tryLoad(data.myCompletedVideos());
+
     final me = await data.myAnalytics();
-    if (auth.user?.isEmployee != true) return _DashboardData(me: me);
-    try {
-      final leaders = await data.leaderboard();
-      return _DashboardData(me: me, leaders: leaders);
-    } catch (_) {
-      // The rest of the dashboard still works without rankings.
-      return _DashboardData(me: me, leadersFailed: true);
-    }
+
+    final leaders = await leadersLoad;
+    final assigned = await assignedLoad;
+    final mine = await mineLoad;
+    final completed = await completedLoad;
+
+    final completedIds = completed == null
+        ? null
+        : {
+            for (final item in completed)
+              if (item.videoId.isNotEmpty) item.videoId,
+          };
+
+    return _DashboardData(
+      me: me,
+      leaders: leaders,
+      leadersFailed: isEmployee && leaders == null,
+      upNext: buildUpNext(
+        assigned: assigned ?? const <AssignedQuiz>[],
+        mine: mine ?? const <QuizSummary>[],
+        completedVideoIds: completedIds,
+        catalog: kVideoCatalog,
+      ),
+      upNextFailed: mine == null || completed == null || (isEmployee && assigned == null),
+    );
+  }
+
+  Future<void> _openUpNext(UpNextItem item) async {
+    final video = item.video;
+    final quizId = item.quizId;
+    final Widget? page = video != null
+        ? VideoPlayerScreen(video: video, alreadyCompleted: false)
+        : (quizId != null ? QuizSessionScreen(quizId: quizId, title: item.title) : null);
+    if (page == null) return;
+
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
+    if (mounted) await _controller.refresh();
+  }
+
+  Widget _buildUpNext(_DashboardData data) {
+    return CyberCard(
+      borderColor: AppColors.purple.withValues(alpha: 0.4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Up next', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          const SizedBox(height: 12),
+          if (data.upNext.isEmpty)
+            Text(
+              data.upNextFailed
+                  ? 'Your to-do list could not be loaded. Pull down to try again.'
+                  : "You're all caught up. Open the Learn tab for more.",
+              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+            ),
+          for (final item in data.upNext)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _UpNextRow(item: item, onTap: () => _openUpNext(item)),
+            ),
+          if (data.upNext.isNotEmpty && data.upNextFailed)
+            const Text(
+              'Some items could not be loaded. Pull down to try again.',
+              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+            ),
+        ],
+      ),
+    );
   }
 
   Color _riskColor(int risk) {
@@ -148,6 +240,8 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SectionHeader(title: 'Your Security Journey', subtitle: 'Track your security awareness progress'),
+          const SizedBox(height: 16),
+          _buildUpNext(data),
           const SizedBox(height: 20),
 
           GridView.count(
@@ -364,6 +458,58 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
             );
           }),
         ],
+      ),
+    );
+  }
+}
+
+class _UpNextRow extends StatelessWidget {
+  const _UpNextRow({required this.item, required this.onTap});
+
+  final UpNextItem item;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final (IconData icon, Color color) = switch (item.kind) {
+      UpNextKind.assignedQuiz => (
+          item.isOverdue ? Icons.assignment_late_outlined : Icons.assignment_outlined,
+          item.isOverdue ? AppColors.red : AppColors.yellow,
+        ),
+      UpNextKind.adaptiveQuiz => (Icons.auto_awesome_outlined, AppColors.purple),
+      UpNextKind.video => (Icons.play_circle_outline, AppColors.green),
+    };
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                  ),
+                  Text(item.subtitle, style: TextStyle(fontSize: 11, color: item.isOverdue ? AppColors.red : AppColors.textMuted)),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.textMuted, size: 20),
+          ],
+        ),
       ),
     );
   }
